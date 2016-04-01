@@ -1,0 +1,119 @@
+.headerClass1 {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 1em;
+	font-weight: bold;
+	color: #000000;
+	padding: 2px;
+	margin: 5px;
+}
+
+.headerClass2 {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 0.85em;
+	font-weight: bold;
+	color: #000000;
+	padding: 2px;
+	margin: 5px;
+	background-color: rgb(105, 156, 217);
+}
+
+.headerClass3 {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 0.88em;
+	color: #000000;
+	margin: 5px;
+}
+
+.headerClass4 {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 0.7em;
+	font-weight: bold;
+	color: #000000;
+	margin: 3px;
+}
+
+.dataTable {
+	border: 1px solid gray;
+	padding: 0px;
+	margin: 0px;
+}
+
+.headerCell {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 0.7em;
+	color: #000000;
+	background-color: #cee0fe;
+	border-bottom: 1px solid gray;
+	padding: 1px;
+	vertical-align: top;
+}
+
+.alternateDataRow {
+	background-color: #ebebeb;
+}
+
+.linkedRow {
+	cursor: pointer;
+}
+
+.linkedRowHover {
+	background-color: #FFCC33;
+}
+
+.dataCell {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 0.7em;
+	color: #000000;
+}
+
+.bold {
+	font-weight: bold;
+}
+
+.italic {
+	font-style: italic;
+}
+
+.left {
+	text-align: left;
+}
+
+.right {
+	text-align: right;
+}
+
+.center {
+	text-align: center;
+}
+
+a:VISITED {
+	color: blue;
+}
+
+.deadLink {
+	text-decoration: none;
+	cursor: default;
+	color: blue;
+}
+
+.noLink a {
+	color: black;
+	text-decoration: none;
+	cursor: default;
+}
+
+.noLink a:visited {
+	color: black;
+}
+
+.noLink a:hover {
+	color: black;
+}
+
+.topBorder {
+	border-top: solid gray thin;
+}
+
+.bottomBorder {
+	border-bottom: solid gray thin;
+}

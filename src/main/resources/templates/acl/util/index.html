@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<object th:remove="tag"
+	th:include="acl#util/components :: header (${accelerateProperties.appName} + ' - Index Page', '0')"></object>
+</head>
+<body>
+	<div class="container-fluid">
+		<div class="alert alert-success" role="alert">
+			<h1>
+				Index Page - <a
+					th:href="${#httpServletRequest.contextPath} + ${accelerateProperties.homePage}"
+					th:text="${accelerateProperties.appName}"></a>
+			</h1>
+		</div>
+
+		<div th:replace="acl#util/components :: request_details"></div>
+	</div>
+</body>
+</html>

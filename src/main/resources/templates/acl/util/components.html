@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="header (title, onload)">
+<meta charset="UTF-8" />
+<meta name="_csrf" th:attr="content=${_csrf != null}?${_csrf.token}:''" />
+<meta name="_csrf_header"
+	th:attr="content=${_csrf != null}?${_csrf.headerName}:''" />
+
+<title th:text="${title}"></title>
+
+<link type="text/css" rel='stylesheet'
+	th:href="@{/webjars/bootstrap/3.3.6/css/bootstrap.min.css}" />
+<link type="text/css" rel='stylesheet'
+	th:href="@{/webjars/bootstrap/3.3.6/css/bootstrap-theme.min.css}" />
+
+<script type="text/javascript"
+	th:src="@{/webjars/jquery/2.2.1/jquery.min.js}"></script>
+<script type="text/javascript"
+	th:src="@{/webjars/bootstrap/3.3.6/js/bootstrap.min.js}"></script>
+
+<script th:inline="javascript">
+	/*<![CDATA[*/
+	$(document).ready(function() {
+		var functionName = /*[[${onload}]]*/null;
+		var functionObj = window[functionName];
+		if (functionObj) {
+			functionObj();
+		}
+	});
+	/*]]>*/
+</script>
+</head>
+<body>
+	<div th:fragment="request_details">
+		<h2>Request Details</h2>
+
+		<div class="table-responsive">
+			<table class="table table-bordered table-hover table-condensed">
+				<tr th:each="field : ${requestFieldList}">
+					<td th:text="${field[0]}" />
+					<td th:text="${field[1]}" />
+				</tr>
+			</table>
+		</div>
+	</div>
+
+	<div th:fragment="request_params">
+		<h2>Request Parameters</h2>
+
+		<div class="table-responsive">
+			<table class="table table-bordered table-hover table-condensed">
+				<tr th:each="param : ${requestParamList}">
+					<td th:text="${param[0]}" />
+					<td th:text="${param[1]}" />
+				</tr>
+			</table>
+		</div>
+	</div>
+</body>
+</html>

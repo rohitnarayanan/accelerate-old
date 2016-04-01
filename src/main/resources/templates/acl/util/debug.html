@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<object
+	th:include="acl#util/components :: header (${accelerateProperties.appName} + ' - Debug Page', '0')"></object>
+</head>
+<body>
+	<div class="container-fluid">
+		<div class="alert alert-success" role="alert">
+			<h1>
+				Debug Page - <a
+					th:href="${#httpServletRequest.contextPath} + ${accelerateProperties.homePage}"
+					th:text="${accelerateProperties.appName}"></a>
+			</h1>
+		</div>
+
+		<div class="alert alert-info" role="alert">
+			<h4>This page is a utility to quickly view all parameters
+				submitted by a form for debugging purpose.</h4>
+		</div>
+
+		<div th:replace="acl#util/components :: request_params"></div>
+		<div th:replace="acl#util/components :: request_details"></div>
+	</div>
+</body>
+</html>
