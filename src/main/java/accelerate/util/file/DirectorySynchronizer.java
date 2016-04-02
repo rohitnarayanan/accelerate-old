@@ -266,7 +266,7 @@ public class DirectorySynchronizer {
 		/**
 		 * serialVersionUID
 		 */
-		private static final long serialVersionUID = 5336645842239938872L;
+		private static final long serialVersionUID = 1L;
 
 		/**
 		 * Source directory
@@ -323,7 +323,7 @@ public class DirectorySynchronizer {
 		/**
 		 * serialVersionUID
 		 */
-		private static final long serialVersionUID = -8097285988368524955L;
+		private static final long serialVersionUID = 1L;
 
 		/**
 		 * Flag to indicate whether the process encountered an erro
@@ -465,7 +465,7 @@ public class DirectorySynchronizer {
 		/**
 		 * serialVersionUID
 		 */
-		private static final long serialVersionUID = 5577600876841621558L;
+		private static final long serialVersionUID = 1L;
 
 		/**
 		 * Source {@link File}

@@ -13,7 +13,7 @@ public class FlowControlException extends AccelerateRuntimeException {
 	/**
 	 * serialVersionUID
 	 */
-	private static final long serialVersionUID = 8887623006177753597L;
+	private static final long serialVersionUID = 1L;
 
 	/**
 	 * @param aMessage

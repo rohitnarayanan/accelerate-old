@@ -13,7 +13,7 @@ public class ResponseBean extends AccelerateDataBean {
 	/**
 	 * serialVersionUID
 	 */
-	private static final long serialVersionUID = 6650044748250728353L;
+	private static final long serialVersionUID = 1L;
 
 	/**
 	 * Return Code. <code>

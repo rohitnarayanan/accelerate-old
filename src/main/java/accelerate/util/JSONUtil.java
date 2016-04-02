@@ -6,6 +6,9 @@ import static accelerate.util.AppUtil.isEmpty;
 
 import java.io.IOException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
@@ -29,6 +32,11 @@ import accelerate.logging.AccelerateLogger;
  * @since 25-May-2015
  */
 public class JSONUtil {
+	/**
+	 * 
+	 */
+	private static final Logger _logger = LoggerFactory.getLogger(JSONUtil.class);
+
 	/**
 	 * static class
 	 */
@@ -92,7 +100,7 @@ public class JSONUtil {
 			return EMPTY_STRING;
 		}
 
-		return serialize(aObject, objectMapper(Include.NON_EMPTY, false, true, true));
+		return serialize(aObject, objectMapper());
 	}
 
 	/**
@@ -144,8 +152,7 @@ public class JSONUtil {
 		try {
 			objectString = aObjectMapper.writeValueAsString(aObject);
 		} catch (JsonProcessingException error) {
-			AccelerateLogger.exception(JSONUtil.class, ERROR_LOGGER, AccelerateLogger.LogLevel.ERROR, error,
-					"Error in serializing {}", aObject.getClass());
+			_logger.warn("Error:[{}] while serializing:[{}]", error.getMessage(), aObject.getClass());
 			objectString = "~" + aObject.getClass().getSimpleName();
 		}
 
@@ -167,7 +174,7 @@ public class JSONUtil {
 			return EMPTY_STRING;
 		}
 
-		return serializeExcept(aObject, objectMapper(Include.NON_EMPTY, false, true, true), aExcludedFields);
+		return serializeExcept(aObject, objectMapper(), aExcludedFields);
 	}
 
 	/**
@@ -258,7 +265,7 @@ public class JSONUtil {
 			return EMPTY_STRING;
 		}
 
-		return serializeOnly(aObject, objectMapper(Include.NON_EMPTY, false, true, true), aIncludedFields);
+		return serializeOnly(aObject, objectMapper(), aIncludedFields);
 	}
 
 	/**
@@ -325,8 +332,7 @@ public class JSONUtil {
 
 			objectString = aObjectMapper.writeValueAsString(aObject);
 		} catch (JsonProcessingException error) {
-			AccelerateLogger.exception(JSONUtil.class, ERROR_LOGGER, AccelerateLogger.LogLevel.ERROR, error,
-					"Error in serializing {}", aObject.getClass());
+			_logger.warn("Error:[{}] while serializing:[{}]", error.getMessage(), aObject.getClass());
 			objectString = "~" + aObject.getClass().getSimpleName();
 		}
 
@@ -373,7 +379,6 @@ public class JSONUtil {
 	 */
 	public static <T extends Object> T deserialize(String aJSONString, Class<T> aClass, ObjectMapper aObjectMapper)
 			throws AccelerateException {
-
 		try {
 			return aObjectMapper.readValue(aJSONString, aClass);
 		} catch (IOException error) {

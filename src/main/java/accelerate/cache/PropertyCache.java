@@ -59,7 +59,7 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	/**
 	 * serialVersionUID
 	 */
-	private static final long serialVersionUID = -9179394344090492058L;
+	private static final long serialVersionUID = 1L;
 
 	/**
 	 * The attribute contains the URL to the property file. The URL can be in

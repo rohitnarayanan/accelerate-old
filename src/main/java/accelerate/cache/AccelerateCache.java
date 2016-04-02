@@ -53,7 +53,7 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	/**
 	 * serialVersionUID
 	 */
-	private static final long serialVersionUID = -8298118183227610680L;
+	private static final long serialVersionUID = 1L;
 
 	/**
 	 * {@link Class} instance for the cache key type
@@ -104,7 +104,7 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	protected long cacheDuration = -1;
 
 	/**
-	 * Init Time of Cache
+	 * Init time of Cache
 	 */
 	protected long cacheInitializedTime = -1;
 
@@ -119,7 +119,7 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	protected boolean refreshable = false;
 
 	/**
-	 * Is the cache being refershed
+	 * Is the cache being refreshed
 	 */
 	protected boolean refreshing = false;
 
@@ -193,7 +193,7 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 
 	/**
 	 * This method returns the date timestamp when the cache was first
-	 * initiliazed
+	 * initialized
 	 *
 	 * @return cache name
 	 * @throws AccelerateException

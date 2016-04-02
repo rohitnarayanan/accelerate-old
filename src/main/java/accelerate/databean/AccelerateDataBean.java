@@ -1,14 +1,13 @@
 package accelerate.databean;
 
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import accelerate.util.DataMap;
 import accelerate.util.JSONUtil;
 
 /**
@@ -23,7 +22,7 @@ public class AccelerateDataBean implements Serializable {
 	/**
 	 * serialVersionUID
 	 */
-	private static final long serialVersionUID = -6296002276646863077L;
+	private static final long serialVersionUID = 1L;
 
 	/**
 	 * {@link Set} to include names of fields to exclude while logging
@@ -47,7 +46,7 @@ public class AccelerateDataBean implements Serializable {
 	 * works more like java bean get/set attribute incase developers do not want
 	 * to create new beans with specific attributes/fields
 	 */
-	private Map<String, Object> dataMap = new HashMap<>();
+	private DataMap<Object> dataMap = new DataMap<>();
 
 	/**
 	 * This method registers the aFieldName as a field to be excluded from
@@ -134,26 +133,6 @@ public class AccelerateDataBean implements Serializable {
 	}
 
 	/**
-	 * Function to add data to {@link #dataMap}
-	 * 
-	 * @param aKey
-	 * @param aValue
-	 */
-	public void putData(String aKey, Object aValue) {
-		this.dataMap.put(aKey, aValue);
-	}
-
-	/**
-	 * Function to get data from {@link #dataMap}
-	 * 
-	 * @param aKey
-	 * @return
-	 */
-	public Object getData(String aKey) {
-		return this.dataMap.get(aKey);
-	}
-
-	/**
 	 * Getter method for "idField" property
 	 * 
 	 * @return idField
@@ -194,7 +173,7 @@ public class AccelerateDataBean implements Serializable {
 	 * 
 	 * @return dataMap
 	 */
-	public Map<String, Object> getDataMap() {
+	public DataMap<Object> getDataMap() {
 		return this.dataMap;
 	}
 }

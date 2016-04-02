@@ -63,12 +63,12 @@ public class AccelerateBatch<T extends AccelerateTask> {
 	private Object monitor = new Object();
 
 	/**
-	 * {@link Map} of tasks being processed by the batch
+	 * {@link Map} of tasks submitted to the batch
 	 */
-	private Map<String, T> tasks = null;
+	private Map<String, T> pendingTasks = null;
 
 	/**
-	 * {@link Map} of tasks being processed by the batch
+	 * {@link Map} of tasks currently being processed by the batch
 	 */
 	private Map<String, T> activeTasks = null;
 
@@ -76,16 +76,6 @@ public class AccelerateBatch<T extends AccelerateTask> {
 	 * Count of tasks processed by this batch
 	 */
 	private long completedTaskCount = 0l;
-
-	/**
-	 * Count of tasks processed by this batch
-	 */
-	private long activeTaskCount = 0l;
-
-	/**
-	 * Count of tasks processed by this batch
-	 */
-	private long waitingTaskCount = 0l;
 
 	/**
 	 * {@link AccelerateTask} instance currently executing if MULTI_THREADING is
@@ -148,7 +138,7 @@ public class AccelerateBatch<T extends AccelerateTask> {
 		this.executor.initialize();
 
 		this.batchEventListener = new BETaskEventListener();
-		this.tasks = new HashMap<>();
+		this.pendingTasks = new HashMap<>();
 		this.activeTasks = new HashMap<>();
 		this.completedTaskCount = 0l;
 		this.active = true;
@@ -193,7 +183,8 @@ public class AccelerateBatch<T extends AccelerateTask> {
 		this.paused = true;
 
 		if (this.multiThreadingEnabled) {
-			this.tasks.values().forEach(task -> task.pause(this.monitor));
+			this.pendingTasks.values().forEach(task -> task.pause(this.monitor));
+			this.activeTasks.values().forEach(task -> task.pause(this.monitor));
 		} else {
 			this.currentTask.pause(this.monitor);
 		}
@@ -208,7 +199,8 @@ public class AccelerateBatch<T extends AccelerateTask> {
 		this.paused = false;
 
 		if (this.multiThreadingEnabled) {
-			this.tasks.values().forEach(task -> task.resume());
+			this.pendingTasks.values().forEach(task -> task.resume());
+			this.activeTasks.values().forEach(task -> task.resume());
 		} else {
 			this.currentTask.resume();
 		}
@@ -225,11 +217,11 @@ public class AccelerateBatch<T extends AccelerateTask> {
 	 * @return JSON string
 	 */
 	@ManagedOperation(description = "This method returns JSON string with basic status information on the batch")
-	public String getAdvancedStatus() {
+	public String getStatus() {
 		DataMap dataMap = new DataMap();
 		dataMap.addData("1.name", this.batchName, "2.multithreaded", this.multiThreadingEnabled, "3.poolSize",
 				this.threadPoolSize, "4.active", this.active, "5.completedTasks", this.completedTaskCount,
-				"6.activeTasks", this.activeTaskCount, "7.waitingTasks", this.waitingTaskCount);
+				"6.activeTasks", this.activeTasks.size(), "7.waitingTasks", this.pendingTasks.size());
 
 		return JSONUtil.serialize(dataMap);
 	}
@@ -257,12 +249,9 @@ public class AccelerateBatch<T extends AccelerateTask> {
 			throw new AccelerateException("No tasks provided!");
 		}
 
-		if (!this.multiThreadingEnabled) {
-			this.waitingTaskCount = aTaskList.size();
-		}
+		aTaskList.forEach(task -> this.pendingTasks.put(task.getTaskKey(), task));
 
 		for (T task : aTaskList) {
-			this.tasks.put(task.getTaskKey(), task);
 			task.registerTaskEventListener(this.batchEventListener);
 
 			if (this.paused) {
@@ -273,8 +262,7 @@ public class AccelerateBatch<T extends AccelerateTask> {
 				task.setFuture(this.executor.submit(task));
 			} else {
 				this.currentTask = task;
-				this.waitingTaskCount--;
-				this.activeTaskCount = 1;
+				this.activeTasks.put(task.getTaskKey(), this.pendingTasks.get(task.getTaskKey()));
 				task.call();
 				this.completedTaskCount++;
 			}
@@ -285,20 +273,15 @@ public class AccelerateBatch<T extends AccelerateTask> {
 	 * @param aTask
 	 */
 	protected synchronized void beforeStart(T aTask) {
-		this.activeTasks.put(aTask.getTaskKey(), aTask);
-		this.activeTaskCount++;
-		this.waitingTaskCount = this.tasks.size() - this.activeTaskCount;
+		this.activeTasks.put(aTask.getTaskKey(), this.pendingTasks.remove(aTask.getTaskKey()));
 	}
 
 	/**
 	 * @param aTask
 	 */
 	protected synchronized void afterComplete(T aTask) {
-		this.tasks.remove(aTask.getTaskKey());
 		this.activeTasks.remove(aTask.getTaskKey());
-		System.out.println(Thread.currentThread().getName() + ":afterComplete:" + this.completedTaskCount);
 		this.completedTaskCount++;
-		this.activeTaskCount--;
 	}
 
 	/**
@@ -342,8 +325,8 @@ public class AccelerateBatch<T extends AccelerateTask> {
 	 *
 	 * @return allTasks
 	 */
-	public synchronized Map<String, T> getTasks() {
-		return this.tasks;
+	public synchronized Map<String, T> getPendingTasks() {
+		return this.pendingTasks;
 	}
 
 	/**
@@ -370,7 +353,7 @@ public class AccelerateBatch<T extends AccelerateTask> {
 	 * @return activeTaskCount
 	 */
 	public synchronized long getActiveTaskCount() {
-		return this.activeTaskCount;
+		return this.activeTasks.size();
 	}
 
 	/**
@@ -379,7 +362,7 @@ public class AccelerateBatch<T extends AccelerateTask> {
 	 * @return waitingTaskCount
 	 */
 	public synchronized long getWaitingTaskCount() {
-		return this.waitingTaskCount;
+		return this.pendingTasks.size();
 	}
 
 	/**

@@ -17,7 +17,7 @@ public class RequestBean extends AccelerateDataBean {
 	/**
 	 * serialVersionUID
 	 */
-	private static final long serialVersionUID = 6452672226779354122L;
+	private static final long serialVersionUID = 1L;
 
 	/**
 	 * Name of the action to be invoked. Can be used across multiple frameworks

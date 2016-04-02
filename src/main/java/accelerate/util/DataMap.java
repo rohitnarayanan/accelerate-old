@@ -10,9 +10,10 @@ import accelerate.exception.AccelerateRuntimeException;
  * 
  * @version 1.0 Initial Version
  * @author Rohit Narayanan
+ * @param <T>
  * @since Mar 24, 2016
  */
-public class DataMap extends HashMap<String, Object> {
+public final class DataMap<T> extends HashMap<String, T> {
 
 	/**
 	 * 
@@ -26,7 +27,7 @@ public class DataMap extends HashMap<String, Object> {
 	 * @param aValue
 	 * @return instance of {@link DataMap} to chain calls
 	 */
-	public DataMap addData(String aKey, Object aValue) {
+	public final DataMap<T> addData(String aKey, T aValue) {
 		super.put(aKey, aValue);
 		return this;
 	}
@@ -43,7 +44,8 @@ public class DataMap extends HashMap<String, Object> {
 	 *             If key value pairs do not match, or keys are not of type
 	 *             {@link String}
 	 */
-	public DataMap addData(Object... aArgs) throws AccelerateRuntimeException {
+	@SafeVarargs
+	public final DataMap<T> addData(T... aArgs) throws AccelerateRuntimeException {
 		if (AppUtil.isEmpty(aArgs)) {
 			throw new AccelerateRuntimeException("Empty arguments are not allowed");
 		}

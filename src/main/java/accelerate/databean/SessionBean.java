@@ -1,16 +1,18 @@
 package accelerate.databean;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 
 import javax.servlet.http.HttpSessionBindingEvent;
 import javax.servlet.http.HttpSessionBindingListener;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-
-import accelerate.logging.AccelerateLogger;
-import accelerate.util.AccelerateConstants;
+import org.springframework.web.context.request.RequestContextHolder;
 
 /**
  * Generic Data Bean to store in the user's session data
@@ -23,12 +25,22 @@ public class SessionBean extends AccelerateDataBean implements HttpSessionBindin
 	/**
 	 * serialVersionUID
 	 */
-	private static final long serialVersionUID = -5969087461063440103L;
+	private static final long serialVersionUID = 1L;
+
+	/**
+	 * {@link Logger} instance
+	 */
+	private static final Logger _logger = LoggerFactory.getLogger(SessionBean.class);
 
 	/**
 	 * Default alive time for the session
 	 */
 	public static long defaultAge = 30 * 60 * 1000;
+
+	/**
+	 * Session Id
+	 */
+	private Date initTime = null;
 
 	/**
 	 * Session Id
@@ -46,15 +58,35 @@ public class SessionBean extends AccelerateDataBean implements HttpSessionBindin
 	private transient String password = null;
 
 	/**
-	 * Session Id
+	 * 
 	 */
-	private Date initTime = null;
+	private List<? extends GrantedAuthority> authorities = null;
+
+	/**
+	 * 
+	 */
+	private boolean accountExpired = false;
+
+	/**
+	 * 
+	 */
+	private boolean accountLocked = false;
+
+	/**
+	 * 
+	 */
+	private boolean credentialsExpired = false;
+
+	/**
+	 * 
+	 */
+	private boolean accountDisabled = false;
 
 	/**
 	 * Default Constructor
 	 */
 	public SessionBean() {
-		// blank impl
+		initialize(null);
 	}
 
 	/**
@@ -63,21 +95,22 @@ public class SessionBean extends AccelerateDataBean implements HttpSessionBindin
 	 * @param aUserName
 	 */
 	public SessionBean(String aUserName) {
-		setUsername(aUserName);
 		initialize(aUserName);
 	}
 
 	/**
 	 * This method intializes the session bean
 	 *
-	 * @param aSessionId
+	 * @param aUserName
 	 */
-	private void initialize(String aSessionId) {
+	private void initialize(String aUserName) {
 		this.initTime = new Date();
-		this.sessionId = aSessionId;
+		this.sessionId = RequestContextHolder.currentRequestAttributes().getSessionId();
+		this.username = aUserName == null ? this.sessionId : aUserName;
+		this.authorities = new ArrayList<>();
+
 		setIdField("sessionId");
-		AccelerateLogger.info(this.getClass(), AccelerateConstants.REQUEST_LOGGER,
-				"Session initialized for '{}' with id '{}' at '{}'", getUsername(), aSessionId, getInitTime());
+		_logger.info("Session initialized for '{}' with id '{}' at '{}'", this.username, this.sessionId, this.initTime);
 	}
 
 	/**
@@ -101,7 +134,7 @@ public class SessionBean extends AccelerateDataBean implements HttpSessionBindin
 	 */
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
-		return null;
+		return this.authorities;
 	}
 
 	/*
@@ -143,7 +176,7 @@ public class SessionBean extends AccelerateDataBean implements HttpSessionBindin
 	 */
 	@Override
 	public boolean isAccountNonExpired() {
-		return false;
+		return !this.accountExpired;
 	}
 
 	/*
@@ -157,7 +190,7 @@ public class SessionBean extends AccelerateDataBean implements HttpSessionBindin
 	 */
 	@Override
 	public boolean isAccountNonLocked() {
-		return false;
+		return !this.accountLocked;
 	}
 
 	/*
@@ -171,7 +204,7 @@ public class SessionBean extends AccelerateDataBean implements HttpSessionBindin
 	 */
 	@Override
 	public boolean isCredentialsNonExpired() {
-		return false;
+		return !this.credentialsExpired;
 	}
 
 	/*
@@ -185,7 +218,7 @@ public class SessionBean extends AccelerateDataBean implements HttpSessionBindin
 	 */
 	@Override
 	public boolean isEnabled() {
-		return false;
+		return !this.accountDisabled;
 	}
 
 	/*
@@ -219,24 +252,6 @@ public class SessionBean extends AccelerateDataBean implements HttpSessionBindin
 	}
 
 	/**
-	 * Getter method for "sessionId" property
-	 * 
-	 * @return sessionId
-	 */
-	public String getSessionId() {
-		return this.sessionId;
-	}
-
-	/**
-	 * Setter method for "sessionId" property
-	 * 
-	 * @param aSessionId
-	 */
-	public void setSessionId(String aSessionId) {
-		this.sessionId = aSessionId;
-	}
-
-	/**
 	 * Getter method for "initTime" property
 	 * 
 	 * @return initTime
@@ -246,12 +261,30 @@ public class SessionBean extends AccelerateDataBean implements HttpSessionBindin
 	}
 
 	/**
+	 * Getter method for "sessionId" property
+	 * 
+	 * @return sessionId
+	 */
+	public String getSessionId() {
+		return this.sessionId;
+	}
+
+	/**
 	 * Setter method for "initTime" property
 	 * 
 	 * @param aInitTime
 	 */
 	public void setInitTime(Date aInitTime) {
 		this.initTime = aInitTime;
+	}
+
+	/**
+	 * Setter method for "sessionId" property
+	 * 
+	 * @param aSessionId
+	 */
+	public void setSessionId(String aSessionId) {
+		this.sessionId = aSessionId;
 	}
 
 	/**
@@ -270,5 +303,50 @@ public class SessionBean extends AccelerateDataBean implements HttpSessionBindin
 	 */
 	public void setPassword(String aPassword) {
 		this.password = aPassword;
+	}
+
+	/**
+	 * Setter method for "authorities" property
+	 * 
+	 * @param aAuthorities
+	 */
+	public void setAuthorities(List<? extends GrantedAuthority> aAuthorities) {
+		this.authorities = aAuthorities;
+	}
+
+	/**
+	 * Setter method for "accountExpired" property
+	 * 
+	 * @param aAccountExpired
+	 */
+	public void setAccountExpired(boolean aAccountExpired) {
+		this.accountExpired = aAccountExpired;
+	}
+
+	/**
+	 * Setter method for "accountLocked" property
+	 * 
+	 * @param aAccountLocked
+	 */
+	public void setAccountLocked(boolean aAccountLocked) {
+		this.accountLocked = aAccountLocked;
+	}
+
+	/**
+	 * Setter method for "credentialsExpired" property
+	 * 
+	 * @param aCredentialsExpired
+	 */
+	public void setCredentialsExpired(boolean aCredentialsExpired) {
+		this.credentialsExpired = aCredentialsExpired;
+	}
+
+	/**
+	 * Setter method for "accountDisabled" property
+	 * 
+	 * @param aAccountDisabled
+	 */
+	public void setAccountDisabled(boolean aAccountDisabled) {
+		this.accountDisabled = aAccountDisabled;
 	}
 }

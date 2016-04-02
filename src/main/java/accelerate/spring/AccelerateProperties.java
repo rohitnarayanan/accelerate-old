@@ -21,7 +21,7 @@ public class AccelerateProperties implements Serializable {
 	/**
 	 * serialVersionUID
 	 */
-	private static final long serialVersionUID = -8074174684206912932L;
+	private static final long serialVersionUID = 1L;
 
 	/**
 	 * Id of the Application

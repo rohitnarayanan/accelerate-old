@@ -14,7 +14,6 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.core.Ordered;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 import org.springframework.web.servlet.handler.SimpleMappingExceptionResolver;
 import org.thymeleaf.TemplateProcessingParameters;
@@ -23,7 +22,6 @@ import org.thymeleaf.spring4.templateresolver.SpringResourceTemplateResolver;
 import org.thymeleaf.spring4.view.ThymeleafViewResolver;
 
 import accelerate.cache.AccelerateCache;
-import accelerate.util.JSONUtil;
 
 /**
  * Main {@link Configuration} class for accelerate
@@ -82,14 +80,16 @@ public class AccelerateConfig {
 			return resolver;
 		}
 
-		/**
-		 * @return
-		 */
-		@Bean
-		@ConditionalOnProperty(name = "accelerate.web.jsonconverter")
-		public static MappingJackson2HttpMessageConverter customizeJackson() {
-			return new MappingJackson2HttpMessageConverter(JSONUtil.objectMapper());
-		}
+		// /**
+		// * @return
+		// */
+		// @Bean
+		// @ConditionalOnProperty(name = "accelerate.web.jsonconverter")
+		// public static MappingJackson2HttpMessageConverter customizeJackson()
+		// {
+		// return new
+		// MappingJackson2HttpMessageConverter(JSONUtil.objectMapper());
+		// }
 	}
 
 	/**

@@ -70,11 +70,11 @@ public class FileRenamer {
 	 * @version 1.0 Initial Version
 	 * @since 21-May-2015
 	 */
-	public static class FileRenamerInput extends AccelerateDataBean {
+	public class FileRenamerInput extends AccelerateDataBean {
 		/**
 		 * serialVersionUID
 		 */
-		private static final long serialVersionUID = -6077138755695084707L;
+		private static final long serialVersionUID = 1L;
 
 		/**
 		 * Path to file / directory
@@ -145,7 +145,7 @@ public class FileRenamer {
 		/**
 		 * serialVersionUID
 		 */
-		private static final long serialVersionUID = 2653353789004093642L;
+		private static final long serialVersionUID = 1L;
 
 		/**
 		 * Count for the number of files executed by this instance
