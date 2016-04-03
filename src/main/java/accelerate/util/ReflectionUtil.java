@@ -15,9 +15,10 @@ import accelerate.exception.AccelerateException;
  * @version 1.0 Initial Version
  * @since Jun 12, 2009
  */
-public class ReflectionUtil {
+public final class ReflectionUtil {
+
 	/**
-	 * static class
+	 * hidden constructor
 	 */
 	private ReflectionUtil() {
 	}

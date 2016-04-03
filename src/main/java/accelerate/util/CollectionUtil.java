@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import accelerate.databean.AccelerateDataBean;
 import accelerate.exception.AccelerateException;
 
 /**
@@ -23,7 +24,14 @@ import accelerate.exception.AccelerateException;
  * @author Rohit Narayanan
  * @since Mar 10, 2016
  */
-public class CollectionUtil {
+public final class CollectionUtil {
+
+	/**
+	 * hidden constructor
+	 */
+	private CollectionUtil() {
+	}
+
 	/**
 	 * @param aProperties
 	 *            - Properties Object
@@ -50,10 +58,10 @@ public class CollectionUtil {
 	 * @param mapInstanceB
 	 * @return result string
 	 */
-	public static DataMap compareMaps(Map<?, ?> mapInstanceA, Map<?, ?> mapInstanceB) {
-		DataMap extraA = new DataMap();
-		DataMap extraB = new DataMap();
-		DataMap conflict = new DataMap();
+	public static AccelerateDataBean compareMaps(Map<?, ?> mapInstanceA, Map<?, ?> mapInstanceB) {
+		AccelerateDataBean extraA = new AccelerateDataBean();
+		AccelerateDataBean extraB = new AccelerateDataBean();
+		AccelerateDataBean conflict = new AccelerateDataBean();
 
 		mapInstanceA.forEach((key, value) -> {
 			if (mapInstanceB.get(key) == null) {
@@ -74,8 +82,8 @@ public class CollectionUtil {
 			}
 		});
 
-		DataMap dataMap = new DataMap();
-		dataMap.addData("extraA", extraA, "extraB", extraB, "conflict", conflict);
+		AccelerateDataBean dataMap = new AccelerateDataBean();
+		dataMap.addAllAttributes("extraA", extraA, "extraB", extraB, "conflict", conflict);
 		return dataMap;
 	}
 

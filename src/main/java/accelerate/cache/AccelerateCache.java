@@ -1,8 +1,5 @@
 package accelerate.cache;
 
-import static accelerate.util.AccelerateConstants.AUDIT_LOGGER;
-import static accelerate.util.AccelerateConstants.ERROR_LOGGER;
-
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -11,6 +8,8 @@ import java.util.Set;
 
 import javax.annotation.PostConstruct;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.Cache.ValueWrapper;
@@ -26,7 +25,6 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonView;
 
 import accelerate.exception.AccelerateException;
-import accelerate.logging.AccelerateLogger;
 import accelerate.spring.StaticListenerHelper;
 import accelerate.util.JSONUtil;
 import accelerate.util.StringUtil;
@@ -54,6 +52,11 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	 * serialVersionUID
 	 */
 	private static final long serialVersionUID = 1L;
+
+	/**
+	 * 
+	 */
+	protected static final Logger _logger = LoggerFactory.getLogger(AccelerateCache.class);
 
 	/**
 	 * {@link Class} instance for the cache key type
@@ -431,7 +434,7 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 			throw new AccelerateException("Not Refeshable");
 		}
 
-		AccelerateLogger.info(this.getClass(), AUDIT_LOGGER, "{}: Refreshing Cache", name());
+		_logger.info("{}: Refreshing Cache", name());
 
 		this.refreshing = true;
 		boolean returnFlag = true;
@@ -453,15 +456,12 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 			this.cacheRefreshedTime = System.currentTimeMillis();
 			this.staticListenerHelper.notifyCacheLoad(AccelerateCache.this);
 		} catch (Exception error) {
-			AccelerateLogger.exception(AccelerateCache.class, ERROR_LOGGER, AccelerateLogger.LogLevel.ERROR, error,
-					"{}: Cache Refresh Error", name());
-
+			_logger.error("{}: Cache Refresh Error", name(), error);
 			returnFlag = false;
 		}
 
 		this.refreshing = false;
-
-		AccelerateLogger.info(AccelerateCache.class, AUDIT_LOGGER, "{}: Cache Refreshed", name());
+		_logger.info("{}: Cache Refreshed", name());
 
 		return returnFlag;
 	}
@@ -497,10 +497,9 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 			}
 
 			this.initialized = true;
-			AccelerateLogger.info(this.getClass(), AUDIT_LOGGER, "{}: Cache Initialized", name());
+			_logger.info("{}: Cache Initialized", name());
 		} catch (Exception error) {
-			AccelerateLogger.exception(this.getClass(), ERROR_LOGGER, AccelerateLogger.LogLevel.ERROR, error,
-					"{}: Cache Initialize Error", name());
+			_logger.error("{}: Cache Initialize Error", name(), error);
 			throw new AccelerateException("Initialize Error", error);
 		}
 

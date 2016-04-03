@@ -11,6 +11,8 @@ import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -19,18 +21,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.thymeleaf.context.WebContext;
 
-import accelerate.cache.AccelerateCache;
 import accelerate.exception.AccelerateException;
-import accelerate.logging.AccelerateLogger;
-import accelerate.logging.AccelerateLogger.LogLevel;
 import accelerate.spring.AccelerateProperties;
-import accelerate.util.AccelerateConstants;
 import accelerate.util.StringUtil;
 
 /**
- * {@link org.springframework.web.servlet.mvc.Controller} providing basic index,
- * error and debug pages, along with utility pages to view instances of
- * {@link AccelerateCache} configured in the application
+ * {@link org.springframework.web.servlet.mvc.Controller} providing basic pages
+ * like index, error and debug.
  *
  * @author Rohit Narayanan
  * @version 1.0 Initial Version
@@ -40,7 +37,12 @@ import accelerate.util.StringUtil;
 @ConditionalOnWebApplication
 @ConditionalOnProperty(name = "accelerate.web.ui")
 @RequestMapping("/aclUtil")
-public class UtilController {
+public class AccelerateUtilController {
+	/**
+	 * 
+	 */
+	protected static final Logger _logger = LoggerFactory.getLogger(AccelerateUtilController.class);
+
 	/**
 	 * {@link List} of request attributes that are printed
 	 */
@@ -161,8 +163,7 @@ public class UtilController {
 			context.setVariable("errorStackTrace",
 					getErrorLog((Throwable) aRequest.getAttribute(RequestDispatcher.ERROR_EXCEPTION)));
 		} catch (Exception error) {
-			AccelerateLogger.exception(UtilController.class, AccelerateConstants.ERROR_LOGGER, LogLevel.ERROR, error,
-					"Error compiling error information");
+			_logger.warn("Error compiling error information", error);
 		}
 
 		return "acl#util/error";

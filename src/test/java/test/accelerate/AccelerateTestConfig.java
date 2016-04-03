@@ -18,5 +18,8 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @SpringApplicationConfiguration
 @ComponentScan(basePackages = { "accelerate" })
 public class AccelerateTestConfig {
-	//
+	/**
+	 * Path to home directory of the user
+	 */
+	public static final String userHome = System.getProperty("user.home") + "/.tmp";
 }

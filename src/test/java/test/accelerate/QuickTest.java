@@ -1,5 +1,8 @@
 package test.accelerate;
 
+import accelerate.databean.AccelerateDataBean;
+import accelerate.databean.AccelerateModel;
+
 /**
  * Basic class to quick test code
  *
@@ -11,7 +14,8 @@ package test.accelerate;
 public class QuickTest {
 	public static void main(String[] args) {
 		try {
-			System.out.println(System.getProperty("user.home"));
+			AccelerateModel bean = new AccelerateModel();
+			System.out.println(bean instanceof AccelerateDataBean);
 		} catch (Exception error) {
 			error.printStackTrace();
 		}

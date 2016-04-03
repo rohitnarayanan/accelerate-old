@@ -22,7 +22,13 @@ import accelerate.exception.AccelerateException;
  * @version 1.0 Initial Version
  * @since Jun 12, 2009
  */
-public class StringUtil {
+public final class StringUtil {
+
+	/**
+	 * hidden constructor
+	 */
+	private StringUtil() {
+	}
 
 	/**
 	 * This function safely invokes the toString method on the Object. It return
@@ -681,11 +687,5 @@ public class StringUtil {
 			}
 		}
 		return matches;
-	}
-
-	/**
-	 * static class
-	 */
-	private StringUtil() {
 	}
 }

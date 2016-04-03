@@ -1,13 +1,12 @@
 package accelerate.databean;
 
-import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.fasterxml.jackson.annotation.JsonFilter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.springframework.ui.ModelMap;
 
-import accelerate.util.DataMap;
+import accelerate.exception.AccelerateRuntimeException;
+import accelerate.util.AppUtil;
 import accelerate.util.JSONUtil;
 
 /**
@@ -17,8 +16,7 @@ import accelerate.util.JSONUtil;
  * @version 1.0 Initial Version
  * @since 21-May-2015
  */
-@JsonFilter("accelerate.databean.AccelerateDataBean")
-public class AccelerateDataBean implements Serializable {
+public class AccelerateDataBean extends ModelMap {
 	/**
 	 * serialVersionUID
 	 */
@@ -38,51 +36,7 @@ public class AccelerateDataBean implements Serializable {
 	 * Flag to indicate that the bean stores a huge amount of data, so exception
 	 * handlers and interceptors can avoid serializing the entire bean
 	 */
-	@JsonIgnore
-	private boolean largeDataset = false;
-
-	/**
-	 * Generic Map containing dataMap to be stored in this bean object. This
-	 * works more like java bean get/set attribute incase developers do not want
-	 * to create new beans with specific attributes/fields
-	 */
-	private DataMap<Object> dataMap = new DataMap<>();
-
-	/**
-	 * This method registers the aFieldName as a field to be excluded from
-	 * logging
-	 *
-	 * @param aFieldNames
-	 */
-	public synchronized void addJsonIgnoreFields(String... aFieldNames) {
-		if (this.logExcludedFields == null) {
-			synchronized (this) {
-				if (this.logExcludedFields == null) {
-					this.logExcludedFields = new HashSet<>();
-				}
-			}
-		}
-
-		for (String field : aFieldNames) {
-			this.logExcludedFields.add(field);
-		}
-	}
-
-	/**
-	 * This method registers the aFieldName as a field to be excluded from
-	 * logging
-	 *
-	 * @param aFieldNames
-	 */
-	public synchronized void removeJsonIgnoreFields(String... aFieldNames) {
-		if (this.logExcludedFields == null) {
-			return;
-		}
-
-		for (String field : aFieldNames) {
-			this.logExcludedFields.remove(field);
-		}
-	}
+	private transient boolean largeDataset = false;
 
 	/*
 	 * (non-Javadoc)
@@ -95,6 +49,40 @@ public class AccelerateDataBean implements Serializable {
 	@Override
 	public String toString() {
 		return toJSON();
+	}
+
+	/**
+	 * Shortcut method to add multiple key value pairs to the map. Though it
+	 * accepts an Object array by definition, but it expects the arguments to be
+	 * in the order of key1, value1, key2, value2.. and so on.
+	 * 
+	 * @param aArgs
+	 *            Variable number of key value pairs
+	 * @return selft instance for chaining calls
+	 * @throws AccelerateRuntimeException
+	 *             If key value pairs do not match, or keys are not of type
+	 *             {@link String}
+	 */
+	public final ModelMap addAllAttributes(Object... aArgs) throws AccelerateRuntimeException {
+		if (AppUtil.isEmpty(aArgs)) {
+			throw new AccelerateRuntimeException("Empty arguments are not allowed");
+		}
+
+		if ((aArgs.length % 2) != 0) {
+			throw new AccelerateRuntimeException(
+					"Incorrect number of arguments or array size not correct:" + aArgs.length);
+		}
+
+		for (int idx = 0; idx < aArgs.length; idx += 2) {
+			try {
+				put((String) aArgs[idx], aArgs[idx + 1]);
+			} catch (ClassCastException error) {
+				throw new AccelerateRuntimeException("Error:[{}] for key:[{}] at Index:[{}]", error.getMessage(),
+						aArgs[idx], idx);
+			}
+		}
+
+		return this;
 	}
 
 	/**
@@ -133,6 +121,42 @@ public class AccelerateDataBean implements Serializable {
 	}
 
 	/**
+	 * This method registers the aFieldName as a field to be excluded from
+	 * logging
+	 *
+	 * @param aFieldNames
+	 */
+	public synchronized void addJsonIgnoreFields(String... aFieldNames) {
+		if (this.logExcludedFields == null) {
+			synchronized (this) {
+				if (this.logExcludedFields == null) {
+					this.logExcludedFields = new HashSet<>();
+				}
+			}
+		}
+
+		for (String field : aFieldNames) {
+			this.logExcludedFields.add(field);
+		}
+	}
+
+	/**
+	 * This method registers the aFieldName as a field to be excluded from
+	 * logging
+	 *
+	 * @param aFieldNames
+	 */
+	public synchronized void removeJsonIgnoreFields(String... aFieldNames) {
+		if (this.logExcludedFields == null) {
+			return;
+		}
+
+		for (String field : aFieldNames) {
+			this.logExcludedFields.remove(field);
+		}
+	}
+
+	/**
 	 * Getter method for "idField" property
 	 * 
 	 * @return idField
@@ -166,14 +190,5 @@ public class AccelerateDataBean implements Serializable {
 	 */
 	public void setLargeDataset(boolean aLargeDataset) {
 		this.largeDataset = aLargeDataset;
-	}
-
-	/**
-	 * Getter method for "dataMap" property
-	 * 
-	 * @return dataMap
-	 */
-	public DataMap<Object> getDataMap() {
-		return this.dataMap;
 	}
 }

@@ -14,8 +14,7 @@
 		<!-- encoders are by default assigned the type ch.qos.logback.classic.encoder.PatternLayoutEncoder -->
 		<encoder>
 			<pattern>
-				%d;%logger;%thread;%level;%X{executionInfo.executionId};%msg |~|
-				%throwable%n
+				%d;%logger;%thread;%level;%X{sessionId};%m%n
 			</pattern>
 		</encoder>
 	</appender>

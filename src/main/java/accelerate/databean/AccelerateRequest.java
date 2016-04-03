@@ -13,7 +13,7 @@ import accelerate.util.StringUtil;
  * @version 1.0 Initial Version
  * @since Jul 30, 2009
  */
-public class RequestBean extends AccelerateDataBean {
+public class AccelerateRequest extends AccelerateDataBean {
 	/**
 	 * serialVersionUID
 	 */
@@ -43,7 +43,7 @@ public class RequestBean extends AccelerateDataBean {
 	/**
 	 * default constructor
 	 */
-	public RequestBean() {
+	public AccelerateRequest() {
 	}
 
 	/**

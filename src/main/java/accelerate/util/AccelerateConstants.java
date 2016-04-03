@@ -8,19 +8,13 @@ package accelerate.util;
  * @since May 19, 2009
  */
 @SuppressWarnings("all")
-public abstract class AccelerateConstants {
-	// Bean Name Constants
-	public static final String APP_CONFIG = "PropertyCache";
-	public static final String APP_LOGGER = "AppLogger";
-	public static final String SESSION_BEAN = "sessionBean";
-	public static final String RESPONSE_BEAN = "responseBean";
+public final class AccelerateConstants {
 
-	// Logger Names
-	public static final String ROOT_LOGGER = "rootLogger";
-	public static final String ERROR_LOGGER = "ErrorLogger";
-	public static final String AUDIT_LOGGER = "AuditLogger";
-	public static final String MONITOR_LOGGER = "MonitorLogger";
-	public static final String REQUEST_LOGGER = "RequestLogger";
+	/**
+	 * hidden constructor
+	 */
+	private AccelerateConstants() {
+	}
 
 	// General Property Constants
 	public static final String CACHE = "cache";

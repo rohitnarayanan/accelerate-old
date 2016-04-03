@@ -353,7 +353,7 @@ public class DirectorySynchronizer {
 		public Map<String, ConflictResult> conflictedFiles = new HashMap<>();
 
 		/**
-		 * Message Buffer
+		 * AccelerateMessage Buffer
 		 */
 		public StringBuilder message = new StringBuilder();
 	}
@@ -495,6 +495,8 @@ public class DirectorySynchronizer {
 	 */
 	@SuppressWarnings("javadoc")
 	private static class DirSyncFileCopyTask extends AccelerateTask {
+		private static final long serialVersionUID = 1L;
+
 		private File sourceFile = null;
 		private File sourceRoot = null;
 		private File targetRoot = null;

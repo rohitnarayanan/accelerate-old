@@ -21,7 +21,7 @@ import org.springframework.web.context.request.RequestContextHolder;
  * @version 1.0 Initial Version
  * @since Jul 30, 2009
  */
-public class SessionBean extends AccelerateDataBean implements HttpSessionBindingListener, UserDetails {
+public class AccelerateSession extends AccelerateDataBean implements HttpSessionBindingListener, UserDetails {
 	/**
 	 * serialVersionUID
 	 */
@@ -30,7 +30,7 @@ public class SessionBean extends AccelerateDataBean implements HttpSessionBindin
 	/**
 	 * {@link Logger} instance
 	 */
-	private static final Logger _logger = LoggerFactory.getLogger(SessionBean.class);
+	private static final Logger _logger = LoggerFactory.getLogger(AccelerateSession.class);
 
 	/**
 	 * Default alive time for the session
@@ -85,7 +85,7 @@ public class SessionBean extends AccelerateDataBean implements HttpSessionBindin
 	/**
 	 * Default Constructor
 	 */
-	public SessionBean() {
+	public AccelerateSession() {
 		initialize(null);
 	}
 
@@ -94,7 +94,7 @@ public class SessionBean extends AccelerateDataBean implements HttpSessionBindin
 	 *
 	 * @param aUserName
 	 */
-	public SessionBean(String aUserName) {
+	public AccelerateSession(String aUserName) {
 		initialize(aUserName);
 	}
 

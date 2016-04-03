@@ -35,7 +35,14 @@ import accelerate.exception.AccelerateException;
  * @version 1.0 Initial Version
  * @since Oct 15, 2009
  */
-public class FileUtil {
+public final class FileUtil {
+
+	/**
+	 * hidden constructor
+	 */
+	private FileUtil() {
+	}
+
 	/**
 	 * This method deletes the given directory.
 	 *

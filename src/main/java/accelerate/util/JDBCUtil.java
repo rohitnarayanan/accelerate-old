@@ -18,7 +18,14 @@ import org.springframework.jdbc.datasource.lookup.JndiDataSourceLookup;
  * @version 1.0 Initial Version
  * @since September 11, 2009
  */
-public class JDBCUtil {
+public final class JDBCUtil {
+
+	/**
+	 * hidden constructor
+	 */
+	private JDBCUtil() {
+	}
+
 	/**
 	 * @param aJndiName
 	 * @return {@link DataSource}

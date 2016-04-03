@@ -15,7 +15,14 @@ import org.apache.commons.lang3.ArrayUtils;
  * @version 1.0 Initial Version
  * @since Jun 12, 2009
  */
-public class AppUtil {
+public final class AppUtil {
+
+	/**
+	 * hidden constructor
+	 */
+	private AppUtil() {
+	}
+
 	/**
 	 * @param value
 	 * @return true if object is empty

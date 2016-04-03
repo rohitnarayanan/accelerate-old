@@ -11,7 +11,7 @@ import java.io.Serializable;
  * @version 1.0 Initial Version
  * @since Feb 1, 2014
  */
-public class Message implements Serializable {
+public class AccelerateMessage implements Serializable {
 	/**
 	 * serialVersionUID
 	 */
@@ -23,12 +23,12 @@ public class Message implements Serializable {
 	private MessageType messageType = null;
 
 	/**
-	 * Message Code
+	 * AccelerateMessage Code
 	 */
 	private String messageCode = null;
 
 	/**
-	 * Message Text
+	 * AccelerateMessage Text
 	 */
 	private String messageText = null;
 
@@ -37,7 +37,7 @@ public class Message implements Serializable {
 	 * @param aMessageCode
 	 * @param aMessageText
 	 */
-	public Message(MessageType aMessageType, String aMessageCode, String aMessageText) {
+	public AccelerateMessage(MessageType aMessageType, String aMessageCode, String aMessageText) {
 		setMessageType(aMessageType);
 		setMessageCode(aMessageCode);
 		setMessageText(aMessageText);
@@ -47,7 +47,7 @@ public class Message implements Serializable {
 	 * @param aMessageType
 	 * @param aMessageCode
 	 */
-	public Message(MessageType aMessageType, String aMessageCode) {
+	public AccelerateMessage(MessageType aMessageType, String aMessageCode) {
 		setMessageType(aMessageType);
 		setMessageCode(aMessageCode);
 	}

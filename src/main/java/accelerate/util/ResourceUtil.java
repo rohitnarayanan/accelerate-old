@@ -24,9 +24,10 @@ import accelerate.exception.AccelerateException;
  * @version 1.0 Initial Version
  * @since 14-May-2015
  */
-public class ResourceUtil {
+public final class ResourceUtil {
+
 	/**
-	 *
+	 * hidden constructor
 	 */
 	private ResourceUtil() {
 	}

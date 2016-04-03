@@ -1,13 +1,16 @@
 package accelerate.batch;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import accelerate.exception.AccelerateException;
-import accelerate.logging.AccelerateLogger;
 
 /**
  * Abstract implementation for {@link Runnable}
@@ -16,7 +19,18 @@ import accelerate.logging.AccelerateLogger;
  * @version 1.0 Initial Version
  * @since Feb 12, 2010
  */
-public abstract class AccelerateTask implements Callable<Map<String, Object>> {
+public abstract class AccelerateTask implements Callable<Map<String, Object>>, Serializable {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	/**
+	 * 
+	 */
+	protected static final Logger _logger = LoggerFactory.getLogger(AccelerateTask.class);
+
 	/**
 	 * {@link Future} instance containing result
 	 */
@@ -225,14 +239,14 @@ public abstract class AccelerateTask implements Callable<Map<String, Object>> {
 
 		synchronized (this.monitor) {
 			try {
-				AccelerateLogger.debug(this.getClass(), null, "Pausing: {}", getTaskKey());
+				_logger.info("Pausing: {}", getTaskKey());
 				this.monitor.wait();
 			} catch (InterruptedException error) {
 				throw new AccelerateException(error);
 			}
 		}
 
-		AccelerateLogger.debug(this.getClass(), null, "Resuming: {}", getTaskKey());
+		_logger.info("Resuming: {}", getTaskKey());
 	}
 
 	/**

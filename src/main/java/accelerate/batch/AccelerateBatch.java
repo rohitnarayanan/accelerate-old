@@ -16,8 +16,8 @@ import org.springframework.jmx.export.annotation.ManagedOperation;
 import org.springframework.jmx.export.annotation.ManagedResource;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
+import accelerate.databean.AccelerateDataBean;
 import accelerate.exception.AccelerateException;
-import accelerate.util.DataMap;
 import accelerate.util.JSONUtil;
 
 /**
@@ -218,12 +218,12 @@ public class AccelerateBatch<T extends AccelerateTask> {
 	 */
 	@ManagedOperation(description = "This method returns JSON string with basic status information on the batch")
 	public String getStatus() {
-		DataMap dataMap = new DataMap();
-		dataMap.addData("1.name", this.batchName, "2.multithreaded", this.multiThreadingEnabled, "3.poolSize",
+		AccelerateDataBean dataBean = new AccelerateDataBean();
+		dataBean.addAllAttributes("1.name", this.batchName, "2.multithreaded", this.multiThreadingEnabled, "3.poolSize",
 				this.threadPoolSize, "4.active", this.active, "5.completedTasks", this.completedTaskCount,
 				"6.activeTasks", this.activeTasks.size(), "7.waitingTasks", this.pendingTasks.size());
 
-		return JSONUtil.serialize(dataMap);
+		return JSONUtil.serialize(dataBean);
 	}
 
 	/**

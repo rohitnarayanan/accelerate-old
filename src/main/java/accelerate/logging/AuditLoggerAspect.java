@@ -1,12 +1,13 @@
 package accelerate.logging;
 
-import static accelerate.util.AccelerateConstants.AUDIT_LOGGER;
 import static accelerate.util.AccelerateConstants.SPACE_CHAR;
 
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -27,6 +28,11 @@ import accelerate.util.StringUtil;
 @Component("AuditLoggerAspect")
 public class AuditLoggerAspect {
 	/**
+	 * 
+	 */
+	protected static final Logger _logger = LoggerFactory.getLogger(AuditLoggerAspect.class);
+
+	/**
 	 * This method profiles the execution of the method that has been captured
 	 * by the pointcut defined. It logs the entry and exit of every method and
 	 * also logs the execution time.
@@ -37,14 +43,13 @@ public class AuditLoggerAspect {
 	 * @throws Throwable
 	 */
 	@Around("execution(* *(..)) and @annotation(accelerate.logging.Auditable)")
-	public Object audit(ProceedingJoinPoint aJoinPoint) throws Throwable {
+	public static Object audit(ProceedingJoinPoint aJoinPoint) throws Throwable {
 		Throwable error = null;
 		Object returnObject = null;
 		String signature = StringUtil.split(aJoinPoint.getSignature().toString(), SPACE_CHAR)[1];
 		StopWatch stopWatch = new StopWatch();
 
-		AccelerateLogger.debug(this.getClass(), AUDIT_LOGGER, "{},{},{}", "Start", signature,
-				System.currentTimeMillis());
+		_logger.debug("{},{},{}", "Start", signature, System.currentTimeMillis());
 
 		stopWatch.start();
 		try {
@@ -54,10 +59,8 @@ public class AuditLoggerAspect {
 		}
 		stopWatch.stop();
 
-		AccelerateLogger.debug(this.getClass(), AUDIT_LOGGER, "{},{},{}", "Time", signature,
-				stopWatch.getTotalTimeMillis());
-		AccelerateLogger.debug(this.getClass(), AUDIT_LOGGER, "{},{},{}", (error != null) ? "ErrorExit" : "End",
-				signature, System.currentTimeMillis());
+		_logger.debug("{},{},{}", "Time", signature, stopWatch.getTotalTimeMillis());
+		_logger.debug("{},{},{}", (error != null) ? "ErrorExit" : "End", signature, System.currentTimeMillis());
 
 		if (error != null) {
 			throw error;

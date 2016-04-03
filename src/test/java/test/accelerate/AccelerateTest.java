@@ -1,5 +1,8 @@
 package test.accelerate;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.actuate.autoconfigure.ManagementWebSecurityAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -13,8 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
+import accelerate.cache.AccelerateCache;
 import accelerate.cache.PropertyCache;
-import accelerate.spring.AccelerateProperties;
+import accelerate.databean.AccelerateDataBean;
 
 /**
  * Junit test for accelerate spring context
@@ -28,9 +32,9 @@ import accelerate.spring.AccelerateProperties;
 @RestController
 public class AccelerateTest extends WebMvcConfigurerAdapter {
 	/**
-	 * Path to home directory of the user
+	 * 
 	 */
-	public static String userHome = System.getProperty("user.home") + "/.tmp";
+	private static final Logger _logger = LoggerFactory.getLogger(AccelerateCache.class);
 
 	/*
 	 * (non-Javadoc)
@@ -65,13 +69,17 @@ public class AccelerateTest extends WebMvcConfigurerAdapter {
 	}
 
 	/**
-	 * @param aAccelerateProperties
+	 * Method to test spring jackson convertor and logbacks message formatting
+	 * 
 	 * @return
 	 */
 	@RequestMapping("/testJsonConverter")
-	public static AccelerateProperties testJsonConverter(AccelerateProperties aAccelerateProperties) {
-		aAccelerateProperties.getWeb().put("testKey", "testValue");
-		return aAccelerateProperties;
+	public static AccelerateDataBean testJsonConverter() {
+		MDC.put("sessionId", "1234567890");
+		_logger.error("This is test message to log the msg:{} and error too", "YEAH", new Exception());
+		AccelerateDataBean dataBean = new AccelerateDataBean();
+		dataBean.addAllAttributes("testKey1", "testValue1", "testKey2", "testValue2");
+		return dataBean;
 	}
 
 	/**

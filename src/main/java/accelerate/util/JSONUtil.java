@@ -1,7 +1,6 @@
 package accelerate.util;
 
 import static accelerate.util.AccelerateConstants.EMPTY_STRING;
-import static accelerate.util.AccelerateConstants.ERROR_LOGGER;
 import static accelerate.util.AppUtil.isEmpty;
 
 import java.io.IOException;
@@ -22,7 +21,6 @@ import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
 import accelerate.exception.AccelerateException;
-import accelerate.logging.AccelerateLogger;
 
 /**
  * Utility class for converting object to/from JSON string
@@ -31,14 +29,14 @@ import accelerate.logging.AccelerateLogger;
  * @version 1.0 Initial Version
  * @since 25-May-2015
  */
-public class JSONUtil {
+public final class JSONUtil {
 	/**
 	 * 
 	 */
 	private static final Logger _logger = LoggerFactory.getLogger(JSONUtil.class);
 
 	/**
-	 * static class
+	 * hidden constructor
 	 */
 	private JSONUtil() {
 	}
@@ -242,8 +240,7 @@ public class JSONUtil {
 
 			objectString = aObjectMapper.writeValueAsString(aObject);
 		} catch (JsonProcessingException error) {
-			AccelerateLogger.exception(JSONUtil.class, ERROR_LOGGER, AccelerateLogger.LogLevel.ERROR, error,
-					"Error in serializing {}", aObject.getClass());
+			_logger.warn(String.format("Error in serializing {}", aObject.getClass()), error);
 			objectString = "~" + aObject.getClass().getSimpleName();
 		}
 

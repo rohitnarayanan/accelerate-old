@@ -19,7 +19,7 @@ import accelerate.exception.AccelerateException;
  * @version 1.0 Initial Version
  * @since June 12, 2009
  */
-public class UtilCache {
+public final class UtilCache {
 	/**
 	 * This map stores the compiled pattern for each type of delimiter
 	 */
@@ -44,6 +44,12 @@ public class UtilCache {
 	 * {@link XPath} singleton instance for SAX parsing
 	 */
 	private static XPath xPath = xPathFactory.newXPath();
+
+	/**
+	 * hidden constructor
+	 */
+	private UtilCache() {
+	}
 
 	/**
 	 * This method clears out all the {@link Pattern} instances cached

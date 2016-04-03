@@ -13,7 +13,14 @@ import org.apache.commons.io.IOUtils;
  * @author Rohit Narayanan
  * @since Mar 10, 2016
  */
-public class IOUtil {
+public final class IOUtil {
+
+	/**
+	 * hidden constructor
+	 */
+	private IOUtil() {
+	}
+
 	/**
 	 * @param <T>
 	 * @param bean

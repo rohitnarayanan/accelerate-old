@@ -20,10 +20,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import accelerate.cache.PropertyCache;
 import accelerate.databean.AccelerateDataBean;
 import accelerate.exception.AccelerateException;
-import accelerate.logging.AccelerateLogger;
 import accelerate.util.FileUtil;
 import accelerate.util.StringUtil;
 
@@ -35,6 +37,12 @@ import accelerate.util.StringUtil;
  * @since 14-May-2015
  */
 public class FileRenamer {
+
+	/**
+	 * 
+	 */
+	protected static final Logger _logger = LoggerFactory.getLogger(FileRenamer.class);
+
 	/**
 	 * @param aInput
 	 * @return
@@ -253,8 +261,7 @@ public class FileRenamer {
 				if (this.input.rename) {
 					File newFile = new File(aFile.getParentFile(), newName);
 					if (newFile.exists()) {
-						AccelerateLogger.info(FileRenamer.class, FileRenamer.class.getName(),
-								"Exists -> {} ::: {} ::: {}", fileName, newName, aFile.getParent());
+						_logger.debug("Exists -> {} ::: {} ::: {}", fileName, newName, aFile.getParent());
 						return aFile;
 					}
 
@@ -262,8 +269,7 @@ public class FileRenamer {
 					this.output.renameCount++;
 				}
 
-				AccelerateLogger.info(FileRenamer.class, FileRenamer.class.getName(), "Completed -> {} ::: {} ::: {}",
-						fileName, newName, aFile.getParent());
+				_logger.debug("Completed -> {} ::: {} ::: {}", fileName, newName, aFile.getParent());
 			}
 
 			return aFile;
@@ -386,16 +392,14 @@ public class FileRenamer {
 
 			String upperCase = aToken.toUpperCase();
 			if (allCapsMatcher.reset(aToken).matches()) {
-				AccelerateLogger.info(FileRenamer.class, FileRenamer.class.getName(),
-						"*********Skipping all Caps Token: {}", aToken);
+				_logger.debug("*********Skipping all Caps Token: {}", aToken);
 				return aToken;
 			}
 
 			if (this.input.convertRomanToNumber) {
 				String val = this.input.configProps.get(StringUtil.createKey("Roman", upperCase));
 				if (val != null) {
-					AccelerateLogger.info(FileRenamer.class, FileRenamer.class.getName(),
-							"*********Returning '{}' for '{}'", val, aToken);
+					_logger.debug("*********Returning '{}' for '{}'", val, aToken);
 					return val;
 				}
 			}
@@ -403,8 +407,7 @@ public class FileRenamer {
 			if (this.input.convertStringToNumber) {
 				String val = this.input.configProps.get(StringUtil.createKey("Name", upperCase));
 				if (val != null) {
-					AccelerateLogger.info(FileRenamer.class, FileRenamer.class.getName(),
-							"*********Returning '{}' for '{}'", val, aToken);
+					_logger.debug("*********Returning '{}' for '{}'", val, aToken);
 					return val;
 				}
 			}

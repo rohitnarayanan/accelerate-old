@@ -1,7 +1,6 @@
 package accelerate.cache;
 
 import static accelerate.util.AccelerateConstants.COMMA_CHAR;
-import static accelerate.util.AccelerateConstants.ERROR_LOGGER;
 import static accelerate.util.AccelerateConstants.YES;
 import static accelerate.util.AppUtil.compare;
 import static accelerate.util.AppUtil.isEmpty;
@@ -25,7 +24,6 @@ import org.springframework.jmx.export.annotation.ManagedOperation;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import accelerate.exception.AccelerateException;
-import accelerate.logging.AccelerateLogger;
 import accelerate.util.AccelerateConstants;
 import accelerate.util.ReflectionUtil;
 import accelerate.util.ResourceUtil;
@@ -37,18 +35,15 @@ import accelerate.util.StringUtil;
  * configuration properties in the form of key-value pairs
  * </p>
  * <p>
- * The properties can also be defined in a database table as defined in the
- * <b>'accelerate.resource.PropertyCacheDDLScript.sql'</b> file. The name of the
- * table can be any custom name provided by the user.
+ * The properties can also be defined in a database table named as
+ * {@link #configTableName} table with the key stored in {@link #keyColumnName}
+ * column and value in {@link #valueColumnName} column. These properties can be
+ * overridden too.
  * </p>
  * <p>
- * To utilize the db driven property mechanism, the user should set the
- * following attributes -
- * <ul>
- * <li>'<b>envPrefix</b>'</li>
- * <li>'<b>dbTableName</b>'</li>
- * <li>'<b>dataSource</b>'</li>
- * </ul>
+ * Users also have the option of saving the properties for multiple environments
+ * and profiles in the same table. All they need to do is to set the
+ * {@link #profileName} property and it will be taken care of.
  * </p>
  *
  * @author Rohit Narayanan
@@ -75,7 +70,7 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	/**
 	 * Name of the database table that contains the properties
 	 */
-	private String configTableName = AccelerateConstants.APP_CONFIG;
+	private String configTableName = "APP_PROPERTIES";
 
 	/**
 	 * Name of the table column that contains the property key
@@ -213,8 +208,7 @@ public class PropertyCache extends AccelerateCache<String, String> {
 
 			return 0;
 		} catch (Exception error) {
-			AccelerateLogger.exception(this.getClass(), ERROR_LOGGER, AccelerateLogger.LogLevel.ERROR, error,
-					"{}: Error in parsing integer property", name());
+			_logger.error("{}: Error in parsing integer property", name(), error);
 			return this.errorIntValue;
 		}
 	}
