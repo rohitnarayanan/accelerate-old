@@ -38,6 +38,13 @@ public class AccelerateDataBean extends ModelMap {
 	 */
 	private transient boolean largeDataset = false;
 
+	/**
+	 * default constructor
+	 */
+	public AccelerateDataBean() {
+		this.logExcludedFields = new HashSet<>();
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -105,6 +112,10 @@ public class AccelerateDataBean extends ModelMap {
 			return toShortJSON();
 		}
 
+		if (AppUtil.isEmpty(this.logExcludedFields)) {
+			return JSONUtil.serialize(this);
+		}
+
 		return JSONUtil.serializeExcept(this,
 				this.logExcludedFields.toArray(new String[this.logExcludedFields.size()]));
 	}
@@ -127,14 +138,6 @@ public class AccelerateDataBean extends ModelMap {
 	 * @param aFieldNames
 	 */
 	public synchronized void addJsonIgnoreFields(String... aFieldNames) {
-		if (this.logExcludedFields == null) {
-			synchronized (this) {
-				if (this.logExcludedFields == null) {
-					this.logExcludedFields = new HashSet<>();
-				}
-			}
-		}
-
 		for (String field : aFieldNames) {
 			this.logExcludedFields.add(field);
 		}

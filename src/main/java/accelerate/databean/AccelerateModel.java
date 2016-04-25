@@ -37,7 +37,7 @@ public class AccelerateModel extends AccelerateDataBean implements Model {
 	/**
 	 * {@link AccelerateMessage} instance
 	 */
-	private AccelerateMessage accelerateMessage = null;
+	private AccelerateMessage message = null;
 
 	/**
 	 * {@link Exception} caught during process
@@ -52,7 +52,7 @@ public class AccelerateModel extends AccelerateDataBean implements Model {
 	/**
 	 * {@link AccelerateRequest} instance
 	 */
-	private transient AccelerateRequest accelerateRequest = null;
+	private transient AccelerateRequest request = null;
 
 	/**
 	 * default constructor
@@ -70,15 +70,14 @@ public class AccelerateModel extends AccelerateDataBean implements Model {
 	}
 
 	/**
-	 * shortcut constructor to set the {@link #viewName} and
-	 * {@link #accelerateRequest}
+	 * shortcut constructor to set the {@link #viewName} and {@link #request}
 	 *
 	 * @param aViewName
 	 * @param aAccelerateRequest
 	 */
 	public AccelerateModel(String aViewName, AccelerateRequest aAccelerateRequest) {
-		setViewName(aViewName);
-		setRequestBean(aAccelerateRequest);
+		this.viewName = aViewName;
+		this.request = aAccelerateRequest;
 	}
 
 	/*
@@ -107,7 +106,7 @@ public class AccelerateModel extends AccelerateDataBean implements Model {
 	 */
 	@Override
 	public AccelerateModel addAttribute(String aAttributeName, Object aAttributeValue) {
-		addAttribute(aAttributeName, aAttributeValue);
+		super.addAttribute(aAttributeName, aAttributeValue);
 		return this;
 	}
 
@@ -122,7 +121,7 @@ public class AccelerateModel extends AccelerateDataBean implements Model {
 	 */
 	@Override
 	public AccelerateModel addAttribute(Object aAttributeValue) {
-		addAttribute(aAttributeValue);
+		super.addAttribute(aAttributeValue);
 		return this;
 	}
 
@@ -138,7 +137,7 @@ public class AccelerateModel extends AccelerateDataBean implements Model {
 	@Override
 	public AccelerateModel addAllAttributes(Collection<?> aAttributeValues) {
 		if (!AppUtil.isEmpty(aAttributeValues)) {
-			aAttributeValues.forEach(value -> addAttribute(value));
+			aAttributeValues.forEach(value -> super.addAttribute(value));
 		}
 
 		return this;
@@ -156,7 +155,7 @@ public class AccelerateModel extends AccelerateDataBean implements Model {
 	@Override
 	public AccelerateModel addAllAttributes(Map<String, ?> aAttributes) {
 		if (!AppUtil.isEmpty(aAttributes)) {
-			aAttributes.forEach((key, value) -> addAttribute(key, value));
+			aAttributes.forEach((key, value) -> super.addAttribute(key, value));
 		}
 
 		return this;
@@ -176,7 +175,7 @@ public class AccelerateModel extends AccelerateDataBean implements Model {
 		if (!AppUtil.isEmpty(aAttributes)) {
 			aAttributes.forEach((key, value) -> {
 				if (containsKey(key)) {
-					addAttribute(key, value);
+					super.addAttribute(key, value);
 				}
 			});
 		}
@@ -194,7 +193,7 @@ public class AccelerateModel extends AccelerateDataBean implements Model {
 	 */
 	@Override
 	public boolean containsAttribute(String aAttributeName) {
-		return containsKey(aAttributeName);
+		return super.containsKey(aAttributeName);
 	}
 
 	/*
@@ -247,57 +246,21 @@ public class AccelerateModel extends AccelerateDataBean implements Model {
 	}
 
 	/**
-	 * Getter method for "contextPath" property
+	 * Getter method for "message" property
 	 * 
-	 * @return contextPath
-	 */
-	public String getContextPath() {
-		return this.contextPath;
-	}
-
-	/**
-	 * Setter method for "contextPath" property
-	 * 
-	 * @param aContextPath
-	 */
-	public void setContextPath(String aContextPath) {
-		this.contextPath = aContextPath;
-	}
-
-	/**
-	 * Getter method for "accelerateRequest" property
-	 * 
-	 * @return accelerateRequest
-	 */
-	public AccelerateRequest getRequestBean() {
-		return this.accelerateRequest;
-	}
-
-	/**
-	 * Setter method for "accelerateRequest" property
-	 * 
-	 * @param aAccelerateRequest
-	 */
-	public void setRequestBean(AccelerateRequest aAccelerateRequest) {
-		this.accelerateRequest = aAccelerateRequest;
-	}
-
-	/**
-	 * Getter method for "accelerateMessage" property
-	 * 
-	 * @return accelerateMessage
+	 * @return message
 	 */
 	public AccelerateMessage getMessage() {
-		return this.accelerateMessage;
+		return this.message;
 	}
 
 	/**
-	 * Setter method for "accelerateMessage" property
+	 * Setter method for "message" property
 	 * 
-	 * @param aAccelerateMessage
+	 * @param aMessage
 	 */
-	public void setMessage(AccelerateMessage aAccelerateMessage) {
-		this.accelerateMessage = aAccelerateMessage;
+	public void setMessage(AccelerateMessage aMessage) {
+		this.message = aMessage;
 	}
 
 	/**
@@ -316,5 +279,41 @@ public class AccelerateModel extends AccelerateDataBean implements Model {
 	 */
 	public void setError(Exception aError) {
 		this.error = aError;
+	}
+
+	/**
+	 * Getter method for "contextPath" property
+	 * 
+	 * @return contextPath
+	 */
+	public String getContextPath() {
+		return this.contextPath;
+	}
+
+	/**
+	 * Setter method for "contextPath" property
+	 * 
+	 * @param aContextPath
+	 */
+	public void setContextPath(String aContextPath) {
+		this.contextPath = aContextPath;
+	}
+
+	/**
+	 * Getter method for "request" property
+	 * 
+	 * @return request
+	 */
+	public AccelerateRequest getRequest() {
+		return this.request;
+	}
+
+	/**
+	 * Setter method for "request" property
+	 * 
+	 * @param aRequest
+	 */
+	public void setRequest(AccelerateRequest aRequest) {
+		this.request = aRequest;
 	}
 }
