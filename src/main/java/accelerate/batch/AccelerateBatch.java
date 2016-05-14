@@ -218,10 +218,10 @@ public class AccelerateBatch<T extends AccelerateTask> {
 	 */
 	@ManagedOperation(description = "This method returns JSON string with basic status information on the batch")
 	public String getStatus() {
-		AccelerateDataBean dataBean = new AccelerateDataBean();
-		dataBean.addAllAttributes("1.name", this.batchName, "2.multithreaded", this.multiThreadingEnabled, "3.poolSize",
-				this.threadPoolSize, "4.active", this.active, "5.completedTasks", this.completedTaskCount,
-				"6.activeTasks", this.activeTasks.size(), "7.waitingTasks", this.pendingTasks.size());
+		AccelerateDataBean dataBean = AccelerateDataBean.build("1.name", this.batchName, "2.multithreaded",
+				this.multiThreadingEnabled, "3.poolSize", this.threadPoolSize, "4.active", this.active,
+				"5.completedTasks", this.completedTaskCount, "6.activeTasks", this.activeTasks.size(), "7.waitingTasks",
+				this.pendingTasks.size());
 
 		return JSONUtil.serialize(dataBean);
 	}

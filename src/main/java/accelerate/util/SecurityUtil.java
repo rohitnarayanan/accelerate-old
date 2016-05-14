@@ -2,7 +2,7 @@ package accelerate.util;
 
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import accelerate.databean.AccelerateSession;
+import accelerate.databean.AccelerateWebSession;
 
 /**
  * Utility class with helper methods to handle IO operations
@@ -22,7 +22,7 @@ public final class SecurityUtil {
 	/**
 	 * @return
 	 */
-	public static final AccelerateSession getUserSession() {
-		return (AccelerateSession) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+	public static final AccelerateWebSession getUserSession() {
+		return (AccelerateWebSession) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 	}
 }

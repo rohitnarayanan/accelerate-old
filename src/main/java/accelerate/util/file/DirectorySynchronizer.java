@@ -9,6 +9,7 @@ import static accelerate.util.FileUtil.getFileName;
 import static accelerate.util.FileUtil.getUnixPath;
 
 import java.io.File;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -262,7 +263,7 @@ public class DirectorySynchronizer {
 	 * @version 1.0 Initial Version
 	 * @since 21-May-2015
 	 */
-	public static class DirSyncInput extends AccelerateDataBean {
+	public static class DirSyncInput implements Serializable {
 		/**
 		 * serialVersionUID
 		 */
@@ -319,7 +320,7 @@ public class DirectorySynchronizer {
 	 * @version 1.0 Initial Version
 	 * @since 21-May-2015
 	 */
-	public static class DirSyncOutput extends AccelerateDataBean {
+	public static class DirSyncOutput implements Serializable {
 		/**
 		 * serialVersionUID
 		 */
@@ -461,7 +462,7 @@ public class DirectorySynchronizer {
 	 * @version 1.0 Initial Version
 	 * @since 21-May-2015
 	 */
-	public static class ConflictResult extends AccelerateDataBean {
+	public static class ConflictResult implements Serializable {
 		/**
 		 * serialVersionUID
 		 */

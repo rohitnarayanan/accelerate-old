@@ -82,8 +82,7 @@ public final class CollectionUtil {
 			}
 		});
 
-		AccelerateDataBean dataMap = new AccelerateDataBean();
-		dataMap.addAllAttributes("extraA", extraA, "extraB", extraB, "conflict", conflict);
+		AccelerateDataBean dataMap = AccelerateDataBean.build("extraA", extraA, "extraB", extraB, "conflict", conflict);
 		return dataMap;
 	}
 

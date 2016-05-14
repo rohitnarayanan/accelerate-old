@@ -1,8 +1,5 @@
 package test.accelerate;
 
-import accelerate.databean.AccelerateDataBean;
-import accelerate.databean.AccelerateModel;
-
 /**
  * Basic class to quick test code
  *
@@ -14,8 +11,7 @@ import accelerate.databean.AccelerateModel;
 public class QuickTest {
 	public static void main(String[] args) {
 		try {
-			AccelerateModel bean = new AccelerateModel();
-			System.out.println(bean instanceof AccelerateDataBean);
+			System.out.println("QuickTest");
 		} catch (Exception error) {
 			error.printStackTrace();
 		}

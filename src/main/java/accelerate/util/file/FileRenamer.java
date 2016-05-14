@@ -14,6 +14,7 @@ import static accelerate.util.StringUtil.extractUpto;
 import static accelerate.util.UtilCache.getPattern;
 
 import java.io.File;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,7 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import accelerate.cache.PropertyCache;
-import accelerate.databean.AccelerateDataBean;
 import accelerate.exception.AccelerateException;
 import accelerate.util.FileUtil;
 import accelerate.util.StringUtil;
@@ -78,7 +78,7 @@ public class FileRenamer {
 	 * @version 1.0 Initial Version
 	 * @since 21-May-2015
 	 */
-	public class FileRenamerInput extends AccelerateDataBean {
+	public class FileRenamerInput implements Serializable {
 		/**
 		 * serialVersionUID
 		 */
@@ -149,7 +149,7 @@ public class FileRenamer {
 	 * @version 1.0 Initial Version
 	 * @since 21-May-2015
 	 */
-	public static class FileRenamerOutput extends AccelerateDataBean {
+	public static class FileRenamerOutput implements Serializable {
 		/**
 		 * serialVersionUID
 		 */

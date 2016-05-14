@@ -1,6 +1,9 @@
 package accelerate.databean;
 
+import java.io.Serializable;
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.springframework.ui.ModelMap;
@@ -16,7 +19,7 @@ import accelerate.util.JSONUtil;
  * @version 1.0 Initial Version
  * @since 21-May-2015
  */
-public class AccelerateDataBean extends ModelMap {
+public class AccelerateDataBean implements Serializable {
 	/**
 	 * serialVersionUID
 	 */
@@ -39,10 +42,16 @@ public class AccelerateDataBean extends ModelMap {
 	private transient boolean largeDataset = false;
 
 	/**
+	 * Instance of {@link ModelMap} for generic storage
+	 */
+	private ModelMap model = null;
+
+	/**
 	 * default constructor
 	 */
 	public AccelerateDataBean() {
 		this.logExcludedFields = new HashSet<>();
+		this.model = new ModelMap();
 	}
 
 	/*
@@ -59,6 +68,73 @@ public class AccelerateDataBean extends ModelMap {
 	}
 
 	/**
+	 * @param aAttributeName
+	 * @param aAttributeValue
+	 * @return
+	 * @see org.springframework.ui.ModelMap#addAttribute(java.lang.String,
+	 *      java.lang.Object)
+	 */
+	public ModelMap put(String aAttributeName, Object aAttributeValue) {
+		return this.model.addAttribute(aAttributeName, aAttributeValue);
+	}
+
+	/**
+	 * @param aAttributeValue
+	 * @return
+	 * @see org.springframework.ui.ModelMap#addAttribute(java.lang.Object)
+	 */
+	public ModelMap put(Object aAttributeValue) {
+		return this.model.addAttribute(aAttributeValue);
+	}
+
+	/**
+	 * @param aKey
+	 * @return
+	 * @see java.util.LinkedHashMap#get(java.lang.Object)
+	 */
+	public Boolean has(Object aKey) {
+		return this.model.containsKey(aKey);
+	}
+
+	/**
+	 * @param aKey
+	 * @return
+	 * @see java.util.LinkedHashMap#get(java.lang.Object)
+	 */
+	public Object get(Object aKey) {
+		return this.model.get(aKey);
+	}
+
+	/**
+	 * @param aKey
+	 * @param aDefaultValue
+	 * @return
+	 * @see java.util.LinkedHashMap#getOrDefault(java.lang.Object,
+	 *      java.lang.Object)
+	 */
+	public Object getOrDefault(Object aKey, Object aDefaultValue) {
+		return this.model.getOrDefault(aKey, aDefaultValue);
+	}
+
+	/**
+	 * @param aAttributeValues
+	 * @return
+	 * @see org.springframework.ui.ModelMap#addAllAttributes(java.util.Collection)
+	 */
+	public ModelMap putAll(Collection<?> aAttributeValues) {
+		return this.model.addAllAttributes(aAttributeValues);
+	}
+
+	/**
+	 * @param aAttributes
+	 * @return
+	 * @see org.springframework.ui.ModelMap#addAllAttributes(java.util.Map)
+	 */
+	public ModelMap putAll(Map<String, ?> aAttributes) {
+		return this.model.addAllAttributes(aAttributes);
+	}
+
+	/**
 	 * Shortcut method to add multiple key value pairs to the map. Though it
 	 * accepts an Object array by definition, but it expects the arguments to be
 	 * in the order of key1, value1, key2, value2.. and so on.
@@ -70,7 +146,7 @@ public class AccelerateDataBean extends ModelMap {
 	 *             If key value pairs do not match, or keys are not of type
 	 *             {@link String}
 	 */
-	public final ModelMap addAllAttributes(Object... aArgs) throws AccelerateRuntimeException {
+	public final AccelerateDataBean addAll(Object... aArgs) throws AccelerateRuntimeException {
 		if (AppUtil.isEmpty(aArgs)) {
 			throw new AccelerateRuntimeException("Empty arguments are not allowed");
 		}
@@ -82,7 +158,7 @@ public class AccelerateDataBean extends ModelMap {
 
 		for (int idx = 0; idx < aArgs.length; idx += 2) {
 			try {
-				put((String) aArgs[idx], aArgs[idx + 1]);
+				this.model.put((String) aArgs[idx], aArgs[idx + 1]);
 			} catch (ClassCastException error) {
 				throw new AccelerateRuntimeException("Error:[{}] for key:[{}] at Index:[{}]", error.getMessage(),
 						aArgs[idx], idx);
@@ -90,6 +166,19 @@ public class AccelerateDataBean extends ModelMap {
 		}
 
 		return this;
+	}
+
+	/**
+	 * Static shortcut method to build a new instance
+	 * 
+	 * @param aArgs
+	 * @return
+	 * @throws AccelerateRuntimeException
+	 */
+	public static final AccelerateDataBean build(Object... aArgs) throws AccelerateRuntimeException {
+		AccelerateDataBean bean = new AccelerateDataBean();
+		bean.addAll(aArgs);
+		return bean;
 	}
 
 	/**

@@ -1,11 +1,5 @@
 package accelerate.databean;
 
-import java.util.Collection;
-import java.util.Map;
-
-import org.springframework.ui.Model;
-
-import accelerate.util.AppUtil;
 import accelerate.util.JSONUtil;
 
 /**
@@ -15,7 +9,7 @@ import accelerate.util.JSONUtil;
  * @version 1.0 Initial Version
  * @since Jul 30, 2009
  */
-public class AccelerateModel extends AccelerateDataBean implements Model {
+public class AccelerateWebResponse extends AccelerateDataBean {
 	/**
 	 * serialVersionUID
 	 */
@@ -50,14 +44,14 @@ public class AccelerateModel extends AccelerateDataBean implements Model {
 	private String contextPath = null;
 
 	/**
-	 * {@link AccelerateRequest} instance
+	 * {@link AccelerateWebRequest} instance
 	 */
-	private transient AccelerateRequest request = null;
+	private transient AccelerateWebRequest request = null;
 
 	/**
 	 * default constructor
 	 */
-	public AccelerateModel() {
+	public AccelerateWebResponse() {
 	}
 
 	/**
@@ -65,7 +59,7 @@ public class AccelerateModel extends AccelerateDataBean implements Model {
 	 *
 	 * @param aViewName
 	 */
-	public AccelerateModel(String aViewName) {
+	public AccelerateWebResponse(String aViewName) {
 		this.viewName = aViewName;
 	}
 
@@ -75,7 +69,7 @@ public class AccelerateModel extends AccelerateDataBean implements Model {
 	 * @param aViewName
 	 * @param aAccelerateRequest
 	 */
-	public AccelerateModel(String aViewName, AccelerateRequest aAccelerateRequest) {
+	public AccelerateWebResponse(String aViewName, AccelerateWebRequest aAccelerateRequest) {
 		this.viewName = aViewName;
 		this.request = aAccelerateRequest;
 	}
@@ -91,122 +85,6 @@ public class AccelerateModel extends AccelerateDataBean implements Model {
 	@Override
 	public String toShortJSON() {
 		return JSONUtil.serializeOnly(this, "returnCode", "viewName", "accelerateMessage");
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.springframework.ui.Model#addAttribute(java.lang.String,
-	 * java.lang.Object)
-	 */
-	/**
-	 * @param aAttributeName
-	 * @param aAttributeValue
-	 * @return
-	 */
-	@Override
-	public AccelerateModel addAttribute(String aAttributeName, Object aAttributeValue) {
-		super.addAttribute(aAttributeName, aAttributeValue);
-		return this;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.springframework.ui.Model#addAttribute(java.lang.Object)
-	 */
-	/**
-	 * @param aAttributeValue
-	 * @return
-	 */
-	@Override
-	public AccelerateModel addAttribute(Object aAttributeValue) {
-		super.addAttribute(aAttributeValue);
-		return this;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.springframework.ui.Model#addAllAttributes(java.util.Collection)
-	 */
-	/**
-	 * @param aAttributeValues
-	 * @return
-	 */
-	@Override
-	public AccelerateModel addAllAttributes(Collection<?> aAttributeValues) {
-		if (!AppUtil.isEmpty(aAttributeValues)) {
-			aAttributeValues.forEach(value -> super.addAttribute(value));
-		}
-
-		return this;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.springframework.ui.Model#addAllAttributes(java.util.Map)
-	 */
-	/**
-	 * @param aAttributes
-	 * @return
-	 */
-	@Override
-	public AccelerateModel addAllAttributes(Map<String, ?> aAttributes) {
-		if (!AppUtil.isEmpty(aAttributes)) {
-			aAttributes.forEach((key, value) -> super.addAttribute(key, value));
-		}
-
-		return this;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.springframework.ui.Model#mergeAttributes(java.util.Map)
-	 */
-	/**
-	 * @param aAttributes
-	 * @return
-	 */
-	@Override
-	public AccelerateModel mergeAttributes(Map<String, ?> aAttributes) {
-		if (!AppUtil.isEmpty(aAttributes)) {
-			aAttributes.forEach((key, value) -> {
-				if (containsKey(key)) {
-					super.addAttribute(key, value);
-				}
-			});
-		}
-		return this;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.springframework.ui.Model#containsAttribute(java.lang.String)
-	 */
-	/**
-	 * @param aAttributeName
-	 * @return
-	 */
-	@Override
-	public boolean containsAttribute(String aAttributeName) {
-		return super.containsKey(aAttributeName);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.springframework.ui.Model#asMap()
-	 */
-	/**
-	 * @return
-	 */
-	@Override
-	public Map<String, Object> asMap() {
-		return this;
 	}
 
 	/**
@@ -304,7 +182,7 @@ public class AccelerateModel extends AccelerateDataBean implements Model {
 	 * 
 	 * @return request
 	 */
-	public AccelerateRequest getRequest() {
+	public AccelerateWebRequest getRequest() {
 		return this.request;
 	}
 
@@ -313,7 +191,7 @@ public class AccelerateModel extends AccelerateDataBean implements Model {
 	 * 
 	 * @param aRequest
 	 */
-	public void setRequest(AccelerateRequest aRequest) {
+	public void setRequest(AccelerateWebRequest aRequest) {
 		this.request = aRequest;
 	}
 }

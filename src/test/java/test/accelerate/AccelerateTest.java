@@ -77,9 +77,7 @@ public class AccelerateTest extends WebMvcConfigurerAdapter {
 	public static AccelerateDataBean testJsonConverter() {
 		MDC.put("sessionId", "1234567890");
 		_logger.error("This is test message to log the msg:{} and error too", "YEAH", new Exception());
-		AccelerateDataBean dataBean = new AccelerateDataBean();
-		dataBean.addAllAttributes("testKey1", "testValue1", "testKey2", "testValue2");
-		return dataBean;
+		return AccelerateDataBean.build("testKey1", "testValue1", "testKey2", "testValue2");
 	}
 
 	/**

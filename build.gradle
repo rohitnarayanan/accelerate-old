@@ -1,25 +1,26 @@
 import groovy.json.*
 
 buildscript {
-    repositories {
-        jcenter()
-    }
-    dependencies {
-        classpath("io.spring.gradle:dependency-management-plugin:0.5.4.RELEASE")
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.3.3.RELEASE")
-    }
+	repositories {
+		jcenter()
+	}
+	dependencies {
+		classpath("io.spring.gradle:dependency-management-plugin:$springPlatformVersion")
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:$springBootGradleVersion")
+	}
 }
 
 apply plugin: "io.spring.dependency-management"
 
 dependencyManagement {
-    imports {
-        mavenBom "io.spring.platform:platform-bom:2.0.2.RELEASE"
-    }
+	imports {
+		mavenBom "io.spring.platform:platform-bom:$springBootVersion"
+	}
 }
 
 repositories {
     jcenter()
+    mavenLocal()
 }
 
 apply plugin: "java"
@@ -29,22 +30,14 @@ apply plugin: "eclipse"
 
 group = "karma"
 version = "1.0"
-project.ext.javaVersion = "1.8"
-
 
 task wrapper(type: Wrapper) {
-    gradleVersion = "2.11"
+	gradleVersion = "2.12"
 }
 
-bootRepackage {
-	mainClass = "test.accelerate.AccelerateTest"
-	enabled = false
-}
-
-bootRun {
-    addResources = true
-}
-
+/*
+ * Dependencies
+ */
 dependencies {
 	// spring dependencies
 	compile("org.springframework.boot:spring-boot-starter")
@@ -90,27 +83,23 @@ compileJava {
 	targetCompatibility = javaVersion
 }
 
-
-jar {
-	from ("${projectDir}/src/main/java") {
-		include('**/*.java')
-    }
+bootRepackage {
+	mainClass = "test.accelerate.AccelerateTest"
+	enabled = false
 }
 
 /*
  * Eclipse settings
  */
 eclipse {
-	project {
-		natures 'org.eclipse.wst.common.project.facet.core.nature'
-	}
 	classpath {
 		defaultOutputDir = file("build/classes")
+		
 		file {
 			whenMerged { classpath ->
 				classpath.entries.collect { entry ->
 					if (entry.kind == "con" && entry.path == "org.eclipse.jdt.launching.JRE_CONTAINER") {
-						entry.path = "org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"
+						entry.path = "org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-" + javaVersion
 					}
 					
 					entry
@@ -129,4 +118,8 @@ eclipse {
 			}
 		}
 	}
+}
+
+task testTask << {
+	println "hello";
 }
