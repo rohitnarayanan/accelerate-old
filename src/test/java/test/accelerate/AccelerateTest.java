@@ -10,7 +10,9 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.security.SecurityAutoConfiguration;
 import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomizer;
 import org.springframework.boot.context.embedded.ErrorPage;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
@@ -19,6 +21,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 import accelerate.cache.AccelerateCache;
 import accelerate.cache.PropertyCache;
 import accelerate.databean.AccelerateDataBean;
+import accelerate.spring.StaticCacheListener;
+import accelerate.spring.StaticContextListener;
 
 /**
  * Junit test for accelerate spring context
@@ -29,7 +33,10 @@ import accelerate.databean.AccelerateDataBean;
  */
 @SpringBootApplication(scanBasePackages = { "accelerate.*" }, exclude = { SecurityAutoConfiguration.class,
 		ManagementWebSecurityAutoConfiguration.class, DataSourceAutoConfiguration.class })
+@EnableAspectJAutoProxy(proxyTargetClass = true)
 @RestController
+@StaticContextListener(onContextStarted = "contextStarted", onContextClosed = "contextClosed")
+@StaticCacheListener(name = "AccelerateConfig", handler = "testHandler")
 public class AccelerateTest extends WebMvcConfigurerAdapter {
 	/**
 	 * 
@@ -78,6 +85,27 @@ public class AccelerateTest extends WebMvcConfigurerAdapter {
 		MDC.put("sessionId", "1234567890");
 		_logger.error("This is test message to log the msg:{} and error too", "YEAH", new Exception());
 		return AccelerateDataBean.build("testKey1", "testValue1", "testKey2", "testValue2");
+	}
+
+	/**
+	 * @param aCache
+	 */
+	public static final void testHandler(PropertyCache aCache) {
+		System.err.println("Injected Cache with size:" + aCache.size());
+	}
+
+	/**
+	 * @param aContext
+	 */
+	public static final void contextStarted(@SuppressWarnings("unused") ApplicationContext aContext) {
+		System.err.println("Context started");
+	}
+
+	/**
+	 * @param aContext
+	 */
+	public static final void contextClosed(@SuppressWarnings("unused") ApplicationContext aContext) {
+		System.err.println("Context closed");
 	}
 
 	/**

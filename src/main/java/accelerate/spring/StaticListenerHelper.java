@@ -1,14 +1,16 @@
 package accelerate.spring;
 
 import static accelerate.util.AccelerateConstants.COMMA_CHAR;
-import static accelerate.util.AppUtil.isEmpty;
 
 import java.io.Serializable;
+import java.lang.annotation.Annotation;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
 import org.springframework.beans.factory.BeanFactory;
@@ -22,11 +24,15 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StopWatch;
 
 import accelerate.cache.AccelerateCache;
 import accelerate.exception.AccelerateException;
 import accelerate.exception.AccelerateRuntimeException;
+import accelerate.logging.AuditLoggerAspect;
+import accelerate.logging.Auditable;
 import accelerate.util.AppUtil;
+import accelerate.util.CollectionUtil;
 import accelerate.util.ReflectionUtil;
 import accelerate.util.StringUtil;
 
@@ -50,14 +56,14 @@ public class StaticListenerHelper implements ApplicationListener<ApplicationRead
 	 * reference is stores to avoid scanning classpath multiple times as it is
 	 * an expensive operation
 	 */
-	private static Set<BeanDefinition> contextListeners = null;
+	private Map<String, Map<String, String>> staticContextListeners = null;
 
 	/**
 	 * List of classes annotated with @StaticCacheListener. Static reference is
 	 * stores to avoid scanning classpath multiple times as it is an expensive
 	 * operation
 	 */
-	private static Set<BeanDefinition> cacheListeners = null;
+	private Map<String, Map<String, String>> staticCacheListeners = null;
 
 	/**
 	 * static {@link ApplicationContext} instance, to provide spring beans
@@ -73,16 +79,31 @@ public class StaticListenerHelper implements ApplicationListener<ApplicationRead
 	private AccelerateProperties accelerateProperties = null;
 
 	/**
+	 * @throws AccelerateException
+	 * 
+	 */
+	@PostConstruct
+	public void construct() throws AccelerateException {
+		Exception exception = null;
+		StopWatch stopWatch = AuditLoggerAspect.logMethodStart("accelerate.spring.StaticListenerHelper.construct()");
+		try {
+			initializeContextListenerMap();
+			initializeCacheListenerMap();
+		} catch (Exception error) {
+			exception = error;
+			AccelerateException.checkAndThrow(error);
+		} finally {
+			AuditLoggerAspect.logMethodEnd("accelerate.spring.StaticListenerHelper.construct()", exception, stopWatch);
+		}
+	}
+
+	/**
 	 * This method is called to notify that the application is shutting down or
 	 * the context has been destroyed.
 	 */
 	@PreDestroy
 	public void destroy() {
-		try {
-			notifyContextListener("onContextClosed", this.applicationContext);
-		} catch (AccelerateException error) {
-			throw new AccelerateRuntimeException(error);
-		}
+		notifyContextListener("onContextClosed");
 	}
 
 	/*
@@ -103,100 +124,103 @@ public class StaticListenerHelper implements ApplicationListener<ApplicationRead
 	 * @param aEvent
 	 */
 	@Override
+	@Auditable
 	public void onApplicationEvent(ApplicationReadyEvent aEvent) {
-		try {
-			notifyContextListener("onContextStarted", this.applicationContext);
-		} catch (AccelerateException error) {
-			throw new AccelerateRuntimeException(error);
+		notifyContextListener("onContextStarted");
+	}
+
+	/**
+	 * @throws AccelerateException
+	 */
+	private void initializeContextListenerMap() throws AccelerateException {
+		this.staticContextListeners = new HashMap<>();
+		Set<BeanDefinition> contextListeners = findCandidateComponents(StaticContextListener.class);
+
+		for (BeanDefinition beanDefinition : contextListeners) {
+			Object metadata = ReflectionUtil.getFieldValue(beanDefinition.getClass(), beanDefinition, "metadata");
+			@SuppressWarnings("unchecked")
+			Map<String, LinkedList<AnnotationAttributes>> attributesMap = (Map<String, LinkedList<AnnotationAttributes>>) ReflectionUtil
+					.getFieldValue(metadata.getClass(), metadata, "attributesMap");
+			AnnotationAttributes annotationAttributes = attributesMap.get(StaticContextListener.class.getName()).get(0);
+
+			CollectionUtil.addToValueMap(this.staticContextListeners, beanDefinition.getBeanClassName(),
+					"onContextStarted", annotationAttributes.getString("onContextStarted"));
+			CollectionUtil.addToValueMap(this.staticContextListeners, beanDefinition.getBeanClassName(),
+					"onContextClosed", annotationAttributes.getString("onContextClosed"));
 		}
+	}
+
+	/**
+	 * @throws AccelerateException
+	 */
+	private void initializeCacheListenerMap() throws AccelerateException {
+		this.staticCacheListeners = new HashMap<>();
+		Set<BeanDefinition> cacheListeners = findCandidateComponents(StaticCacheListener.class);
+
+		for (BeanDefinition beanDefinition : cacheListeners) {
+			Object metadata = ReflectionUtil.getFieldValue(beanDefinition.getClass(), beanDefinition, "metadata");
+			@SuppressWarnings("unchecked")
+			Map<String, LinkedList<AnnotationAttributes>> attributesMap = (Map<String, LinkedList<AnnotationAttributes>>) ReflectionUtil
+					.getFieldValue(metadata.getClass(), metadata, "attributesMap");
+			AnnotationAttributes annotationAttributes = attributesMap.get(StaticCacheListener.class.getName()).get(0);
+
+			CollectionUtil.addToValueMap(this.staticCacheListeners, annotationAttributes.getString("name"),
+					beanDefinition.getBeanClassName(), annotationAttributes.getString("handler"));
+		}
+	}
+
+	/**
+	 * @param aAnnotationType
+	 * @return
+	 */
+	private Set<BeanDefinition> findCandidateComponents(Class<? extends Annotation> aAnnotationType) {
+		ClassPathScanningCandidateComponentProvider provider = new ClassPathScanningCandidateComponentProvider(false);
+		provider.addIncludeFilter(new AnnotationTypeFilter(aAnnotationType));
+
+		Set<BeanDefinition> componentSet = new HashSet<>(provider.findCandidateComponents("accelerate.*"));
+		String[] packages = StringUtil.split(this.accelerateProperties.getAppBasePackage(), COMMA_CHAR);
+		for (String packageStr : packages) {
+			if (!AppUtil.compare(packageStr, "accelerate")) {
+				componentSet.addAll(provider.findCandidateComponents(packageStr));
+			}
+		}
+
+		return componentSet;
 	}
 
 	/**
 	 * @param aHandlerKey
-	 * @param aHandlerArg
-	 * @throws AccelerateException
 	 */
-	private void notifyContextListener(String aHandlerKey, Object aHandlerArg) throws AccelerateException {
-		try {
-			if (contextListeners == null) {
-				synchronized (this) {
-					if (contextListeners == null) {
-						ClassPathScanningCandidateComponentProvider provider = new ClassPathScanningCandidateComponentProvider(
-								false);
-						provider.addIncludeFilter(new AnnotationTypeFilter(StaticContextListener.class));
-
-						contextListeners = new HashSet<>(provider.findCandidateComponents("accelerate.*"));
-						String[] packages = StringUtil.split(this.accelerateProperties.getAppBasePackage(), COMMA_CHAR);
-						for (String packageStr : packages) {
-							if (!AppUtil.compare(packageStr, "accelerate")) {
-								contextListeners.addAll(provider
-										.findCandidateComponents(this.accelerateProperties.getAppBasePackage()));
-							}
-						}
-					}
-				}
+	private void notifyContextListener(String aHandlerKey) {
+		this.staticContextListeners.forEach((aClassName, aHandlerMap) -> {
+			try {
+				Class<?> targetClass = Class.forName(aClassName);
+				ReflectionUtil.invokeMethod(targetClass, null, aHandlerMap.get(aHandlerKey),
+						new Class<?>[] { ApplicationContext.class }, new Object[] { this.applicationContext });
+			} catch (Exception error) {
+				throw new AccelerateRuntimeException(error);
 			}
-
-			for (BeanDefinition beanDefinition : contextListeners) {
-				Object metadata = ReflectionUtil.getFieldValue(beanDefinition.getClass(), beanDefinition, "metadata");
-				@SuppressWarnings("unchecked")
-				Map<String, LinkedList<AnnotationAttributes>> attributesMap = (Map<String, LinkedList<AnnotationAttributes>>) ReflectionUtil
-						.getFieldValue(metadata.getClass(), metadata, "attributesMap");
-				LinkedList<AnnotationAttributes> annotationAttributeList = attributesMap
-						.get(StaticContextListener.class.getName());
-
-				Class<?> targetClass = Class.forName(beanDefinition.getBeanClassName());
-				String handlerName = annotationAttributeList.get(0).getString(aHandlerKey);
-
-				ReflectionUtil.invokeMethod(targetClass, null, handlerName, new Class<?>[] { aHandlerArg.getClass() },
-						new Object[] { aHandlerArg });
-			}
-		} catch (ClassNotFoundException error) {
-			throw new AccelerateException(error);
-		}
+		});
 	}
 
 	/**
 	 * @param aCache
-	 * @throws AccelerateException
 	 */
-	public void notifyCacheLoad(AccelerateCache<?, ?> aCache) throws AccelerateException {
-		try {
-			if (cacheListeners == null) {
-				synchronized (this) {
-					if (cacheListeners == null) {
-						ClassPathScanningCandidateComponentProvider provider = new ClassPathScanningCandidateComponentProvider(
-								false);
-						provider.addIncludeFilter(new AnnotationTypeFilter(StaticCacheListener.class));
-
-						cacheListeners = new HashSet<>(provider.findCandidateComponents("accelerate.*"));
-						if (!isEmpty(this.accelerateProperties.getAppBasePackage())) {
-							cacheListeners.addAll(
-									provider.findCandidateComponents(this.accelerateProperties.getAppBasePackage()));
-						}
-					}
-				}
-			}
-
-			for (BeanDefinition beanDefinition : cacheListeners) {
-				Object metadata = ReflectionUtil.getFieldValue(beanDefinition.getClass(), beanDefinition, "metadata");
-				@SuppressWarnings("unchecked")
-				Map<String, LinkedList<AnnotationAttributes>> attributesMap = (Map<String, LinkedList<AnnotationAttributes>>) ReflectionUtil
-						.getFieldValue(metadata.getClass(), metadata, "attributesMap");
-				LinkedList<AnnotationAttributes> annotationAttributeList = attributesMap
-						.get(StaticCacheListener.class.getName());
-				AnnotationAttributes annotationAttributes = annotationAttributeList.get(0);
-				String cacheName = annotationAttributes.getString("name");
-				String handlerName = annotationAttributes.getString("handler");
-				Class<?> targetClass = Class.forName(beanDefinition.getBeanClassName());
-
-				if (AppUtil.compare(cacheName, aCache.name())) {
-					ReflectionUtil.invokeMethod(targetClass, null, handlerName, new Class<?>[] { aCache.getClass() },
-							new Object[] { aCache });
-				}
-			}
-		} catch (ClassNotFoundException error) {
-			throw new AccelerateException(error);
+	@Auditable
+	public void notifyCacheLoad(AccelerateCache<?, ?> aCache) {
+		Map<String, String> listenerMap = this.staticCacheListeners.get(aCache.name());
+		if (AppUtil.isEmpty(listenerMap)) {
+			return;
 		}
+
+		listenerMap.forEach((aClassName, aHandlerName) -> {
+			try {
+				Class<?> targetClass = Class.forName(aClassName);
+				ReflectionUtil.invokeMethod(targetClass, null, aHandlerName, new Class<?>[] { aCache.getClass() },
+						new Object[] { aCache });
+			} catch (Exception error) {
+				throw new AccelerateRuntimeException(error);
+			}
+		});
 	}
 }

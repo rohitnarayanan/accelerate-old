@@ -92,7 +92,7 @@ public class AccelerateDataBean implements Serializable {
 	 * @return
 	 * @see java.util.LinkedHashMap#get(java.lang.Object)
 	 */
-	public Boolean has(Object aKey) {
+	public Boolean contains(Object aKey) {
 		return this.model.containsKey(aKey);
 	}
 

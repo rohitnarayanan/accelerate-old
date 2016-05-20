@@ -50,4 +50,12 @@ public class AccelerateException extends Exception {
 	public AccelerateException(Throwable aCause, String aMessage, Object... aMessageArgs) {
 		super(String.format(aMessage, aMessageArgs), aCause);
 	}
+
+	/**
+	 * @param aError
+	 * @throws AccelerateException
+	 */
+	public static void checkAndThrow(Exception aError) throws AccelerateException {
+		throw (aError instanceof AccelerateException) ? (AccelerateException) aError : new AccelerateException(aError);
+	}
 }

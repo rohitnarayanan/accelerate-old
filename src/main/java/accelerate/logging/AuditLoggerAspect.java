@@ -25,7 +25,7 @@ import accelerate.util.StringUtil;
  */
 @Aspect
 @Order(Ordered.HIGHEST_PRECEDENCE)
-@Component("AuditLoggerAspect")
+@Component
 public class AuditLoggerAspect {
 	/**
 	 * 
@@ -37,6 +37,10 @@ public class AuditLoggerAspect {
 	 * by the pointcut defined. It logs the entry and exit of every method and
 	 * also logs the execution time.
 	 * 
+	 * NOTE: This call is only applied to call by Spring or call on Spring
+	 * configured objects. It does not handle private or class-internal methods
+	 * calls.
+	 * 
 	 * @param aJoinPoint
 	 *            the {@link JoinPoint} caught by the {@link Around} advice
 	 * @return the object returned by the target method
@@ -47,25 +51,44 @@ public class AuditLoggerAspect {
 		Throwable error = null;
 		Object returnObject = null;
 		String signature = StringUtil.split(aJoinPoint.getSignature().toString(), SPACE_CHAR)[1];
-		StopWatch stopWatch = new StopWatch();
+		StopWatch stopWatch = logMethodStart(signature);
 
-		_logger.debug("{},{},{}", "Start", signature, System.currentTimeMillis());
-
-		stopWatch.start();
 		try {
 			returnObject = aJoinPoint.proceed();
 		} catch (Throwable throwable) {
 			error = throwable;
 		}
-		stopWatch.stop();
 
-		_logger.debug("{},{},{}", "Time", signature, stopWatch.getTotalTimeMillis());
-		_logger.debug("{},{},{}", (error != null) ? "ErrorExit" : "End", signature, System.currentTimeMillis());
+		logMethodEnd(signature, error, stopWatch);
 
 		if (error != null) {
 			throw error;
 		}
 
 		return returnObject;
+	}
+
+	/**
+	 * @param aSignature
+	 * @return
+	 */
+	public static StopWatch logMethodStart(String aSignature) {
+		_logger.debug("{},{},{}", "Start", aSignature, System.currentTimeMillis());
+		StopWatch stopWatch = new StopWatch();
+		stopWatch.start();
+		return stopWatch;
+
+	}
+
+	/**
+	 * @param aSignature
+	 * @param aError
+	 * @param aStopWatch
+	 */
+	public static void logMethodEnd(String aSignature, Throwable aError, StopWatch aStopWatch) {
+		aStopWatch.stop();
+
+		_logger.debug("{},{},{}", "Time", aSignature, aStopWatch.getTotalTimeMillis());
+		_logger.debug("{},{},{}", (aError != null) ? "ErrorExit" : "End", aSignature, System.currentTimeMillis());
 	}
 }

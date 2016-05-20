@@ -1,16 +1,17 @@
 package accelerate.batch;
 
-import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import accelerate.databean.AccelerateDataBean;
 import accelerate.exception.AccelerateException;
+import accelerate.util.StringUtil;
 
 /**
  * Abstract implementation for {@link Runnable}
@@ -19,7 +20,7 @@ import accelerate.exception.AccelerateException;
  * @version 1.0 Initial Version
  * @since Feb 12, 2010
  */
-public abstract class AccelerateTask implements Callable<Map<String, Object>>, Serializable {
+public abstract class AccelerateTask extends AccelerateDataBean implements Callable<AccelerateTask> {
 
 	/**
 	 * 
@@ -32,20 +33,15 @@ public abstract class AccelerateTask implements Callable<Map<String, Object>>, S
 	protected static final Logger _logger = LoggerFactory.getLogger(AccelerateTask.class);
 
 	/**
-	 * {@link Future} instance containing result
-	 */
-	protected Map<String, Object> taskResult = null;
-
-	/**
 	 * Key Id for the task
 	 */
 	private String taskKey = null;
 
 	/**
-	 * {@link List} of {@link AccelerateTaskListener} registered to this
-	 * instance
+	 * {@link List} of {@link Consumer} registered to to be called after
+	 * execution
 	 */
-	private List<AccelerateTaskListener> taskEventListeners = new ArrayList<>();
+	private Consumer<AccelerateTask> postProccessor = null;
 
 	/**
 	 * {@link System#currentTimeMillis()} when the task was submitted for
@@ -94,15 +90,16 @@ public abstract class AccelerateTask implements Callable<Map<String, Object>>, S
 	private Thread thread = null;
 
 	/**
-	 * {@link Future} instance containing result
+	 * {@link Future} instance return on task submit
 	 */
-	private Future<Map<String, Object>> future = null;
+	private Future<AccelerateTask> future = null;
 
 	/**
 	 * default constructor
 	 */
 	public AccelerateTask() {
-		this("Task#" + Thread.currentThread().getName());
+		this(StringUtil.createKey("AccelerateTask", Thread.currentThread().getName(),
+				String.valueOf(System.currentTimeMillis())));
 	}
 
 	/**
@@ -115,47 +112,18 @@ public abstract class AccelerateTask implements Callable<Map<String, Object>>, S
 	}
 
 	/**
-	 * @param aTaskEventListener
+	 * @param aConsumer
 	 */
-	public void registerTaskEventListener(AccelerateTaskListener aTaskEventListener) {
-		this.taskEventListeners.add(aTaskEventListener);
+	public final void registerPostProcessor(Consumer<AccelerateTask> aConsumer) {
+		this.postProccessor = aConsumer;
 	}
 
 	/**
-	 * Getter Method for taskKey
-	 *
-	 * @return taskKey
+	 * @param aFuture
 	 */
-	public String getTaskKey() {
-		return this.taskKey;
-	}
-
-	/**
-	 * @return
-	 */
-	public long getSubmitTime() {
-		return this.submitTime;
-	}
-
-	/**
-	 * @return
-	 */
-	public long getStartTime() {
-		return this.startTime;
-	}
-
-	/**
-	 * @return
-	 */
-	public long getWaitTime() {
-		return this.startTime - this.submitTime;
-	}
-
-	/**
-	 * @return
-	 */
-	public long getEndTime() {
-		return this.endTime;
+	public synchronized void submitted(Future<AccelerateTask> aFuture) {
+		this.submitTime = System.currentTimeMillis();
+		this.future = aFuture;
 	}
 
 	/**
@@ -174,6 +142,15 @@ public abstract class AccelerateTask implements Callable<Map<String, Object>>, S
 		this.monitor = null;
 	}
 
+	/**
+	 * @throws ExecutionException
+	 * @throws InterruptedException
+	 *
+	 */
+	public synchronized void waitForCompletion() throws InterruptedException, ExecutionException {
+		this.future.get();
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -185,40 +162,21 @@ public abstract class AccelerateTask implements Callable<Map<String, Object>>, S
 	 * @throws AccelerateException
 	 */
 	@Override
-	public Map<String, Object> call() throws AccelerateException {
+	public AccelerateTask call() throws AccelerateException {
 		try {
 			this.thread = Thread.currentThread();
 			this.startTime = System.currentTimeMillis();
-			notifyListeners(0);
 			this.executing = true;
 			execute();
 		} finally {
 			this.endTime = System.currentTimeMillis();
 			this.executing = false;
 			this.complete = true;
-			notifyListeners(1);
+
+			this.postProccessor.accept(this);
 		}
 
-		return this.taskResult;
-	}
-
-	/**
-	 * This method notifies all the registered listeners of the task's life
-	 * cycle
-	 *
-	 * @param aSwitchFlag
-	 */
-	private void notifyListeners(int aSwitchFlag) {
-		for (AccelerateTaskListener taskEventListener : this.taskEventListeners) {
-			switch (aSwitchFlag) {
-			case 0:
-				taskEventListener.beforeStart(this);
-				break;
-			case 1:
-				taskEventListener.afterComplete(this);
-				break;
-			}
-		}
+		return this;
 	}
 
 	/**
@@ -250,17 +208,62 @@ public abstract class AccelerateTask implements Callable<Map<String, Object>>, S
 	}
 
 	/**
-	 * Getter method for "taskEventListeners" property
-	 *
-	 * @return taskEventListeners
+	 * Getter method for "taskKey" property
+	 * 
+	 * @return taskKey
 	 */
-	public List<AccelerateTaskListener> getTaskEventListeners() {
-		return this.taskEventListeners;
+	public String getTaskKey() {
+		return this.taskKey;
+	}
+
+	/**
+	 * Setter method for "taskKey" property
+	 * 
+	 * @param aTaskKey
+	 */
+	public void setTaskKey(String aTaskKey) {
+		this.taskKey = aTaskKey;
+	}
+
+	/**
+	 * Getter method for "postProccessor" property
+	 * 
+	 * @return postProccessor
+	 */
+	public Consumer<? extends AccelerateTask> getPostProccessor() {
+		return this.postProccessor;
+	}
+
+	/**
+	 * Getter method for "submitTime" property
+	 * 
+	 * @return submitTime
+	 */
+	public long getSubmitTime() {
+		return this.submitTime;
+	}
+
+	/**
+	 * Getter method for "startTime" property
+	 * 
+	 * @return startTime
+	 */
+	public long getStartTime() {
+		return this.startTime;
+	}
+
+	/**
+	 * Getter method for "endTime" property
+	 * 
+	 * @return endTime
+	 */
+	public long getEndTime() {
+		return this.endTime;
 	}
 
 	/**
 	 * Getter method for "executing" property
-	 *
+	 * 
 	 * @return executing
 	 */
 	public boolean isExecuting() {
@@ -269,7 +272,7 @@ public abstract class AccelerateTask implements Callable<Map<String, Object>>, S
 
 	/**
 	 * Getter method for "complete" property
-	 *
+	 * 
 	 * @return complete
 	 */
 	public boolean isComplete() {
@@ -278,7 +281,7 @@ public abstract class AccelerateTask implements Callable<Map<String, Object>>, S
 
 	/**
 	 * Getter method for "taskError" property
-	 *
+	 * 
 	 * @return taskError
 	 */
 	public Exception getTaskError() {
@@ -286,17 +289,17 @@ public abstract class AccelerateTask implements Callable<Map<String, Object>>, S
 	}
 
 	/**
-	 * Getter method for "taskResult" property
-	 *
-	 * @return taskResult
+	 * Getter method for "pause" property
+	 * 
+	 * @return pause
 	 */
-	public Map<String, Object> getTaskResult() {
-		return this.taskResult;
+	public boolean isPause() {
+		return this.pause;
 	}
 
 	/**
 	 * Getter method for "monitor" property
-	 *
+	 * 
 	 * @return monitor
 	 */
 	public Object getMonitor() {
@@ -305,28 +308,10 @@ public abstract class AccelerateTask implements Callable<Map<String, Object>>, S
 
 	/**
 	 * Getter method for "thread" property
-	 *
+	 * 
 	 * @return thread
 	 */
 	public Thread getThread() {
 		return this.thread;
-	}
-
-	/**
-	 * Getter method for "future" property
-	 *
-	 * @return future
-	 */
-	public Future<Map<String, Object>> getFuture() {
-		return this.future;
-	}
-
-	/**
-	 * Setter method for "future" property
-	 *
-	 * @param aFuture
-	 */
-	public void setFuture(Future<Map<String, Object>> aFuture) {
-		this.future = aFuture;
 	}
 }

@@ -11,6 +11,7 @@ import static accelerate.util.FileUtil.getUnixPath;
 import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -18,12 +19,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 
 import accelerate.batch.AccelerateBatch;
 import accelerate.batch.AccelerateTask;
 import accelerate.databean.AccelerateDataBean;
 import accelerate.exception.AccelerateException;
 import accelerate.exception.AccelerateRuntimeException;
+import accelerate.util.CollectionUtil;
 
 /**
  * Utility class that provides methods to compare and synchronize 2 directories.
@@ -83,65 +86,49 @@ public class DirectorySynchronizer {
 			return;
 		}
 
-		int copyCount = 0;
+		Map<String, Map<String, Object>> counterMap = new HashMap<>();
+		counterMap.put("S", Collections.emptyMap());
+		counterMap.put("T", Collections.emptyMap());
+		counterMap.put("C", Collections.emptyMap());
 
 		try {
 			AccelerateBatch<DirSyncFileCopyTask> dirSyncBatch = new AccelerateBatch<>("DirectorySynchronizer",
 					aThreadPoolCount);
-			dirSyncBatch.activate();
+			dirSyncBatch.registerTaskPostProcessor(task -> {
+				if (task.isCopyResult()) {
+					CollectionUtil.addToValueMap(counterMap, task.mode, task.getTaskKey(), null);
+				}
+			});
 
-			List<DirSyncFileCopyTask> taskList = new ArrayList<>();
+			dirSyncBatch.initialize();
+
 			if (aDirSyncInput.copyToTarget) {
-				for (File file : aDirSyncOutput.newSourceFiles) {
-					taskList.add(new DirSyncFileCopyTask(file, aDirSyncInput.sourceDir, aDirSyncInput.targetDir));
-				}
-
-				dirSyncBatch.submitTasks(taskList);
-				for (DirSyncFileCopyTask task : taskList) {
-					if (task.isCopyResult()) {
-						copyCount++;
-					}
-				}
+				aDirSyncOutput.newSourceFiles.stream().forEach(file -> {
+					dirSyncBatch.submitTasks(
+							new DirSyncFileCopyTask(file, aDirSyncInput.sourceDir, aDirSyncInput.targetDir, "S"));
+				});
 			}
-			aDirSyncOutput.message.append("Missing files copied to Target @ ").append(aDirSyncInput.targetDir.getPath())
-					.append(": ").append(copyCount);
 
-			copyCount = 0;
-			taskList = new ArrayList<>();
 			if (aDirSyncInput.copyToSource) {
-				for (File file : aDirSyncOutput.newTargetFiles) {
-					taskList.add(new DirSyncFileCopyTask(file, aDirSyncInput.targetDir, aDirSyncInput.sourceDir));
-				}
-
-				dirSyncBatch.submitTasks(taskList);
-				for (DirSyncFileCopyTask task : taskList) {
-					if (task.isCopyResult()) {
-						copyCount++;
-					}
-				}
+				aDirSyncOutput.newTargetFiles.stream().forEach(file -> {
+					dirSyncBatch.submitTasks(
+							new DirSyncFileCopyTask(file, aDirSyncInput.targetDir, aDirSyncInput.sourceDir, "T"));
+				});
 			}
-			aDirSyncOutput.message.append("Missing files copied to Source @ ").append(aDirSyncInput.sourceDir.getPath())
-					.append(": ").append(copyCount);
 
-			copyCount = 0;
-			taskList = new ArrayList<>();
 			if (aDirSyncInput.overwriteTarget) {
-				for (Entry<String, ConflictResult> entry : aDirSyncOutput.conflictedFiles.entrySet()) {
-					taskList.add(new DirSyncFileCopyTask(entry.getValue()));
-				}
-
-				dirSyncBatch.submitTasks(taskList);
-				for (DirSyncFileCopyTask task : taskList) {
-					if (task.isCopyResult()) {
-						copyCount++;
-					}
-				}
+				aDirSyncOutput.conflictedFiles.forEach((key, value) -> {
+					dirSyncBatch.submitTasks(new DirSyncFileCopyTask(value, "C"));
+				});
 			}
-			aDirSyncOutput.message.append("Conflicted files copied to Target @ ")
-					.append(aDirSyncInput.targetDir.getPath()).append(": ").append(copyCount);
-			copyCount = 0;
 
-			dirSyncBatch.shutdown("SECONDS", 60 * 60 * 2);
+			aDirSyncOutput.message.append("Missing files copied to Target @ ").append(aDirSyncInput.targetDir.getPath())
+					.append(": ").append(counterMap.get("S").size());
+			aDirSyncOutput.message.append("Missing files copied to Source @ ").append(aDirSyncInput.sourceDir.getPath())
+					.append(": ").append(counterMap.get("T").size());
+			aDirSyncOutput.message.append("Conflicted files copied to Target @ ")
+					.append(aDirSyncInput.targetDir.getPath()).append(": ").append(counterMap.get("C").size());
+			dirSyncBatch.shutdown(TimeUnit.HOURS, 2);
 		} catch (Exception error) {
 			aDirSyncOutput.message.append(error.getMessage());
 			throw new AccelerateException(error);
@@ -502,6 +489,7 @@ public class DirectorySynchronizer {
 		private File sourceRoot = null;
 		private File targetRoot = null;
 		private ConflictResult conflictResult = null;
+		String mode = null;
 		private boolean copyResult = false;
 
 		/**
@@ -511,10 +499,11 @@ public class DirectorySynchronizer {
 		 * @param aSourceRoot
 		 * @param aTargetRoot
 		 */
-		public DirSyncFileCopyTask(File aSourceFile, File aSourceRoot, File aTargetRoot) {
+		public DirSyncFileCopyTask(File aSourceFile, File aSourceRoot, File aTargetRoot, String aMode) {
 			this.sourceFile = aSourceFile;
 			this.sourceRoot = aSourceRoot;
 			this.targetRoot = aTargetRoot;
+			this.mode = aMode;
 		}
 
 		/**
@@ -522,8 +511,9 @@ public class DirectorySynchronizer {
 		 *
 		 * @param aConflictResult
 		 */
-		public DirSyncFileCopyTask(ConflictResult aConflictResult) {
+		public DirSyncFileCopyTask(ConflictResult aConflictResult, String aMode) {
 			this.conflictResult = aConflictResult;
+			this.mode = aMode;
 		}
 
 		/**

@@ -231,6 +231,27 @@ public final class CollectionUtil {
 	}
 
 	/**
+	 * @param <P>
+	 * @param <Q>
+	 * @param <R>
+	 * @param aMap
+	 * @param aOuterKey
+	 * @param aInnerKey
+	 * @param aValue
+	 * @return {@link List} to which value was added
+	 */
+	public static <P, Q, R> Map<Q, R> addToValueMap(Map<P, Map<Q, R>> aMap, P aOuterKey, Q aInnerKey, R aValue) {
+		Map<Q, R> valueMap = aMap.get(aOuterKey);
+		if (valueMap == null || valueMap == Collections.emptyMap()) {
+			valueMap = new HashMap<>();
+			aMap.put(aOuterKey, valueMap);
+		}
+
+		valueMap.put(aInnerKey, aValue);
+		return valueMap;
+	}
+
+	/**
 	 * @param <K>
 	 * @param <V>
 	 * @param aMap

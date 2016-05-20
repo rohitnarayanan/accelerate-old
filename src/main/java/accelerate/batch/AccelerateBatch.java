@@ -6,18 +6,15 @@ import static accelerate.util.CollectionUtil.toList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
-import javax.annotation.PostConstruct;
+import java.util.function.Consumer;
 
 import org.springframework.jmx.export.annotation.ManagedOperation;
 import org.springframework.jmx.export.annotation.ManagedResource;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import accelerate.databean.AccelerateDataBean;
-import accelerate.exception.AccelerateException;
+import accelerate.exception.AccelerateRuntimeException;
 import accelerate.util.JSONUtil;
 
 /**
@@ -31,21 +28,16 @@ import accelerate.util.JSONUtil;
  * @since Feb 12, 2010
  */
 @ManagedResource(description = "Wrapper class providing easy-to-use version of spring's ThreadPoolTaskExecutor")
-public class AccelerateBatch<T extends AccelerateTask> {
+public class AccelerateBatch<T extends AccelerateTask> extends ThreadPoolTaskExecutor {
+	/**
+	 * serialVersionUID
+	 */
+	private static final long serialVersionUID = 1L;
+
 	/**
 	 * Name of the Batch
 	 */
 	private String batchName = null;
-
-	/**
-	 * Maximum thread pool size for a multi threaded batch
-	 */
-	private int threadPoolSize = 0;
-
-	/**
-	 * Flag to indicate multi threading is enabled
-	 */
-	private boolean multiThreadingEnabled = true;
 
 	/**
 	 * Flag to indicate whether this instance is active or not
@@ -60,38 +52,22 @@ public class AccelerateBatch<T extends AccelerateTask> {
 	/**
 	 * Semaphore for pausing the tasks
 	 */
-	private Object monitor = new Object();
+	private final Object monitor = new Object();
+
+	/**
+	 * Semaphore for pausing the tasks
+	 */
+	private Consumer<T> taskPostProcessor = null;
 
 	/**
 	 * {@link Map} of tasks submitted to the batch
 	 */
-	private Map<String, T> pendingTasks = null;
-
-	/**
-	 * {@link Map} of tasks currently being processed by the batch
-	 */
-	private Map<String, T> activeTasks = null;
+	private final Map<String, T> tasks = new HashMap<>();
 
 	/**
 	 * Count of tasks processed by this batch
 	 */
-	private long completedTaskCount = 0l;
-
-	/**
-	 * {@link AccelerateTask} instance currently executing if MULTI_THREADING is
-	 * disabled
-	 */
-	private T currentTask = null;
-
-	/**
-	 * {@link ThreadPoolTaskExecutor} instance
-	 */
-	private ThreadPoolTaskExecutor executor = null;
-
-	/**
-	 * {@link BETaskEventListener} instance to keep counters updated
-	 */
-	private BETaskEventListener batchEventListener = null;
+	protected long completedTaskCount = 0l;
 
 	/**
 	 * Default constructor
@@ -100,57 +76,61 @@ public class AccelerateBatch<T extends AccelerateTask> {
 	 * @param aThreadPoolSize
 	 */
 	public AccelerateBatch(String aBatchName, int aThreadPoolSize) {
-		this(aBatchName, aThreadPoolSize, true);
+		this(aBatchName, aThreadPoolSize, aThreadPoolSize);
 	}
 
 	/**
-	 * Overloaded constructor to disable multithreading
+	 * Constructor 2
 	 *
 	 * @param aBatchName
 	 * @param aThreadPoolSize
-	 * @param aEnableMultiThreading
+	 * @param aMaxPoolSize
 	 */
-	public AccelerateBatch(String aBatchName, int aThreadPoolSize, boolean aEnableMultiThreading) {
+	public AccelerateBatch(String aBatchName, int aThreadPoolSize, int aMaxPoolSize) {
 		this.batchName = aBatchName;
-		this.threadPoolSize = aThreadPoolSize;
-		this.multiThreadingEnabled = aEnableMultiThreading;
+		setCorePoolSize(aThreadPoolSize);
+		setMaxPoolSize(aMaxPoolSize);
 	}
 
-	/**
-	 * This methods activates the batch. It is setup as a @PostConstruct method
-	 * to allow automatic activation on spring initialization.
-	 *
-	 * @throws AccelerateException
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.springframework.scheduling.concurrent.ExecutorConfigurationSupport#
+	 * initialize()
 	 */
-	@PostConstruct
+	/**
+	 */
+	@Override
 	@ManagedOperation(description = "This methods activates the batch")
-	public synchronized void activate() throws AccelerateException {
+	public synchronized void initialize() {
 		if (this.active) {
-			throw new AccelerateException(
+			throw new AccelerateRuntimeException(
 					"Batch is already active! Invoke shutdown() to close the batch before reinitializing");
 		}
 
-		this.executor = new ThreadPoolTaskExecutor();
-		this.executor.setCorePoolSize(this.threadPoolSize);
-		this.executor.setMaxPoolSize(this.threadPoolSize);
-		this.executor.setThreadGroupName(this.batchName);
-		this.executor.setThreadNamePrefix("AccelerateTask");
-		this.executor.initialize();
+		setThreadGroupName(this.batchName);
+		setThreadNamePrefix("AccelerateTask");
 
-		this.batchEventListener = new BETaskEventListener();
-		this.pendingTasks = new HashMap<>();
-		this.activeTasks = new HashMap<>();
+		super.initialize();
 		this.completedTaskCount = 0l;
 		this.active = true;
 	}
 
-	/**
-	 * This method tries to shutdown the current batch instance immediately
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.springframework.scheduling.concurrent.ExecutorConfigurationSupport#
+	 * shutdown()
 	 */
-	@ManagedOperation(description = "This method tries to shutdown the current batch instance immediately")
-	public synchronized void shutdownNow() {
+	/**
+	 */
+	@Override
+	@ManagedOperation(description = "This method shuts down the current batch instance")
+	public void shutdown() {
 		this.active = false;
-		this.executor.getThreadPoolExecutor().shutdownNow();
+		super.shutdown();
 	}
 
 	/**
@@ -159,19 +139,27 @@ public class AccelerateBatch<T extends AccelerateTask> {
 	 *
 	 * @param aTimeUnit
 	 * @param aTimeout
-	 * @throws AccelerateException
 	 */
 	@ManagedOperation(description = "This method shuts down the current batch instance and blocks the caller till it shuts down or the timeout provided elapses, whichever is earlier.")
-	public synchronized void shutdown(String aTimeUnit, long aTimeout) throws AccelerateException {
-		TimeUnit timeUnit = TimeUnit.valueOf(aTimeUnit);
+	public synchronized void shutdown(TimeUnit aTimeUnit, long aTimeout) {
+		setAwaitTerminationSeconds((int) aTimeUnit.toSeconds(aTimeout));
+		this.shutdown();
+	}
 
+	/**
+	 * This method tries to shutdown the current batch instance immediately
+	 */
+	@ManagedOperation(description = "This method tries to shutdown the current batch instance immediately")
+	public synchronized void shutdownNow() {
 		this.active = false;
-		this.executor.getThreadPoolExecutor().shutdown();
-		try {
-			this.executor.getThreadPoolExecutor().awaitTermination(aTimeout, timeUnit);
-		} catch (IllegalStateException | InterruptedException error) {
-			throw new AccelerateException(error);
-		}
+		getThreadPoolExecutor().shutdownNow();
+	}
+
+	/**
+	 * @param aConsumer
+	 */
+	public final synchronized void registerTaskPostProcessor(Consumer<T> aConsumer) {
+		this.taskPostProcessor = aConsumer;
 	}
 
 	/**
@@ -181,13 +169,7 @@ public class AccelerateBatch<T extends AccelerateTask> {
 	@ManagedOperation(description = "This method handles a pause interrupt sent by JMX and attempts to pause the execution of all running tasks")
 	public synchronized void pause() {
 		this.paused = true;
-
-		if (this.multiThreadingEnabled) {
-			this.pendingTasks.values().forEach(task -> task.pause(this.monitor));
-			this.activeTasks.values().forEach(task -> task.pause(this.monitor));
-		} else {
-			this.currentTask.pause(this.monitor);
-		}
+		this.tasks.values().forEach(task -> task.pause(this.monitor));
 	}
 
 	/**
@@ -197,13 +179,7 @@ public class AccelerateBatch<T extends AccelerateTask> {
 	@ManagedOperation(description = "This method handles a resume interrupt via by the JMX and attempts to resume the execution of all paused tasks")
 	public synchronized void resume() {
 		this.paused = false;
-
-		if (this.multiThreadingEnabled) {
-			this.pendingTasks.values().forEach(task -> task.resume());
-			this.activeTasks.values().forEach(task -> task.resume());
-		} else {
-			this.currentTask.resume();
-		}
+		this.tasks.values().forEach(task -> task.resume());
 
 		synchronized (this.monitor) {
 			this.monitor.notifyAll();
@@ -218,211 +194,98 @@ public class AccelerateBatch<T extends AccelerateTask> {
 	 */
 	@ManagedOperation(description = "This method returns JSON string with basic status information on the batch")
 	public String getStatus() {
-		AccelerateDataBean dataBean = AccelerateDataBean.build("1.name", this.batchName, "2.multithreaded",
-				this.multiThreadingEnabled, "3.poolSize", this.threadPoolSize, "4.active", this.active,
-				"5.completedTasks", this.completedTaskCount, "6.activeTasks", this.activeTasks.size(), "7.waitingTasks",
-				this.pendingTasks.size());
+		AccelerateDataBean dataBean = AccelerateDataBean.build("1.name", this.batchName, "2.corePoolSize",
+				getCorePoolSize(), "3.maxPoolSize", getMaxPoolSize(), "4.active", this.active, "5.completedTasks",
+				this.completedTaskCount, "6.taskCount", this.tasks.size());
 
 		return JSONUtil.serialize(dataBean);
 	}
 
 	/**
 	 * @param aTaskList
-	 * @throws AccelerateException
+	 * @throws AccelerateRuntimeException
 	 */
 	@SafeVarargs
-	public final void submitTasks(T... aTaskList) throws AccelerateException {
+	public final void submitTasks(T... aTaskList) throws AccelerateRuntimeException {
 		submitTasks(toList(aTaskList));
 	}
 
 	/**
 	 * @param aTaskList
-	 * @throws AccelerateException
+	 * @throws AccelerateRuntimeException
 	 */
-	public final synchronized void submitTasks(List<T> aTaskList) throws AccelerateException {
+	@SuppressWarnings("unchecked")
+	public final synchronized void submitTasks(List<T> aTaskList) throws AccelerateRuntimeException {
 		if (!this.active) {
-			throw new AccelerateException(
+			throw new AccelerateRuntimeException(
 					"Batch has been shutdown! Invoke activate() reinitialize the batch before submitting tasks");
 		}
 
 		if (isEmpty(aTaskList)) {
-			throw new AccelerateException("No tasks provided!");
+			throw new AccelerateRuntimeException("No tasks provided!");
 		}
 
-		aTaskList.forEach(task -> this.pendingTasks.put(task.getTaskKey(), task));
+		aTaskList.stream().forEach(task -> {
+			this.tasks.put(task.getTaskKey(), task);
 
-		for (T task : aTaskList) {
-			task.registerTaskEventListener(this.batchEventListener);
+			task.registerPostProcessor(_task -> {
+				this.tasks.remove(_task.getTaskKey());
+				this.completedTaskCount++;
+				if (this.taskPostProcessor != null) {
+					this.taskPostProcessor.accept((T) _task);
+				}
+			});
 
 			if (this.paused) {
 				task.pause(this.monitor);
 			}
 
-			if (this.multiThreadingEnabled) {
-				task.setFuture(this.executor.submit(task));
-			} else {
-				this.currentTask = task;
-				this.activeTasks.put(task.getTaskKey(), this.pendingTasks.get(task.getTaskKey()));
-				task.call();
-				this.completedTaskCount++;
-			}
-		}
+			task.submitted(submit(task));
+		});
 	}
 
 	/**
-	 * @param aTask
+	 * Getter method for "batchName" property
+	 * 
+	 * @return batchName
 	 */
-	protected synchronized void beforeStart(T aTask) {
-		this.activeTasks.put(aTask.getTaskKey(), this.pendingTasks.remove(aTask.getTaskKey()));
-	}
-
-	/**
-	 * @param aTask
-	 */
-	protected synchronized void afterComplete(T aTask) {
-		this.activeTasks.remove(aTask.getTaskKey());
-		this.completedTaskCount++;
-	}
-
-	/**
-	 * Getter method for "executor" property
-	 *
-	 * @return executorService
-	 */
-	public ThreadPoolTaskExecutor getSpringExecutor() {
-		return this.executor;
-	}
-
-	/**
-	 * Getter method for underlying {@link ThreadPoolExecutor}
-	 *
-	 * @return executorService
-	 */
-	public ExecutorService getJavaExecutor() {
-		return this.executor.getThreadPoolExecutor();
-	}
-
-	/**
-	 * Getter method for "multiThreadingEnabled" property
-	 *
-	 * @return multiThreadingEnabled
-	 */
-	public synchronized boolean isMultiThreadingEnabled() {
-		return this.multiThreadingEnabled;
-	}
-
-	/**
-	 * Getter method for "threadPoolSize" property
-	 *
-	 * @return threadPoolSize
-	 */
-	public synchronized int getThreadPoolSize() {
-		return this.threadPoolSize;
-	}
-
-	/**
-	 * Getter method for "allTasks" property
-	 *
-	 * @return allTasks
-	 */
-	public synchronized Map<String, T> getPendingTasks() {
-		return this.pendingTasks;
-	}
-
-	/**
-	 * Getter method for "activeTasks" property
-	 *
-	 * @return activeTasks
-	 */
-	public synchronized Map<String, T> getActiveTasks() {
-		return this.activeTasks;
-	}
-
-	/**
-	 * Getter method for "completedTaskCount" property
-	 *
-	 * @return completedTaskCount
-	 */
-	public synchronized long getCompletedTaskCount() {
-		return this.completedTaskCount;
-	}
-
-	/**
-	 * Getter method for "activeTaskCount" property
-	 *
-	 * @return activeTaskCount
-	 */
-	public synchronized long getActiveTaskCount() {
-		return this.activeTasks.size();
-	}
-
-	/**
-	 * Getter method for "waitingTaskCount" property
-	 *
-	 * @return waitingTaskCount
-	 */
-	public synchronized long getWaitingTaskCount() {
-		return this.pendingTasks.size();
+	public String getBatchName() {
+		return this.batchName;
 	}
 
 	/**
 	 * Getter method for "active" property
-	 *
+	 * 
 	 * @return active
 	 */
-	public synchronized boolean isActive() {
+	public boolean isActive() {
 		return this.active;
 	}
 
 	/**
 	 * Getter method for "paused" property
-	 *
+	 * 
 	 * @return paused
 	 */
-	public synchronized boolean isPaused() {
+	public boolean isPaused() {
 		return this.paused;
 	}
 
 	/**
-	 * Getter method for "currentTask" property
-	 *
-	 * @return currentTask
+	 * Getter method for "tasks" property
+	 * 
+	 * @return tasks
 	 */
-	public synchronized T getCurrentTask() {
-		return this.currentTask;
+	public Map<String, T> getTasks() {
+		return this.tasks;
 	}
 
 	/**
-	 * {@link AccelerateTaskListener} implementation to maintain the
-	 * status/count of total/active tasks
-	 *
-	 * @author Rohit Narayanan
-	 * @version 1.0 Initial Version
-	 * @since 25-May-2015
+	 * Getter method for "completedTaskCount" property
+	 * 
+	 * @return completedTaskCount
 	 */
-	private class BETaskEventListener implements AccelerateTaskListener {
-		/**
-		 *
-		 */
-		public BETaskEventListener() {
-		}
-
-		/**
-		 * @param aTask
-		 */
-		@Override
-		@SuppressWarnings("unchecked")
-		public void beforeStart(AccelerateTask aTask) {
-			AccelerateBatch.this.beforeStart((T) aTask);
-		}
-
-		/**
-		 * @param aTask
-		 */
-		@Override
-		@SuppressWarnings("unchecked")
-		public void afterComplete(AccelerateTask aTask) {
-			AccelerateBatch.this.afterComplete((T) aTask);
-		}
+	public long getCompletedTaskCount() {
+		return this.completedTaskCount;
 	}
 }

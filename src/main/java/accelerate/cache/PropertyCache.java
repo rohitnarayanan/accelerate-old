@@ -24,6 +24,7 @@ import org.springframework.jmx.export.annotation.ManagedOperation;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import accelerate.exception.AccelerateException;
+import accelerate.exception.AccelerateRuntimeException;
 import accelerate.util.AccelerateConstants;
 import accelerate.util.ReflectionUtil;
 import accelerate.util.ResourceUtil;
@@ -139,10 +140,9 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 *            array containing string to be concatenated to form the
 	 *            property key
 	 * @return {@link String} value stored against the key
-	 * @throws AccelerateException
 	 */
 	@ManagedOperation(description = "This method returns the element stored in cache against the given key")
-	public String get(String... aPropertyKeys) throws AccelerateException {
+	public String get(String... aPropertyKeys) {
 		return get(createKey(aPropertyKeys));
 	}
 
@@ -154,9 +154,8 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 * @param aPropertyKey
 	 *            key to be looked up
 	 * @return boolean result of the comparison
-	 * @throws AccelerateException
 	 */
-	public boolean checkProperty(String aPropertyKey) throws AccelerateException {
+	public boolean checkProperty(String aPropertyKey) {
 		return checkPropertyWithValue(YES, aPropertyKey);
 	}
 
@@ -169,9 +168,8 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 *            array containing string to be concatenated to form the
 	 *            property key
 	 * @return boolean result of the comparison
-	 * @throws AccelerateException
 	 */
-	public boolean checkProperty(String... aPropertyKeys) throws AccelerateException {
+	public boolean checkProperty(String... aPropertyKeys) {
 		return checkPropertyWithValue(YES, aPropertyKeys);
 	}
 
@@ -184,9 +182,8 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 * @param aPropertyKeys
 	 *            array of strings to be concatenated to form the property key
 	 * @return boolean result of the comparison
-	 * @throws AccelerateException
 	 */
-	public boolean checkPropertyWithValue(String aCompareValue, String... aPropertyKeys) throws AccelerateException {
+	public boolean checkPropertyWithValue(String aCompareValue, String... aPropertyKeys) {
 		return compare(get(aPropertyKeys), aCompareValue);
 	}
 
@@ -196,21 +193,14 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 * @param aPropertyKey
 	 *            key to be looked up
 	 * @return int value for the property
-	 * @throws AccelerateException
 	 */
-	public int getIntProperty(String aPropertyKey) throws AccelerateException {
+	public int getIntProperty(String aPropertyKey) {
 		String propertyValue = get(aPropertyKey);
-
-		try {
-			if (!isEmpty(propertyValue)) {
-				return Integer.parseInt(propertyValue);
-			}
-
-			return 0;
-		} catch (Exception error) {
-			_logger.error("{}: Error in parsing integer property", name(), error);
-			return this.errorIntValue;
+		if (!isEmpty(propertyValue)) {
+			return Integer.parseInt(propertyValue);
 		}
+
+		return 0;
 	}
 
 	/**
@@ -221,9 +211,8 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 * @param aPropertyKeys
 	 *            array of strings to be concatenated to form the property key
 	 * @return int value for the property
-	 * @throws AccelerateException
 	 */
-	public int getIntProperty(String... aPropertyKeys) throws AccelerateException {
+	public int getIntProperty(String... aPropertyKeys) {
 		return getIntProperty(createKey(aPropertyKeys));
 	}
 
@@ -234,9 +223,8 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 * @param aPropertyKey
 	 *            - set of property keys to be appended
 	 * @return array of values
-	 * @throws AccelerateException
 	 */
-	public String[] getPropertyList(String aPropertyKey) throws AccelerateException {
+	public String[] getPropertyList(String aPropertyKey) {
 		return StringUtil.split(get(aPropertyKey), COMMA_CHAR);
 	}
 
@@ -248,9 +236,8 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 * @param aPropertyKeys
 	 *            array of strings to be concatenated to form the property key
 	 * @return array of values
-	 * @throws AccelerateException
 	 */
-	public String[] getPropertyList(String... aPropertyKeys) throws AccelerateException {
+	public String[] getPropertyList(String... aPropertyKeys) {
 		return getPropertyList(createKey(aPropertyKeys));
 	}
 
@@ -259,7 +246,6 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 * 
 	 * @see accelerate.cache.AccelerateCache#isLoadedAtStartup()
 	 */
-
 	/**
 	 * @return
 	 */
@@ -274,7 +260,6 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 * @see accelerate.cache.AccelerateCache#loadCache(org.springframework.
 	 * cache.Cache)
 	 */
-
 	/**
 	 * @param aCache
 	 * @return
@@ -289,7 +274,7 @@ public class PropertyCache extends AccelerateCache<String, String> {
 		}
 
 		final Map<String, String> propertyMap = LoadPropertyMap(this.applicationContext, getConfigURL());
-		if (compare(propertyMap.get(createKey(this.profileName, "fetchfromdb")), YES)) {
+		if (compare(propertyMap.get(createKey(this.profileName, "fetchFromDB")), YES)) {
 			final int length = !isEmpty(this.profileName) ? this.profileName.length() + 1 : 0;
 
 			StringBuilder sql = new StringBuilder();
@@ -323,15 +308,13 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 * 
 	 * @see accelerate.cache.AccelerateCache#fetch(java.lang.Object)
 	 */
-
 	/**
 	 * @param aKey
 	 * @return
-	 * @throws AccelerateException
 	 */
 	@Override
-	protected String fetch(String aKey) throws AccelerateException {
-		throw new AccelerateException("This cache is always loaded at startup !");
+	protected String fetch(String aKey) {
+		throw new AccelerateRuntimeException("This cache is always loaded at startup !");
 	}
 
 	/**

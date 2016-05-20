@@ -19,6 +19,11 @@
 		</encoder>
 	</appender>
 
+	<logger name="accelerate.logging.AuditLoggerAspect" level="debug"
+		additivity="false">
+		<appender-ref ref="SysoutAppender" />
+	</logger>
+
 	<root level="info">
 		<appender-ref ref="SysoutAppender" />
 	</root>

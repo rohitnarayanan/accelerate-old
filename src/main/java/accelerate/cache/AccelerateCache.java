@@ -1,6 +1,7 @@
 package accelerate.cache;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonView;
 
 import accelerate.exception.AccelerateException;
+import accelerate.exception.AccelerateRuntimeException;
 import accelerate.spring.StaticListenerHelper;
 import accelerate.util.JSONUtil;
 import accelerate.util.StringUtil;
@@ -172,12 +174,11 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	 * This method sets the age of the cache
 	 *
 	 * @param aCacheAge
-	 * @throws AccelerateException
 	 */
 	@ManagedOperation(description = "This method sets the age of the cache")
-	public void age(String aCacheAge) throws AccelerateException {
+	public void age(String aCacheAge) {
 		if (!isLoadedAtStartup()) {
-			throw new AccelerateException("Cache Not LoadedAtStartup");
+			throw new AccelerateRuntimeException("Cache Not LoadedAtStartup");
 		}
 
 		this.cacheAge = aCacheAge;
@@ -199,45 +200,42 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	 * initialized
 	 *
 	 * @return cache name
-	 * @throws AccelerateException
 	 */
 	@ManagedOperation(description = "This method returns the date timestamp when the cache was first initiliazed")
 	@JsonView(JsonSummary.class)
 	@JsonFormat(pattern = "MM/dd/yyyy HH:ss:SSS z")
-	public Date initializedTime() throws AccelerateException {
+	public Date initializedTime() {
 		if (this.cacheInitializedTime > 0) {
 			return new Date(this.cacheInitializedTime);
 		}
 
-		throw new AccelerateException("Not Initialized");
+		return null;
 	}
 
 	/**
 	 * This method returns the date timestamp when the cache was last refreshed
 	 *
 	 * @return cache name
-	 * @throws AccelerateException
 	 */
 	@ManagedOperation(description = "This method returns the date timestamp when the cache was last refreshed")
 	@JsonView(JsonSummary.class)
 	@JsonFormat(pattern = "MM/dd/yyyy HH:ss:SSS z")
-	public Date lastRefreshedTime() throws AccelerateException {
+	public Date lastRefreshedTime() {
 		if (this.cacheRefreshedTime > 0) {
 			return new Date(this.cacheRefreshedTime);
 		}
 
-		throw new AccelerateException("Never Refreshed");
+		return null;
 	}
 
 	/**
 	 * This method returns the base map which stores the cache
 	 *
 	 * @return {@link Cache} instance
-	 * @throws AccelerateException
 	 */
-	public Cache cache() throws AccelerateException {
+	public Cache cache() {
 		if (!this.initialized) {
-			throw new AccelerateException("Not Initialized");
+			throw new AccelerateRuntimeException("Not Initialized");
 		}
 
 		return this.cache;
@@ -247,31 +245,29 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	 * This method returns the number of keys stored in cache
 	 *
 	 * @return cache size
-	 * @throws AccelerateException
 	 */
 	@ManagedOperation(description = "This method returns the number of keys stored in cache")
 	@JsonView(JsonSummary.class)
-	public int size() throws AccelerateException {
+	public int size() {
 		if (this.initialized) {
 			return this.keyList.size();
 		}
 
-		throw new AccelerateException("Not Initialized");
+		return -1;
 	}
 
 	/**
 	 * This method returns all the keys stored in cache
 	 *
 	 * @return {@link List} instance
-	 * @throws AccelerateException
 	 */
 	@ManagedOperation(description = "This method returns all the keys stored in cache")
-	public Set<K> keys() throws AccelerateException {
+	public Set<K> keys() {
 		if (this.initialized) {
 			return this.keyList;
 		}
 
-		throw new AccelerateException("Not Initialized");
+		return Collections.emptySet();
 	}
 
 	/**
@@ -304,12 +300,11 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	 * @param aKey
 	 *            key to be looked up in the cache
 	 * @return value instance stored against the key
-	 * @throws AccelerateException
 	 */
 	@SuppressWarnings("unchecked")
-	public V get(K aKey) throws AccelerateException {
+	public V get(K aKey) {
 		if (!this.initialized) {
-			throw new AccelerateException("Not Initialized");
+			throw new AccelerateRuntimeException("Not Initialized");
 		}
 
 		V value = null;
@@ -337,7 +332,7 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	@ManagedOperation(description = "This method returns the JSON form of value stored in cache against the given key")
 	public String getSerialized(String aKeyString) throws AccelerateException {
 		if (!this.initialized) {
-			throw new AccelerateException("Not Initialized");
+			throw new AccelerateRuntimeException("Not Initialized");
 		}
 
 		K key = JSONUtil.deserialize(aKeyString, this.keyClass);
@@ -353,11 +348,10 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	 *            key against which the value should be stored
 	 * @param aValue
 	 *            value which has to be added to the cache
-	 * @throws AccelerateException
 	 */
-	public void put(K aKey, V aValue) throws AccelerateException {
+	public void put(K aKey, V aValue) {
 		if (!this.initialized) {
-			throw new AccelerateException("Not Initialized");
+			throw new AccelerateRuntimeException("Not Initialized");
 		}
 
 		this.cache.put(aKey, aValue);
@@ -379,7 +373,7 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	@ManagedOperation(description = "This method stores the given key-value pair in cache after converting them")
 	public void putSerialized(String aKeyString, String aValueString) throws AccelerateException {
 		if (!this.initialized) {
-			throw new AccelerateException("Not Initialized");
+			throw new AccelerateRuntimeException("Not Initialized");
 		}
 
 		K key = JSONUtil.deserialize(aKeyString, this.keyClass);
@@ -399,12 +393,11 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	 * @param aKey
 	 *            cache key which is to be removed
 	 * @return value that was removed. null, if the key was not found in the map
-	 * @throws AccelerateException
 	 */
 	@SuppressWarnings("unchecked")
-	public V delete(K aKey) throws AccelerateException {
+	public V delete(K aKey) {
 		if (!this.initialized) {
-			throw new AccelerateException("Not Initialized");
+			throw new AccelerateRuntimeException("Not Initialized");
 		}
 
 		V value = null;
@@ -564,9 +557,9 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	 * @param aKey
 	 *            Key for which the value is to be fetched
 	 * @return Value retrieved from the data source
-	 * @throws AccelerateException
+	 * @throws AccelerateRuntimeException
 	 */
-	protected abstract V fetch(K aKey) throws AccelerateException;
+	protected abstract V fetch(K aKey) throws AccelerateRuntimeException;
 
 	/**
 	 * This method calculates the cache duration to determine when the cache is
@@ -604,12 +597,12 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	}
 
 	@SuppressWarnings("javadoc")
-	public interface JsonSummary {
+	private interface JsonSummary {
 		// marker interface
 	}
 
 	@SuppressWarnings("javadoc")
-	public interface JsonDetails {
+	private interface JsonDetails {
 		// marker interface
 	}
 }

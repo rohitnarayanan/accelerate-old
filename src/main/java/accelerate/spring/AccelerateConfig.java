@@ -35,12 +35,6 @@ import accelerate.cache.AccelerateCache;
 @Profile("accelerate")
 public class AccelerateConfig {
 	/**
-	 * 
-	 */
-	@Autowired
-	protected static ApplicationContext applicationContext = null;
-
-	/**
 	 * @return {@link PropertySourcesPlaceholderConfigurer} instance to inject
 	 *         properties into beans
 	 */
@@ -79,17 +73,6 @@ public class AccelerateConfig {
 			resolver.setDefaultErrorView("forward:/aclUtil/error");
 			return resolver;
 		}
-
-		// /**
-		// * @return
-		// */
-		// @Bean
-		// @ConditionalOnProperty(name = "accelerate.web.jsonconverter")
-		// public static MappingJackson2HttpMessageConverter customizeJackson()
-		// {
-		// return new
-		// MappingJackson2HttpMessageConverter(JSONUtil.objectMapper());
-		// }
 	}
 
 	/**
@@ -102,6 +85,12 @@ public class AccelerateConfig {
 	@Configuration
 	@ConditionalOnProperty(name = "accelerate.web.ui")
 	public static class AccelerateUIConfig extends WebMvcConfigurerAdapter {
+		/**
+		 * 
+		 */
+		@Autowired
+		private ApplicationContext applicationContext = null;
+
 		/**
 		 * 
 		 */
@@ -132,7 +121,7 @@ public class AccelerateConfig {
 				}
 			};
 
-			resolver.setApplicationContext(applicationContext);
+			resolver.setApplicationContext(this.applicationContext);
 			resolver.setCacheable(this.thymeleafProperties.isCache());
 			resolver.setPrefix(this.thymeleafProperties.getPrefix());
 			resolver.setSuffix(this.thymeleafProperties.getSuffix());
