@@ -397,7 +397,7 @@ public class FileRenamer {
 			}
 
 			if (this.input.convertRomanToNumber) {
-				String val = this.input.configProps.get(StringUtil.createKey("Roman", upperCase));
+				String val = this.input.configProps.get(StringUtil.join("Roman", upperCase));
 				if (val != null) {
 					_logger.debug("*********Returning '{}' for '{}'", val, aToken);
 					return val;
@@ -405,7 +405,7 @@ public class FileRenamer {
 			}
 
 			if (this.input.convertStringToNumber) {
-				String val = this.input.configProps.get(StringUtil.createKey("Name", upperCase));
+				String val = this.input.configProps.get(StringUtil.join("Name", upperCase));
 				if (val != null) {
 					_logger.debug("*********Returning '{}' for '{}'", val, aToken);
 					return val;

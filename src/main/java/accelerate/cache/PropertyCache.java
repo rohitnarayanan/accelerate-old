@@ -5,7 +5,7 @@ import static accelerate.util.AccelerateConstants.YES;
 import static accelerate.util.AppUtil.compare;
 import static accelerate.util.AppUtil.isEmpty;
 import static accelerate.util.ResourceUtil.LoadPropertyMap;
-import static accelerate.util.StringUtil.createKey;
+import static accelerate.util.StringUtil.join;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -143,7 +143,7 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 */
 	@ManagedOperation(description = "This method returns the element stored in cache against the given key")
 	public String get(String... aPropertyKeys) {
-		return get(createKey(aPropertyKeys));
+		return get(join(aPropertyKeys));
 	}
 
 	/**
@@ -213,7 +213,7 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 * @return int value for the property
 	 */
 	public int getIntProperty(String... aPropertyKeys) {
-		return getIntProperty(createKey(aPropertyKeys));
+		return getIntProperty(join(aPropertyKeys));
 	}
 
 	/**
@@ -238,7 +238,7 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 * @return array of values
 	 */
 	public String[] getPropertyList(String... aPropertyKeys) {
-		return getPropertyList(createKey(aPropertyKeys));
+		return getPropertyList(join(aPropertyKeys));
 	}
 
 	/*
@@ -274,7 +274,7 @@ public class PropertyCache extends AccelerateCache<String, String> {
 		}
 
 		final Map<String, String> propertyMap = LoadPropertyMap(this.applicationContext, getConfigURL());
-		if (compare(propertyMap.get(createKey(this.profileName, "fetchFromDB")), YES)) {
+		if (compare(propertyMap.get(join(this.profileName, "fetchFromDB")), YES)) {
 			final int length = !isEmpty(this.profileName) ? this.profileName.length() + 1 : 0;
 
 			StringBuilder sql = new StringBuilder();

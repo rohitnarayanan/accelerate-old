@@ -6,7 +6,7 @@ import static accelerate.util.AccelerateConstants.NEW_LINE;
 import static accelerate.util.AccelerateConstants.UNIX_PATH_CHAR;
 import static accelerate.util.AppUtil.compare;
 import static accelerate.util.AppUtil.isEmpty;
-import static accelerate.util.StringUtil.createKey;
+import static accelerate.util.StringUtil.join;
 import static java.lang.String.valueOf;
 
 import java.io.BufferedReader;
@@ -451,7 +451,7 @@ public final class FileUtil {
 				sectionSize = aTargetFile.length() / aSplitSize;
 			}
 
-			File splitFile = new File(outputDir, createKey(name, valueOf(sectionCount), extn));
+			File splitFile = new File(outputDir, join(name, valueOf(sectionCount), extn));
 
 			@SuppressWarnings("resource")
 			BufferedWriter writer = new BufferedWriter(new FileWriter(splitFile));
@@ -471,7 +471,7 @@ public final class FileUtil {
 
 						sectionCount++;
 						byteCount = 0;
-						splitFile = new File(outputDir, createKey(name, valueOf(sectionCount), extn));
+						splitFile = new File(outputDir, join(name, valueOf(sectionCount), extn));
 
 						writer = new BufferedWriter(new FileWriter(splitFile));
 					}

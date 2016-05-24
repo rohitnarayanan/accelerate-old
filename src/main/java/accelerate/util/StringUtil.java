@@ -3,17 +3,19 @@ package accelerate.util;
 import static accelerate.util.AccelerateConstants.DOT_CHAR;
 import static accelerate.util.AccelerateConstants.EMPTY_STRING;
 import static accelerate.util.AppUtil.isEmpty;
-import static accelerate.util.CollectionUtil.toList;
 import static accelerate.util.UtilCache.getPattern;
 
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-import accelerate.exception.AccelerateException;
+import accelerate.exception.AccelerateRuntimeException;
 
 /**
  * This class provides utility methods for the application
@@ -104,17 +106,8 @@ public final class StringUtil {
 	 *            - List of keys
 	 * @return dot delimited key string
 	 */
-	public static String createKey(List<? extends CharSequence> aKeys) {
-		return createKey(aKeys, DOT_CHAR);
-	}
-
-	/**
-	 * @param aKeys
-	 *            - List of keys
-	 * @return dot delimited key string
-	 */
-	public static String createKey(CharSequence... aKeys) {
-		return createKey(CollectionUtil.toList(aKeys), DOT_CHAR);
+	public static String join(CharSequence... aKeys) {
+		return join(CollectionUtil.toList(aKeys), DOT_CHAR);
 	}
 
 	/**
@@ -124,32 +117,12 @@ public final class StringUtil {
 	 *            - Delimiting character
 	 * @return key string delimited by given character
 	 */
-	public static String createKey(List<? extends CharSequence> aKeys, CharSequence aDelim) {
+	public static String join(List<? extends CharSequence> aKeys, CharSequence aDelim) {
 		if (isEmpty(aKeys)) {
 			return EMPTY_STRING;
 		}
 
-		CharSequence delim = (aDelim != null) ? aDelim : EMPTY_STRING;
-
-		StringBuilder keyBuffer = new StringBuilder();
-		aKeys.forEach(key -> {
-			if (AppUtil.isEmpty(key)) {
-				keyBuffer.append(key).append(delim);
-			}
-		});
-
-		return extractUpto(keyBuffer, 0, delim.length());
-	}
-
-	/**
-	 * @param aKeys
-	 *            - List of keys
-	 * @param aDelim
-	 *            - Delimiting character
-	 * @return key string delimited by given character
-	 */
-	public static String createKey(CharSequence[] aKeys, CharSequence aDelim) {
-		return createKey(CollectionUtil.toList(aKeys), aDelim);
+		return aKeys.stream().collect(Collectors.joining((aDelim != null) ? aDelim : EMPTY_STRING));
 	}
 
 	/**
@@ -184,201 +157,52 @@ public final class StringUtil {
 	}
 
 	/**
-	 * @param aPrefix
-	 *            - prefix to be searched
-	 * @param aSearchList
-	 *            - List of string inputs to search
-	 * @return true if match found
-	 */
-	public static boolean prefixesAny(CharSequence aPrefix, List<? extends CharSequence> aSearchList) {
-		return searchForPrefixSuffix(aPrefix, false, aSearchList);
-
-	}
-
-	/**
-	 * @param aPrefix
-	 *            - prefix to be searched
-	 * @param aSearchList
-	 *            - Variable number of string inputs to search
-	 * @return true if match found
-	 */
-	public static boolean prefixesAny(CharSequence aPrefix, CharSequence... aSearchList) {
-		return prefixesAny(aPrefix, toList(aSearchList));
-	}
-
-	/**
-	 * @param aSuffix
-	 *            - prefix to be searched
-	 * @param aSearchList
-	 *            - List of string inputs to search
-	 * @return true if match found
-	 */
-	public static boolean suffixesAny(CharSequence aSuffix, List<? extends CharSequence> aSearchList) {
-		return searchForPrefixSuffix(aSuffix, true, aSearchList);
-	}
-
-	/**
-	 * @param aSuffix
-	 *            - prefix to be searched
-	 * @param aSearchList
-	 *            - Variable number of string inputs to search
-	 * @return true if match found
-	 */
-	public static boolean suffixesAny(CharSequence aSuffix, CharSequence... aSearchList) {
-		return suffixesAny(aSuffix, toList(aSearchList));
-	}
-
-	/**
-	 * @param aMatch
-	 *            - prefix to be searched
-	 * @param aSearchList
-	 *            - List of string inputs to search
-	 * @param aSuffix
-	 *            - Flag to indicate suffix is to be matched
-	 * @return true if match found
-	 */
-	public static boolean searchForPrefixSuffix(CharSequence aMatch, boolean aSuffix,
-			List<? extends CharSequence> aSearchList) {
-		if ((aMatch == null) || (aSearchList == null)) {
-			return false;
-		}
-
-		String match = aMatch.toString();
-		for (CharSequence source : aSearchList) {
-			if (source == null) {
-				continue;
-			}
-
-			if (aSuffix) {
-				if (source.toString().endsWith(match)) {
-					return true;
-				}
-			} else {
-				if (source.toString().startsWith(match)) {
-					return true;
-				}
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * @param aSearchString
-	 *            - prefix to be searched
-	 * @param aPrefixList
-	 *            - List of string inputs to search
-	 * @return true if match found
-	 */
-	public static boolean prefixedByAny(CharSequence aSearchString, List<? extends CharSequence> aPrefixList) {
-		return matchForPrefixSuffix(aSearchString, false, aPrefixList);
-	}
-
-	/**
-	 * @param aSearchString
-	 *            - prefix to be searched
-	 * @param aPrefixList
-	 *            - Variable number of string inputs to search
-	 * @return true if match found
-	 */
-	public static boolean prefixedByAny(CharSequence aSearchString, CharSequence... aPrefixList) {
-		return prefixedByAny(aSearchString, toList(aPrefixList));
-	}
-
-	/**
-	 * @param aSearchString
-	 *            - prefix to be searched
-	 * @param aSuffixList
-	 *            - List of string inputs to search
-	 * @return true if match found
-	 */
-	public static boolean suffixedByAny(CharSequence aSearchString, List<? extends CharSequence> aSuffixList) {
-		return matchForPrefixSuffix(aSearchString, true, aSuffixList);
-	}
-
-	/**
-	 * @param aSearchString
-	 *            - prefix to be searched
-	 * @param aSuffixList
-	 *            - Variable number of string inputs to search
-	 * @return true if match found
-	 */
-	public static boolean suffixedByAny(CharSequence aSearchString, CharSequence... aSuffixList) {
-		return suffixedByAny(aSearchString, toList(aSuffixList));
-	}
-
-	/**
-	 * @param aSearchPattern
-	 *            - pattern to be searched
-	 * @param aMatchList
-	 *            - List of string inputs to search
-	 * @param aSuffix
-	 *            - Flag to indicate suffix is to be matched
-	 * @return true if match found
-	 */
-	public static boolean matchForPrefixSuffix(CharSequence aSearchPattern, boolean aSuffix,
-			List<? extends CharSequence> aMatchList) {
-		if (isEmpty(aSearchPattern) || isEmpty(aMatchList)) {
-			return false;
-		}
-
-		String searchString = aSearchPattern.toString();
-		for (CharSequence match : aMatchList) {
-			if (match == null) {
-				continue;
-			}
-
-			String matchString = match.toString();
-			if (aSuffix) {
-				if (searchString.endsWith(matchString)) {
-					return true;
-				}
-			} else {
-				if (searchString.startsWith(matchString)) {
-					return true;
-				}
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * @param aPattern
-	 *            - Pattern to be searched
-	 * @param aCompareList
-	 *            - List of string inputs to search
-	 * @return true if match found
-	 */
-	public static boolean matchesAny(CharSequence aPattern, CharSequence... aCompareList) {
-		return matchesAny(aPattern, toList(aCompareList));
-	}
-
-	/**
 	 * @param aPattern
 	 *            - Pattern to be searched
 	 * @param aCompareList
 	 *            - Variable number of string inputs to search
 	 * @return true if match found
 	 */
-	public static boolean matchesAny(CharSequence aPattern, List<? extends CharSequence> aCompareList) {
-		if ((aPattern == null) || isEmpty((aCompareList))) {
-			return false;
+	public static List<String> grep(CharSequence aPattern, List<String> aCompareList) {
+		if (isEmpty(aPattern) || isEmpty((aCompareList))) {
+			return Collections.emptyList();
 		}
 
 		Matcher matcher = getPattern(aPattern.toString()).matcher(EMPTY_STRING);
-		for (CharSequence compareValue : aCompareList) {
-			if (compareValue == null) {
-				continue;
-			}
 
-			matcher.reset(compareValue);
-			if (matcher.find()) {
-				return true;
-			}
+		return aCompareList.stream().filter(aValue -> {
+			matcher.reset(aValue);
+			return matcher.find();
+		}).collect(Collectors.toList());
+	}
+
+	/**
+	 * @param aPattern
+	 *            - Pattern to be searched
+	 * @param aCompareList
+	 *            - Variable number of string inputs to search
+	 * @return true if match found
+	 */
+	public static boolean grepCheck(CharSequence aPattern, List<String> aCompareList) {
+		return grep(aPattern, aCompareList).isEmpty();
+	}
+
+	/**
+	 * @param aTargetString
+	 *            - Target string to search
+	 * @param aPatternList
+	 *            - List of patterns to be searched
+	 * @return true if match found
+	 */
+	public static boolean search(CharSequence aTargetString, List<String> aPatternList) {
+		if (isEmpty(aTargetString) || isEmpty((aPatternList))) {
+			return false;
 		}
 
-		return false;
+		return aPatternList.stream().filter(aPattern -> {
+			Matcher matcher = Pattern.compile(aPattern.toString()).matcher(aTargetString);
+			return matcher.find();
+		}).collect(Collectors.toList()).isEmpty();
 	}
 
 	/**
@@ -395,87 +219,31 @@ public final class StringUtil {
 	}
 
 	/**
-	 * @param aSplitLine
+	 * @param aInputString
 	 * @param aRecordDelim
 	 * @param aFieldDelim
 	 * @return array of delimited values
 	 */
-	public static Map<String, String> multiSplit(CharSequence aSplitLine, CharSequence aRecordDelim,
+	public static Map<String, String> multiSplit(CharSequence aInputString, CharSequence aRecordDelim,
 			CharSequence aFieldDelim) {
-		Map<String, String> tokenMap = new HashMap<>();
-
-		if (isEmpty(aSplitLine)) {
-			return tokenMap;
+		if (isEmpty(aInputString)) {
+			return Collections.emptyMap();
 		}
 
-		String[] records = getPattern(aRecordDelim.toString()).split(aSplitLine);
-		for (String record : records) {
-			String[] fields = getPattern(aFieldDelim.toString()).split(record);
+		Map<String, String> tokenMap = new HashMap<>();
+
+		Arrays.stream(StringUtil.split(aInputString, aRecordDelim)).forEach(aLine -> {
+			String[] fields = StringUtil.split(aLine, aFieldDelim);
 			if (fields.length == 1) {
 				tokenMap.put(fields[0], null);
 			} else if (fields.length == 2) {
 				tokenMap.put(fields[0], fields[1]);
 			} else {
-				tokenMap.put(JSONUtil.serialize(fields), null);
+				throw new AccelerateRuntimeException("3 or more fields in record %s", aLine);
 			}
-		}
+		});
 
 		return tokenMap;
-	}
-
-	/**
-	 * This is a convenience method which breaks down the given input string
-	 * separated by the given delimiter and creates a {@link List} of
-	 * {@link Integer} values.
-	 *
-	 * @param aInputString
-	 *            input string following the format '{value1}{aDelim}{value2}'
-	 * @param aDelim
-	 *            the delimiter separating the long values
-	 * @return {@link List} of {@link Integer} values
-	 */
-	public static List<Integer> convertToList(String aInputString, String aDelim) {
-		List<Integer> valueList = new ArrayList<>();
-
-		Arrays.stream(StringUtil.split(aInputString, aDelim)).forEach(v -> valueList.add(Integer.valueOf(v)));
-
-		return valueList;
-	}
-
-	/**
-	 * This is a convenience method which breaks down the given input string
-	 * separated by the given delimiter and creates a {@link List} of
-	 * {@link Long} values.
-	 *
-	 * @param aInputString
-	 *            input string following the format '{value1}{aDelim}{value2}'
-	 * @param aDelim
-	 *            the delimiter separating the long values
-	 * @return {@link List} of {@link Long} values
-	 */
-	public static List<Long> convertToLongList(String aInputString, String aDelim) {
-		List<Long> valueList = new ArrayList<>();
-		Arrays.stream(StringUtil.split(aInputString, aDelim)).forEach(v -> valueList.add(Long.valueOf(v)));
-
-		return valueList;
-	}
-
-	/**
-	 * This is a convenience method which breaks down the given input string
-	 * separated by the given delimiter and creates a {@link List} of
-	 * {@link Double} values.
-	 *
-	 * @param aInputString
-	 *            input string following the format '{value1}{aDelim}{value2}'
-	 * @param aDelim
-	 *            the delimiter separating the long values
-	 * @return {@link List} of {@link Double} values
-	 */
-	public static List<Double> convertToDoubleList(String aInputString, String aDelim) {
-		List<Double> valueList = new ArrayList<>();
-		Arrays.stream(StringUtil.split(aInputString, aDelim)).forEach(v -> valueList.add(Double.valueOf(v)));
-
-		return valueList;
 	}
 
 	/**
@@ -489,7 +257,7 @@ public final class StringUtil {
 			return EMPTY_STRING;
 		}
 
-		return extractNoCheck(aValue, aStartIndex, aEndIndex);
+		return _extract(aValue, aStartIndex, aEndIndex);
 	}
 
 	/**
@@ -506,7 +274,7 @@ public final class StringUtil {
 		int length = aValue.length();
 		int end = length - aFromEndIndex;
 
-		return extractNoCheck(aValue, aStartIndex, end);
+		return _extract(aValue, aStartIndex, end);
 	}
 
 	/**
@@ -522,7 +290,7 @@ public final class StringUtil {
 		int length = aValue.length();
 		int start = length - aFromEndIndex;
 
-		return extractNoCheck(aValue, start, length);
+		return _extract(aValue, start, length);
 	}
 
 	/**
@@ -531,43 +299,17 @@ public final class StringUtil {
 	 * @param aEndIndex
 	 * @return Clipped String
 	 */
-	private static String extractNoCheck(CharSequence aValue, int aStartIndex, int aEndIndex) {
+	private static String _extract(CharSequence aValue, int aStartIndex, int aEndIndex) {
 		int length = aValue.length();
-		int start = 0;
+		int start = (aStartIndex < 0) ? 0 : aStartIndex;
+		int end = (aEndIndex < 0) ? length : aEndIndex;
 		String value = aValue.toString();
 
-		if ((aStartIndex >= length) || ((aStartIndex >= aEndIndex) && (aEndIndex >= 0))) {
-			return EMPTY_STRING;
-		} else if (aStartIndex >= 0) {
-			start = aStartIndex;
+		if ((start < 0) || (end < 0) || (start >= length) || (end >= length) || (end < start)) {
+			throw new AccelerateRuntimeException("Invalid/Incompatible indexes");
 		}
 
-		if ((aEndIndex < 0) || (aEndIndex > length)) {
-			return value.substring(start);
-		}
-
-		return value.substring(start, aEndIndex);
-	}
-
-	/**
-	 * This method splits the given string backwards by the provided length
-	 *
-	 * @param aInput
-	 * @param aLength
-	 * @return split values
-	 */
-	public static String[] splitFromEnd(CharSequence aInput, int aLength) {
-		if (aInput == null) {
-			return null;
-		}
-
-		String[] splitValues = new String[2];
-		int length = aInput.length();
-
-		splitValues[0] = extract(aInput, 0, length - aLength);
-		splitValues[1] = extractFromEnd(aInput, aLength);
-
-		return splitValues;
+		return value.substring(start, end);
 	}
 
 	/**
@@ -576,7 +318,7 @@ public final class StringUtil {
 	 *
 	 * @param aInputString
 	 *            string to format
-	 * @param aLength
+	 * @param aTargetLength
 	 *            length of the string to return
 	 * @param aPadChar
 	 *            character to use to pad the string
@@ -584,24 +326,20 @@ public final class StringUtil {
 	 *            Flag to indicate pad direction. true for left pad and false
 	 *            for right pad
 	 * @return Formatted String
-	 * @throws AccelerateException
 	 */
-	public static String padString(String aInputString, int aLength, Character aPadChar, boolean aPadFlag)
-			throws AccelerateException {
+	public static String padString(String aInputString, int aTargetLength, Character aPadChar, boolean aPadFlag) {
 		StringBuilder buffer = new StringBuilder();
 
-		int padLength = isEmpty(aInputString) ? aLength : aInputString.length() - aLength;
+		int padLength = isEmpty(aInputString) ? aTargetLength : aInputString.length() - aTargetLength;
 		if (padLength < 0) {
-			throw new AccelerateException("Invalid arguments");
+			throw new AccelerateRuntimeException("Invalid arguments");
 		}
 
 		if (!aPadFlag) {
 			buffer.append(aInputString);
 		}
 
-		for (int count = 0; count < padLength; count++) {
-			buffer.append(aPadChar);
-		}
+		IntStream.range(0, padLength).forEach(value -> buffer.append(aPadChar));
 
 		if (aPadFlag) {
 			buffer.append(aInputString);
@@ -616,7 +354,7 @@ public final class StringUtil {
 	 * @param aInputList
 	 * @return
 	 */
-	public static String toCamelCase(String... aInputList) {
+	public static String camelCase(String... aInputList) {
 		boolean flag = true;
 		StringBuilder buffer = new StringBuilder();
 		for (String token : aInputList) {
@@ -631,61 +369,5 @@ public final class StringUtil {
 		}
 
 		return buffer.toString();
-	}
-
-	/**
-	 * This method searches for the pattern within the given String based on
-	 * Boyer-Moore algorithm
-	 *
-	 * @param aSearchPattern
-	 *            Pattern to be looked up
-	 * @param aTargetString
-	 *            Text to be searched
-	 * @return {@link List} of Indexes where the pattern was found
-	 */
-	public static List<Integer> search(String aSearchPattern, String aTargetString) {
-		List<Integer> matches = new ArrayList<>();
-		int m = aTargetString.length();
-		int n = aSearchPattern.length();
-
-		Map<Character, Integer> rightMostIndexes = new HashMap<>();
-		for (int i = aSearchPattern.length() - 1; i >= 0; i--) {
-			char c = aSearchPattern.charAt(i);
-			if (!rightMostIndexes.containsKey(c)) {
-				rightMostIndexes.put(c, i);
-			}
-		}
-
-		int alignedAt = 0;
-		while ((alignedAt + (n - 1)) < m) {
-			for (int indexInPattern = n - 1; indexInPattern >= 0; indexInPattern--) {
-				int indexInText = alignedAt + indexInPattern;
-				char x = aTargetString.charAt(indexInText);
-				char y = aSearchPattern.charAt(indexInPattern);
-
-				if (indexInText >= m) {
-					break;
-				}
-
-				if (x != y) {
-
-					Integer r = rightMostIndexes.get(x);
-
-					if (r == null) {
-						alignedAt = indexInText + 1;
-					} else {
-						int shift = indexInText - (alignedAt + r);
-						alignedAt += shift > 0 ? shift : 1;
-					}
-
-					break;
-				} else if (indexInPattern == 0) {
-					matches.add(alignedAt);
-					alignedAt++;
-				}
-
-			}
-		}
-		return matches;
 	}
 }

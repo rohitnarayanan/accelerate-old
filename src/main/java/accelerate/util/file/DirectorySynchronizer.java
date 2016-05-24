@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import accelerate.batch.AccelerateBatch;
@@ -500,6 +501,7 @@ public class DirectorySynchronizer {
 		 * @param aTargetRoot
 		 */
 		public DirSyncFileCopyTask(File aSourceFile, File aSourceRoot, File aTargetRoot, String aMode) {
+			super("DirSyncFileCopyTask-" + UUID.randomUUID());
 			this.sourceFile = aSourceFile;
 			this.sourceRoot = aSourceRoot;
 			this.targetRoot = aTargetRoot;
@@ -512,6 +514,7 @@ public class DirectorySynchronizer {
 		 * @param aConflictResult
 		 */
 		public DirSyncFileCopyTask(ConflictResult aConflictResult, String aMode) {
+			super("DirSyncFileCopyTask-" + UUID.randomUUID());
 			this.conflictResult = aConflictResult;
 			this.mode = aMode;
 		}
@@ -519,7 +522,7 @@ public class DirectorySynchronizer {
 		/**
 		 */
 		@Override
-		public void execute() {
+		protected void execute() {
 			int sourceRootIndex = this.sourceRoot.getPath().length();
 			File destination = new File(this.targetRoot, getUnixPath(this.sourceFile).substring(sourceRootIndex));
 			try {

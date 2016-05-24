@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.thymeleaf.context.WebContext;
 
-import accelerate.exception.AccelerateException;
 import accelerate.spring.AccelerateProperties;
 import accelerate.util.StringUtil;
 
@@ -88,7 +87,7 @@ public class AccelerateUtilController {
 
 			try {
 				fieldValue = StringUtil.toString(invokeGetter(aRequest, field));
-			} catch (AccelerateException error) {
+			} catch (Exception error) {
 				fieldValue = error.getMessage();
 			}
 

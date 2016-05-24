@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 
 import accelerate.databean.AccelerateDataBean;
 import accelerate.exception.AccelerateException;
-import accelerate.util.StringUtil;
 
 /**
  * Abstract implementation for {@link Runnable}
@@ -95,14 +94,6 @@ public abstract class AccelerateTask extends AccelerateDataBean implements Calla
 	private Future<AccelerateTask> future = null;
 
 	/**
-	 * default constructor
-	 */
-	public AccelerateTask() {
-		this(StringUtil.createKey("AccelerateTask", Thread.currentThread().getName(),
-				String.valueOf(System.currentTimeMillis())));
-	}
-
-	/**
 	 * Overloaded constructor
 	 *
 	 * @param aTaskKey
@@ -114,14 +105,14 @@ public abstract class AccelerateTask extends AccelerateDataBean implements Calla
 	/**
 	 * @param aConsumer
 	 */
-	public final void registerPostProcessor(Consumer<AccelerateTask> aConsumer) {
+	final void registerPostProcessor(Consumer<AccelerateTask> aConsumer) {
 		this.postProccessor = aConsumer;
 	}
 
 	/**
 	 * @param aFuture
 	 */
-	public synchronized void submitted(Future<AccelerateTask> aFuture) {
+	final synchronized void submitted(Future<AccelerateTask> aFuture) {
 		this.submitTime = System.currentTimeMillis();
 		this.future = aFuture;
 	}
@@ -129,7 +120,7 @@ public abstract class AccelerateTask extends AccelerateDataBean implements Calla
 	/**
 	 * @param aMonitor
 	 */
-	public synchronized void pause(Object aMonitor) {
+	final synchronized void pause(Object aMonitor) {
 		this.pause = true;
 		this.monitor = aMonitor;
 	}
@@ -137,7 +128,7 @@ public abstract class AccelerateTask extends AccelerateDataBean implements Calla
 	/**
 	 *
 	 */
-	public synchronized void resume() {
+	final synchronized void resume() {
 		this.pause = false;
 		this.monitor = null;
 	}
@@ -147,7 +138,7 @@ public abstract class AccelerateTask extends AccelerateDataBean implements Calla
 	 * @throws InterruptedException
 	 *
 	 */
-	public synchronized void waitForCompletion() throws InterruptedException, ExecutionException {
+	public final void waitForCompletion() throws InterruptedException, ExecutionException {
 		this.future.get();
 	}
 
@@ -182,7 +173,7 @@ public abstract class AccelerateTask extends AccelerateDataBean implements Calla
 	/**
 	 * @throws AccelerateException
 	 */
-	public abstract void execute() throws AccelerateException;
+	protected abstract void execute() throws AccelerateException;
 
 	/**
 	 * This method is a utility provided to implementations of this class to
@@ -190,7 +181,7 @@ public abstract class AccelerateTask extends AccelerateDataBean implements Calla
 	 *
 	 * @throws AccelerateException
 	 */
-	public void checkPause() throws AccelerateException {
+	final void checkPause() throws AccelerateException {
 		if (!this.pause) {
 			return;
 		}
@@ -214,15 +205,6 @@ public abstract class AccelerateTask extends AccelerateDataBean implements Calla
 	 */
 	public String getTaskKey() {
 		return this.taskKey;
-	}
-
-	/**
-	 * Setter method for "taskKey" property
-	 * 
-	 * @param aTaskKey
-	 */
-	public void setTaskKey(String aTaskKey) {
-		this.taskKey = aTaskKey;
 	}
 
 	/**

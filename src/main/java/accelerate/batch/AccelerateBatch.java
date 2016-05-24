@@ -203,16 +203,16 @@ public class AccelerateBatch<T extends AccelerateTask> extends ThreadPoolTaskExe
 
 	/**
 	 * @param aTaskList
-	 * @throws AccelerateRuntimeException
 	 */
 	@SafeVarargs
-	public final void submitTasks(T... aTaskList) throws AccelerateRuntimeException {
+	public final void submitTasks(T... aTaskList) {
 		submitTasks(toList(aTaskList));
 	}
 
 	/**
 	 * @param aTaskList
 	 * @throws AccelerateRuntimeException
+	 *             on invalid batch state or empty argument
 	 */
 	@SuppressWarnings("unchecked")
 	public final synchronized void submitTasks(List<T> aTaskList) throws AccelerateRuntimeException {

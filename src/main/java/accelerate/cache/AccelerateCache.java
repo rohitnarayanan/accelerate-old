@@ -557,9 +557,8 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	 * @param aKey
 	 *            Key for which the value is to be fetched
 	 * @return Value retrieved from the data source
-	 * @throws AccelerateRuntimeException
 	 */
-	protected abstract V fetch(K aKey) throws AccelerateRuntimeException;
+	protected abstract V fetch(K aKey);
 
 	/**
 	 * This method calculates the cache duration to determine when the cache is

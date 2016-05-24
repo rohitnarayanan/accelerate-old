@@ -22,12 +22,12 @@ import org.springframework.web.util.WebUtils;
  * @author Rohit Narayanan
  * @since Mar 10, 2016
  */
-public final class AngularUtil {
+public final class AngularJSUtil {
 
 	/**
 	 * hidden constructor
 	 */
-	private AngularUtil() {
+	private AngularJSUtil() {
 	}
 
 	/**

@@ -36,8 +36,10 @@ public final class AppUtil {
 			return ((Collection<?>) value).size() == 0;
 		} else if (value instanceof Map<?, ?>) {
 			return ((Map<?, ?>) value).isEmpty();
+		} else if (value instanceof String) {
+			return ((String) value).trim().length() == 0;
 		} else if (value instanceof CharSequence) {
-			return value.toString().trim().length() == 0;
+			return ((CharSequence) value).length() == 0;
 		}
 
 		return false;
@@ -129,17 +131,7 @@ public final class AppUtil {
 	 */
 	@SafeVarargs
 	public static <T> boolean compareAny(T aCompareValue, T... aCompareValueList) {
-		if (isEmpty(aCompareValue) || isEmpty(aCompareValueList)) {
-			return false;
-		}
-
-		for (T compareValue : aCompareValueList) {
-			if (compare(aCompareValue, compareValue)) {
-				return true;
-			}
-		}
-
-		return false;
+		return compareAny(aCompareValue, CollectionUtil.toList(aCompareValueList));
 	}
 
 	/**

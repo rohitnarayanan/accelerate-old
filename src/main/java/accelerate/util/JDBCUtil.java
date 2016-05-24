@@ -30,7 +30,7 @@ public final class JDBCUtil {
 	 * @param aJndiName
 	 * @return {@link DataSource}
 	 */
-	public static DataSource getDataSource(String aJndiName) {
+	public static final DataSource getDataSource(String aJndiName) {
 		JndiDataSourceLookup dsLookup = new JndiDataSourceLookup();
 		dsLookup.setResourceRef(true);
 		return dsLookup.getDataSource(aJndiName);
@@ -47,8 +47,8 @@ public final class JDBCUtil {
 	 * @param aConnProps
 	 * @return
 	 */
-	public static DataSource getDriverManagerDataSource(String aDbType, String aServer, int aPort, String aServiceOrSid,
-			String aDriverClassName, String aUsername, String aPassword, Properties aConnProps) {
+	public static final DataSource getDriverManagerDataSource(String aDbType, String aServer, int aPort,
+			String aServiceOrSid, String aDriverClassName, String aUsername, String aPassword, Properties aConnProps) {
 		DriverManagerDataSource dataSource = new DriverManagerDataSource();
 		dataSource.setUrl(getConnectionString(aDbType, aServer, aPort, aServiceOrSid));
 		dataSource.setDriverClassName(aDriverClassName);
@@ -71,7 +71,7 @@ public final class JDBCUtil {
 	 * @param aServiceOrSid
 	 * @return
 	 */
-	public static String getConnectionString(String aDbType, String aServer, int aPort, String aServiceOrSid) {
+	public static final String getConnectionString(String aDbType, String aServer, int aPort, String aServiceOrSid) {
 		StringBuilder connString = new StringBuilder();
 		connString.append("jdbc:");
 		connString.append(aDbType);

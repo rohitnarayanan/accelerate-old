@@ -169,13 +169,13 @@ public class AccelerateDataBean implements Serializable {
 	}
 
 	/**
-	 * Static shortcut method to build a new instance
+	 * Static shortcut method to build a new instance using
+	 * {@link #addAll(Object...)}
 	 * 
 	 * @param aArgs
 	 * @return
-	 * @throws AccelerateRuntimeException
 	 */
-	public static final AccelerateDataBean build(Object... aArgs) throws AccelerateRuntimeException {
+	public static final AccelerateDataBean build(Object... aArgs) {
 		AccelerateDataBean bean = new AccelerateDataBean();
 		bean.addAll(aArgs);
 		return bean;

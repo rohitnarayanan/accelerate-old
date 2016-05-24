@@ -1,6 +1,5 @@
 package accelerate.util.file;
 
-import static accelerate.util.AppUtil.isEmpty;
 import static accelerate.util.FileUtil.getFileName;
 
 import java.io.File;
@@ -8,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import accelerate.exception.AccelerateException;
+import accelerate.util.CollectionUtil;
 import accelerate.util.StringUtil;
 
 /**
@@ -76,7 +76,7 @@ public class FileFinder {
 		 * @param aSearchExtn
 		 */
 		public FileFinderHandler(String aSearchString, boolean aSearchExtn) {
-			this.searchString = aSearchString;
+			this.searchString = StringUtil.lower(aSearchString);
 			this.searchExtn = aSearchExtn;
 		}
 
@@ -100,11 +100,9 @@ public class FileFinder {
 		public File handleFile(File aFile) {
 			if (this.searchExtn) {
 				this.searchResults.add(aFile);
-			} else {
-				List<Integer> matches = StringUtil.search(this.searchString, getFileName(aFile).toLowerCase());
-				if (!isEmpty(matches)) {
-					this.searchResults.add(aFile);
-				}
+			} else if (StringUtil.grepCheck(this.searchString,
+					CollectionUtil.toList(getFileName(aFile).toLowerCase()))) {
+				this.searchResults.add(aFile);
 			}
 
 			return aFile;
