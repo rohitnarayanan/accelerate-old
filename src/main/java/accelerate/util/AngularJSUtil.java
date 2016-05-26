@@ -45,7 +45,7 @@ public final class AngularJSUtil {
 				if (csrf != null) {
 					Cookie cookie = WebUtils.getCookie(aRequest, "XSRF-TOKEN");
 					String token = csrf.getToken();
-					if (cookie == null || token != null && !token.equals(cookie.getValue())) {
+					if ((cookie == null) || ((token != null) && !token.equals(cookie.getValue()))) {
 						cookie = new Cookie("XSRF-TOKEN", token);
 						cookie.setPath(aRequest.getContextPath());
 						aResponse.addCookie(cookie);

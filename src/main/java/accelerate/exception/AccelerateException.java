@@ -1,5 +1,7 @@
 package accelerate.exception;
 
+import org.springframework.core.NestedRuntimeException;
+
 /**
  * This is a simple wrapper exception class that is used by the Accelerate
  * library.
@@ -8,7 +10,7 @@ package accelerate.exception;
  * @version 1.0 Initial Version
  * @since Nov 13, 2008
  */
-public class AccelerateException extends Exception {
+public class AccelerateException extends NestedRuntimeException {
 	/**
 	 * serialVersionUID
 	 */
@@ -16,18 +18,11 @@ public class AccelerateException extends Exception {
 
 	/**
 	 * Default Constructor
-	 */
-	public AccelerateException() {
-		super();
-	}
-
-	/**
-	 * Overloaded Constructor
 	 *
 	 * @param aCause
 	 */
 	public AccelerateException(Throwable aCause) {
-		super(aCause);
+		super(aCause.getMessage(), aCause);
 	}
 
 	/**
@@ -53,9 +48,8 @@ public class AccelerateException extends Exception {
 
 	/**
 	 * @param aError
-	 * @throws AccelerateException
 	 */
-	public static void checkAndThrow(Exception aError) throws AccelerateException {
+	public static void checkAndThrow(Exception aError) {
 		throw (aError instanceof AccelerateException) ? (AccelerateException) aError : new AccelerateException(aError);
 	}
 }

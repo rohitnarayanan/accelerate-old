@@ -5,9 +5,9 @@ import static accelerate.util.AccelerateConstants.EMPTY_STRING;
 import static accelerate.util.AccelerateConstants.NEW_LINE;
 import static accelerate.util.AccelerateConstants.UNIX_PATH_CHAR;
 import static accelerate.util.AppUtil.compare;
-import static accelerate.util.AppUtil.isEmpty;
 import static accelerate.util.StringUtil.join;
 import static java.lang.String.valueOf;
+import static org.springframework.util.ObjectUtils.isEmpty;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -49,9 +49,9 @@ public final class FileUtil {
 	 * @param aDirPath
 	 *            - directory path
 	 * @return message string
-	 * @throws AccelerateException
+	 * @throws IOException
 	 */
-	public static String deleteDirectory(String aDirPath) throws AccelerateException {
+	public static String deleteDirectory(String aDirPath) throws IOException {
 		return deleteDirectory(new File(aDirPath));
 	}
 
@@ -61,24 +61,20 @@ public final class FileUtil {
 	 * @param aDirFile
 	 *            - directory file
 	 * @return message string
-	 * @throws AccelerateException
+	 * @throws IOException
 	 */
-	public static String deleteDirectory(File aDirFile) throws AccelerateException {
-		try {
-			StringBuilder message = new StringBuilder();
-			if (aDirFile == null) {
-				message.append("Null Directory !!");
-			} else if (!aDirFile.exists()) {
-				message.append("Directory Not Found: ").append(aDirFile);
-			} else {
-				FileUtils.deleteDirectory(aDirFile);
-				message.append("Directory Deleted: ").append(aDirFile);
-			}
-
-			return message.toString();
-		} catch (IOException error) {
-			throw new AccelerateException(error);
+	public static String deleteDirectory(File aDirFile) throws IOException {
+		StringBuilder message = new StringBuilder();
+		if (aDirFile == null) {
+			message.append("Null Directory !!");
+		} else if (!aDirFile.exists()) {
+			message.append("Directory Not Found: ").append(aDirFile);
+		} else {
+			FileUtils.deleteDirectory(aDirFile);
+			message.append("Directory Deleted: ").append(aDirFile);
 		}
+
+		return message.toString();
 	}
 
 	/**
@@ -87,9 +83,9 @@ public final class FileUtil {
 	 * @param aDirPath
 	 *            - directory path
 	 * @return message string
-	 * @throws AccelerateException
+	 * @throws IOException
 	 */
-	public static String cleanDirectory(String aDirPath) throws AccelerateException {
+	public static String cleanDirectory(String aDirPath) throws IOException {
 		return cleanDirectory(new File(aDirPath));
 	}
 
@@ -99,9 +95,9 @@ public final class FileUtil {
 	 * @param aDirFile
 	 *            - directory file
 	 * @return message string
-	 * @throws AccelerateException
+	 * @throws IOException
 	 */
-	public static String cleanDirectory(File aDirFile) throws AccelerateException {
+	public static String cleanDirectory(File aDirFile) throws IOException {
 		StringBuilder message = new StringBuilder();
 		message.append("Cleaning directory - ").append(aDirFile);
 		message.append(deleteDirectory(aDirFile));
@@ -184,7 +180,7 @@ public final class FileUtil {
 	 * @return message string
 	 */
 	public static String deleteFiles(File... aFiles) {
-		if (AppUtil.isEmpty(aFiles)) {
+		if (isEmpty(aFiles)) {
 			return "Empty File List !! Nothing Deleted.";
 		}
 
@@ -373,9 +369,9 @@ public final class FileUtil {
 	 * @param source
 	 * @param destination
 	 * @return true, if copied successfully
-	 * @throws AccelerateException
+	 * @throws IOException
 	 */
-	public static boolean copyFile(File source, File destination) throws AccelerateException {
+	public static boolean copyFile(File source, File destination) throws IOException {
 		return copyFile(source, destination, false);
 	}
 
@@ -384,44 +380,40 @@ public final class FileUtil {
 	 * @param destination
 	 * @param overwrite
 	 * @return true, if copied successfully
-	 * @throws AccelerateException
+	 * @throws IOException
 	 */
-	public static boolean copyFile(File source, File destination, boolean overwrite) throws AccelerateException {
-		try {
-			if (destination.exists() && !overwrite) {
-				String message = "Destination (" + destination.getPath() + ") exists and overwrite is disabled !!";
-				throw new AccelerateException(message);
-			}
-
-			if (!source.exists()) {
-				String message = "Source (" + source.getPath() + ") does not exist !!";
-				throw new AccelerateException(message);
-			}
-
-			if (source.isDirectory() && destination.isFile()) {
-				String message = "Cannot copy source folder (" + source.getPath() + "), destination ("
-						+ destination.getPath() + ") is a file !!";
-				throw new AccelerateException(message);
-			}
-
-			File targetFile = destination;
-			if (destination.isDirectory()) {
-				if (source.isFile() || !compare(source.getName(), destination.getName())) {
-					targetFile = new File(destination, source.getName());
-				}
-			}
-
-			destination.getParentFile().mkdirs();
-			if (source.isDirectory()) {
-				FileUtils.copyDirectory(source, targetFile);
-			} else if (source.isFile()) {
-				FileUtils.copyFile(source, targetFile);
-			}
-
-			return targetFile.exists();
-		} catch (IOException error) {
-			throw new AccelerateException(error);
+	public static boolean copyFile(File source, File destination, boolean overwrite) throws IOException {
+		if (destination.exists() && !overwrite) {
+			String message = "Destination (" + destination.getPath() + ") exists and overwrite is disabled !!";
+			throw new AccelerateException(message);
 		}
+
+		if (!source.exists()) {
+			String message = "Source (" + source.getPath() + ") does not exist !!";
+			throw new AccelerateException(message);
+		}
+
+		if (source.isDirectory() && destination.isFile()) {
+			String message = "Cannot copy source folder (" + source.getPath() + "), destination ("
+					+ destination.getPath() + ") is a file !!";
+			throw new AccelerateException(message);
+		}
+
+		File targetFile = destination;
+		if (destination.isDirectory()) {
+			if (source.isFile() || !compare(source.getName(), destination.getName())) {
+				targetFile = new File(destination, source.getName());
+			}
+		}
+
+		destination.getParentFile().mkdirs();
+		if (source.isDirectory()) {
+			FileUtils.copyDirectory(source, targetFile);
+		} else if (source.isFile()) {
+			FileUtils.copyFile(source, targetFile);
+		}
+
+		return targetFile.exists();
 	}
 
 	/**
@@ -430,8 +422,9 @@ public final class FileUtil {
 	 * @param aSplitEqually
 	 * @return message
 	 * @throws AccelerateException
+	 * @throws IOException
 	 */
-	public static String splitFile(File aTargetFile, int aSplitSize, boolean aSplitEqually) throws AccelerateException {
+	public static String splitFile(File aTargetFile, int aSplitSize, boolean aSplitEqually) throws IOException {
 		StringBuilder message = new StringBuilder();
 
 		try (BufferedReader errorLogReader = new BufferedReader(new FileReader(aTargetFile));) {
@@ -487,8 +480,6 @@ public final class FileUtil {
 			message.append(splitFile.getName()).append(NEW_LINE).append(NEW_LINE);
 			message.append("process finished in ").append(System.currentTimeMillis() - l).append("ms").append(NEW_LINE);
 			return message.toString();
-		} catch (IOException error) {
-			throw new AccelerateException(error);
 		}
 	}
 
@@ -588,44 +579,36 @@ public final class FileUtil {
 	/**
 	 * @param aFilePath
 	 * @return {@link BufferedReader}
-	 * @throws AccelerateException
+	 * @throws IOException
 	 */
-	public static BufferedReader getBufferedReader(String aFilePath) throws AccelerateException {
+	public static BufferedReader getBufferedReader(String aFilePath) throws IOException {
 		return getBufferedReader(new File(aFilePath));
 	}
 
 	/**
 	 * @param aFile
 	 * @return {@link BufferedReader}
-	 * @throws AccelerateException
+	 * @throws IOException
 	 */
-	public static BufferedReader getBufferedReader(File aFile) throws AccelerateException {
-		try {
-			return new BufferedReader(new FileReader(aFile));
-		} catch (IOException error) {
-			throw new AccelerateException(error);
-		}
+	public static BufferedReader getBufferedReader(File aFile) throws IOException {
+		return new BufferedReader(new FileReader(aFile));
 	}
 
 	/**
 	 * @param aFilePath
 	 * @return {@link BufferedWriter}
-	 * @throws AccelerateException
+	 * @throws IOException
 	 */
-	public static BufferedWriter getBufferedWriter(String aFilePath) throws AccelerateException {
+	public static BufferedWriter getBufferedWriter(String aFilePath) throws IOException {
 		return getBufferedWriter(new File(aFilePath));
 	}
 
 	/**
 	 * @param aFile
 	 * @return {@link BufferedWriter}
-	 * @throws AccelerateException
+	 * @throws IOException
 	 */
-	public static BufferedWriter getBufferedWriter(File aFile) throws AccelerateException {
-		try {
-			return new BufferedWriter(new FileWriter(aFile));
-		} catch (IOException error) {
-			throw new AccelerateException(error);
-		}
+	public static BufferedWriter getBufferedWriter(File aFile) throws IOException {
+		return new BufferedWriter(new FileWriter(aFile));
 	}
 }

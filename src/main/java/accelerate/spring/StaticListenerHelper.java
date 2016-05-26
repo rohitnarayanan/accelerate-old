@@ -24,11 +24,11 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StopWatch;
 
 import accelerate.cache.AccelerateCache;
 import accelerate.exception.AccelerateException;
-import accelerate.exception.AccelerateRuntimeException;
 import accelerate.logging.AuditLoggerAspect;
 import accelerate.logging.Auditable;
 import accelerate.util.AppUtil;
@@ -198,7 +198,7 @@ public class StaticListenerHelper implements ApplicationListener<ApplicationRead
 				ReflectionUtil.invokeMethod(targetClass, null, aHandlerMap.get(aHandlerKey),
 						new Class<?>[] { ApplicationContext.class }, new Object[] { this.applicationContext });
 			} catch (Exception error) {
-				throw new AccelerateRuntimeException(error);
+				throw new AccelerateException(error);
 			}
 		});
 	}
@@ -209,7 +209,7 @@ public class StaticListenerHelper implements ApplicationListener<ApplicationRead
 	@Auditable
 	public void notifyCacheLoad(AccelerateCache<?, ?> aCache) {
 		Map<String, String> listenerMap = this.staticCacheListeners.get(aCache.name());
-		if (AppUtil.isEmpty(listenerMap)) {
+		if (ObjectUtils.isEmpty(listenerMap)) {
 			return;
 		}
 
@@ -218,8 +218,8 @@ public class StaticListenerHelper implements ApplicationListener<ApplicationRead
 				Class<?> targetClass = Class.forName(aClassName);
 				ReflectionUtil.invokeMethod(targetClass, null, aHandlerName, new Class<?>[] { aCache.getClass() },
 						new Object[] { aCache });
-			} catch (Exception error) {
-				throw new AccelerateRuntimeException(error);
+			} catch (ClassNotFoundException error) {
+				throw new AccelerateException(error);
 			}
 		});
 	}

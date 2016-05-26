@@ -6,7 +6,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import accelerate.exception.AccelerateException;
 import accelerate.util.CollectionUtil;
 import accelerate.util.StringUtil;
 
@@ -25,9 +24,8 @@ public class FileFinder {
 	 * @param aNamePattern
 	 *            text to be searched in the filename
 	 * @return {@link List} of {@link File} that match the search criteria
-	 * @throws AccelerateException
 	 */
-	public static List<File> find(String aRootPath, String aNamePattern) throws AccelerateException {
+	public static List<File> find(String aRootPath, String aNamePattern) {
 		FileFinderHandler handler = new FileFinderHandler(aNamePattern, false);
 		DirectoryParser.execute(aRootPath, handler);
 
@@ -40,9 +38,8 @@ public class FileFinder {
 	 * @param aSearchExtn
 	 *            extension of the file
 	 * @return {@link List} of {@link File} that match the search criteria
-	 * @throws AccelerateException
 	 */
-	public static List<File> findByExtn(String aRootPath, String aSearchExtn) throws AccelerateException {
+	public static List<File> findByExtn(String aRootPath, String aSearchExtn) {
 		FileFinderHandler handler = new FileFinderHandler(aSearchExtn, true);
 		DirectoryParser.execute(aRootPath, handler);
 

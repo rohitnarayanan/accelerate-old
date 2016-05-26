@@ -1,5 +1,6 @@
 package accelerate.cache;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Date;
@@ -18,15 +19,12 @@ import org.springframework.cache.CacheManager;
 import org.springframework.context.ApplicationContext;
 import org.springframework.jmx.export.annotation.ManagedOperation;
 import org.springframework.jmx.export.annotation.ManagedResource;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.Scheduled;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonView;
 
 import accelerate.exception.AccelerateException;
-import accelerate.exception.AccelerateRuntimeException;
 import accelerate.spring.StaticListenerHelper;
 import accelerate.util.JSONUtil;
 import accelerate.util.StringUtil;
@@ -178,7 +176,7 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	@ManagedOperation(description = "This method sets the age of the cache")
 	public void age(String aCacheAge) {
 		if (!isLoadedAtStartup()) {
-			throw new AccelerateRuntimeException("Cache Not LoadedAtStartup");
+			throw new AccelerateException("Cache Not LoadedAtStartup");
 		}
 
 		this.cacheAge = aCacheAge;
@@ -235,7 +233,7 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	 */
 	public Cache cache() {
 		if (!this.initialized) {
-			throw new AccelerateRuntimeException("Not Initialized");
+			throw new AccelerateException("Not Initialized");
 		}
 
 		return this.cache;
@@ -304,7 +302,7 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	@SuppressWarnings("unchecked")
 	public V get(K aKey) {
 		if (!this.initialized) {
-			throw new AccelerateRuntimeException("Not Initialized");
+			throw new AccelerateException("Not Initialized");
 		}
 
 		V value = null;
@@ -328,11 +326,12 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	 *            key string to fetch value stored in the cache
 	 * @return value instance stored against the key
 	 * @throws AccelerateException
+	 * @throws IOException
 	 */
 	@ManagedOperation(description = "This method returns the JSON form of value stored in cache against the given key")
-	public String getSerialized(String aKeyString) throws AccelerateException {
+	public String getSerialized(String aKeyString) throws AccelerateException, IOException {
 		if (!this.initialized) {
-			throw new AccelerateRuntimeException("Not Initialized");
+			throw new AccelerateException("Not Initialized");
 		}
 
 		K key = JSONUtil.deserialize(aKeyString, this.keyClass);
@@ -351,7 +350,7 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	 */
 	public void put(K aKey, V aValue) {
 		if (!this.initialized) {
-			throw new AccelerateRuntimeException("Not Initialized");
+			throw new AccelerateException("Not Initialized");
 		}
 
 		this.cache.put(aKey, aValue);
@@ -368,12 +367,13 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	 *            Value to be stored in the cache. It can be a simple String or
 	 *            JSON representation
 	 * @throws AccelerateException
+	 * @throws IOException
 	 */
 	@SuppressWarnings("unchecked")
 	@ManagedOperation(description = "This method stores the given key-value pair in cache after converting them")
-	public void putSerialized(String aKeyString, String aValueString) throws AccelerateException {
+	public void putSerialized(String aKeyString, String aValueString) throws AccelerateException, IOException {
 		if (!this.initialized) {
-			throw new AccelerateRuntimeException("Not Initialized");
+			throw new AccelerateException("Not Initialized");
 		}
 
 		K key = JSONUtil.deserialize(aKeyString, this.keyClass);
@@ -393,11 +393,12 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	 * @param aKey
 	 *            cache key which is to be removed
 	 * @return value that was removed. null, if the key was not found in the map
+	 * @throws AccelerateException
 	 */
 	@SuppressWarnings("unchecked")
-	public V delete(K aKey) {
+	public V delete(K aKey) throws AccelerateException {
 		if (!this.initialized) {
-			throw new AccelerateRuntimeException("Not Initialized");
+			throw new AccelerateException("Not Initialized");
 		}
 
 		V value = null;
@@ -514,31 +515,13 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	}
 
 	/**
-	 * @throws AccelerateException
-	 */
-	@Scheduled(fixedDelay = 60000)
-	@Async
-	protected void scheduleRefresh() throws AccelerateException {
-		if (!this.initialized) {
-			throw new AccelerateException("Not Initialized");
-		}
-
-		if (!this.refreshable) {
-			return;
-		}
-
-		if ((System.currentTimeMillis() - this.cacheRefreshedTime) > this.cacheDuration) {
-			refresh();
-		}
-	}
-
-	/**
-	 * This method returns true if the data for this cache is loaded at once at
-	 * startup, else false
+	 * This method implementation should return true if the cache loads all data
+	 * at startup, and return false if the cache is loaded as used on an ongoing
+	 * basis.
 	 *
 	 * @return boolean value
 	 */
-	public abstract boolean isLoadedAtStartup();
+	protected abstract boolean isLoadedAtStartup();
 
 	/**
 	 * This method fetches the data to be loaded into the cache, from the data

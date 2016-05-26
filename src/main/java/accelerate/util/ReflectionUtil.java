@@ -3,10 +3,10 @@ package accelerate.util;
 import static accelerate.util.StringUtil.camelCase;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import accelerate.exception.AccelerateException;
-import accelerate.exception.AccelerateRuntimeException;
 
 /**
  * This class provides utility methods for the application
@@ -29,13 +29,14 @@ public final class ReflectionUtil {
 	 * @param aTargetField
 	 * @return
 	 * @throws AccelerateException
-	 *             on {@link Field} operations
+	 *             - Wrapping the following exceptions thrown due to
+	 *             {@link Field} operations - {@link IllegalArgumentException} |
+	 *             {@link IllegalAccessException} | {@link NoSuchFieldException}
+	 *             | {@link SecurityException}
 	 */
 	public static Object getFieldValue(Class<?> aTargetClass, Object aTargetInstance, String aTargetField)
 			throws AccelerateException {
-		if (AppUtil.isEmptyAny(aTargetClass, aTargetInstance, aTargetField)) {
-			throw new AccelerateException("Invalid Call. All arguments are required");
-		}
+		AppUtil.assertEmpty("Invalid Call. All arguments are required", aTargetClass, aTargetInstance, aTargetField);
 
 		try {
 			Field field = aTargetClass.getField(aTargetField);
@@ -57,12 +58,16 @@ public final class ReflectionUtil {
 	 * @param aFieldValue
 	 * @throws AccelerateException
 	 *             on {@link Field} operations
+	 * @throws AccelerateException
+	 *             - Wrapping the following exceptions thrown due to
+	 *             {@link Field} operations - {@link IllegalArgumentException} |
+	 *             {@link IllegalAccessException} | {@link NoSuchFieldException}
+	 *             | {@link SecurityException}
 	 */
 	public static void setFieldValue(Class<?> aTargetClass, Object aTargetInstance, String aTargetField,
 			Object aFieldValue) throws AccelerateException {
-		if (AppUtil.isEmptyAny(aTargetClass, aTargetInstance, aTargetField, aFieldValue)) {
-			throw new AccelerateRuntimeException("Invalid Call. All arguments are required");
-		}
+		AppUtil.assertEmpty("Invalid Call. All arguments are required", aTargetClass, aTargetInstance, aTargetField,
+				aFieldValue);
 
 		try {
 			Field field = aTargetClass.getField(aTargetField);
@@ -78,27 +83,34 @@ public final class ReflectionUtil {
 	/**
 	 * @param aTargetClass
 	 * @param aTargetInstance
-	 * @param aTargetMethod
+	 * @param aTargetMethodName
 	 * @param aMethodArgTypes
 	 * @param aMethodArgs
 	 * @return
+	 * @throws AccelerateException
+	 *             - Wrapping the following exceptions thrown due to
+	 *             {@link Method} operations - {@link NoSuchMethodException} |
+	 *             {@link SecurityException} | {@link IllegalAccessException} |
+	 *             {@link IllegalArgumentException} |
+	 *             {@link InvocationTargetException}
+	 * 
 	 */
-	public static Object invokeMethod(Class<?> aTargetClass, Object aTargetInstance, String aTargetMethod,
-			Class<?>[] aMethodArgTypes, Object[] aMethodArgs) {
-		if (AppUtil.isEmptyAny(aTargetClass, aTargetMethod)) {
-			throw new AccelerateRuntimeException("Invalid Call. Target Class and Method arguments are required");
-		}
+	public static Object invokeMethod(Class<?> aTargetClass, Object aTargetInstance, String aTargetMethodName,
+			Class<?>[] aMethodArgTypes, Object[] aMethodArgs) throws AccelerateException {
+		AppUtil.assertEmpty("Invalid Call .Target Class and method name arguments are required", aTargetClass,
+				aTargetMethodName);
 
 		try {
-			Method method = aTargetClass.getMethod(aTargetMethod, aMethodArgTypes);
+			Method method = aTargetClass.getMethod(aTargetMethodName, aMethodArgTypes);
 			boolean accessible = method.isAccessible();
 			method.setAccessible(true);
 			Object value = method.invoke(aTargetInstance, aMethodArgs);
 			method.setAccessible(accessible);
 
 			return value;
-		} catch (Exception error) {
-			throw new AccelerateRuntimeException(error);
+		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException
+				| InvocationTargetException error) {
+			throw new AccelerateException(error);
 		}
 	}
 
@@ -108,9 +120,7 @@ public final class ReflectionUtil {
 	 * @return String
 	 */
 	public static Object invokeGetter(Object aTargetInstance, String aTargetField) {
-		if (AppUtil.isEmptyAny(aTargetInstance, aTargetField)) {
-			throw new AccelerateRuntimeException("Invalid Call. All arguments are required");
-		}
+		AppUtil.assertEmpty("Invalid Call .All arguments are required", aTargetInstance, aTargetField);
 
 		String getterName = camelCase("get", aTargetField);
 		return invokeMethod(aTargetInstance.getClass(), aTargetInstance, getterName, (Class<?>[]) null,
@@ -123,9 +133,7 @@ public final class ReflectionUtil {
 	 * @param aFieldValue
 	 */
 	public static void invokeSetter(Object aTargetInstance, String aTargetField, Object aFieldValue) {
-		if (AppUtil.isEmptyAny(aTargetInstance, aTargetField, aFieldValue)) {
-			throw new AccelerateRuntimeException("Invalid Call. All arguments are required");
-		}
+		AppUtil.assertEmpty("Invalid Call .All arguments are required", aTargetInstance, aTargetField, aFieldValue);
 
 		String setterName = camelCase("set", aTargetField);
 		invokeMethod(aTargetInstance.getClass(), aTargetInstance, setterName, new Class<?>[] { aFieldValue.getClass() },

@@ -11,9 +11,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.apache.commons.io.IOUtils;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import accelerate.exception.AccelerateException;
 
@@ -56,7 +59,7 @@ public final class ResourceUtil {
 	public static Document loadXMLDOM(InputStream aInputStream) throws AccelerateException {
 		try {
 			return UtilCache.getDocumentBuilder().parse(aInputStream);
-		} catch (Exception error) {
+		} catch (SAXException | IOException | ParserConfigurationException error) {
 			throw new AccelerateException(error);
 		}
 	}
@@ -148,7 +151,7 @@ public final class ResourceUtil {
 			String aDelimiter) throws AccelerateException {
 		try {
 			return LoadCustomPropertyMap(aApplicationContext.getResource(aConfigPath).getInputStream(), aDelimiter);
-		} catch (Exception error) {
+		} catch (IOException error) {
 			throw new AccelerateException(error);
 		}
 	}
@@ -183,7 +186,7 @@ public final class ResourceUtil {
 							StringUtil.extract(inputLine, index, -1));
 				}
 			}
-		} catch (Exception error) {
+		} catch (IOException error) {
 			throw new AccelerateException(error);
 		} finally {
 			IOUtils.closeQuietly(reader);

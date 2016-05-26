@@ -1,7 +1,7 @@
 package accelerate.batch;
 
-import static accelerate.util.AppUtil.isEmpty;
 import static accelerate.util.CollectionUtil.toList;
+import static org.springframework.util.ObjectUtils.isEmpty;
 
 import java.util.HashMap;
 import java.util.List;
@@ -14,7 +14,7 @@ import org.springframework.jmx.export.annotation.ManagedResource;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import accelerate.databean.AccelerateDataBean;
-import accelerate.exception.AccelerateRuntimeException;
+import accelerate.exception.AccelerateException;
 import accelerate.util.JSONUtil;
 
 /**
@@ -100,12 +100,13 @@ public class AccelerateBatch<T extends AccelerateTask> extends ThreadPoolTaskExe
 	 * initialize()
 	 */
 	/**
+	 * @throws AccelerateException
 	 */
 	@Override
 	@ManagedOperation(description = "This methods activates the batch")
-	public synchronized void initialize() {
+	public synchronized void initialize() throws AccelerateException {
 		if (this.active) {
-			throw new AccelerateRuntimeException(
+			throw new AccelerateException(
 					"Batch is already active! Invoke shutdown() to close the batch before reinitializing");
 		}
 
@@ -203,26 +204,27 @@ public class AccelerateBatch<T extends AccelerateTask> extends ThreadPoolTaskExe
 
 	/**
 	 * @param aTaskList
+	 * @throws AccelerateException
 	 */
 	@SafeVarargs
-	public final void submitTasks(T... aTaskList) {
+	public final void submitTasks(T... aTaskList) throws AccelerateException {
 		submitTasks(toList(aTaskList));
 	}
 
 	/**
 	 * @param aTaskList
-	 * @throws AccelerateRuntimeException
+	 * @throws AccelerateException
 	 *             on invalid batch state or empty argument
 	 */
 	@SuppressWarnings("unchecked")
-	public final synchronized void submitTasks(List<T> aTaskList) throws AccelerateRuntimeException {
+	public final synchronized void submitTasks(List<T> aTaskList) throws AccelerateException {
 		if (!this.active) {
-			throw new AccelerateRuntimeException(
+			throw new AccelerateException(
 					"Batch has been shutdown! Invoke activate() reinitialize the batch before submitting tasks");
 		}
 
 		if (isEmpty(aTaskList)) {
-			throw new AccelerateRuntimeException("No tasks provided!");
+			throw new AccelerateException("No tasks provided!");
 		}
 
 		aTaskList.stream().forEach(task -> {

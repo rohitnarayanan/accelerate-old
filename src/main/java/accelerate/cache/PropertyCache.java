@@ -3,9 +3,9 @@ package accelerate.cache;
 import static accelerate.util.AccelerateConstants.COMMA_CHAR;
 import static accelerate.util.AccelerateConstants.YES;
 import static accelerate.util.AppUtil.compare;
-import static accelerate.util.AppUtil.isEmpty;
 import static accelerate.util.ResourceUtil.LoadPropertyMap;
 import static accelerate.util.StringUtil.join;
+import static org.springframework.util.ObjectUtils.isEmpty;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -24,7 +24,6 @@ import org.springframework.jmx.export.annotation.ManagedOperation;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import accelerate.exception.AccelerateException;
-import accelerate.exception.AccelerateRuntimeException;
 import accelerate.util.AccelerateConstants;
 import accelerate.util.ReflectionUtil;
 import accelerate.util.ResourceUtil;
@@ -314,7 +313,7 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 */
 	@Override
 	protected String fetch(String aKey) {
-		throw new AccelerateRuntimeException("This cache is always loaded at startup !");
+		throw new AccelerateException("This cache is always loaded at startup !");
 	}
 
 	/**

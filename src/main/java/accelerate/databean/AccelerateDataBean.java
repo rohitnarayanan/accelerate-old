@@ -7,8 +7,10 @@ import java.util.Map;
 import java.util.Set;
 
 import org.springframework.ui.ModelMap;
+import org.springframework.util.Assert;
+import org.springframework.util.ObjectUtils;
 
-import accelerate.exception.AccelerateRuntimeException;
+import accelerate.exception.AccelerateException;
 import accelerate.util.AppUtil;
 import accelerate.util.JSONUtil;
 
@@ -142,26 +144,20 @@ public class AccelerateDataBean implements Serializable {
 	 * @param aArgs
 	 *            Variable number of key value pairs
 	 * @return selft instance for chaining calls
-	 * @throws AccelerateRuntimeException
+	 * @throws AccelerateException
 	 *             If key value pairs do not match, or keys are not of type
 	 *             {@link String}
 	 */
-	public final AccelerateDataBean addAll(Object... aArgs) throws AccelerateRuntimeException {
-		if (AppUtil.isEmpty(aArgs)) {
-			throw new AccelerateRuntimeException("Empty arguments are not allowed");
-		}
-
-		if ((aArgs.length % 2) != 0) {
-			throw new AccelerateRuntimeException(
-					"Incorrect number of arguments or array size not correct:" + aArgs.length);
-		}
+	public final AccelerateDataBean addAll(Object... aArgs) throws AccelerateException {
+		AppUtil.assertEmpty("Invalid Call. All arguments are required", aArgs);
+		Assert.isTrue(((aArgs.length % 2) == 0), "Incorrect number of arguments");
 
 		for (int idx = 0; idx < aArgs.length; idx += 2) {
 			try {
 				this.model.put((String) aArgs[idx], aArgs[idx + 1]);
 			} catch (ClassCastException error) {
-				throw new AccelerateRuntimeException("Error:[{}] for key:[{}] at Index:[{}]", error.getMessage(),
-						aArgs[idx], idx);
+				throw new AccelerateException("Error:[{}] for key:[{}] at Index:[{}]", error.getMessage(), aArgs[idx],
+						idx);
 			}
 		}
 
@@ -201,7 +197,7 @@ public class AccelerateDataBean implements Serializable {
 			return toShortJSON();
 		}
 
-		if (AppUtil.isEmpty(this.logExcludedFields)) {
+		if (ObjectUtils.isEmpty(this.logExcludedFields)) {
 			return JSONUtil.serialize(this);
 		}
 

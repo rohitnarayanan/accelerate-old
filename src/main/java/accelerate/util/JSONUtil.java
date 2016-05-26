@@ -1,7 +1,7 @@
 package accelerate.util;
 
 import static accelerate.util.AccelerateConstants.EMPTY_STRING;
-import static accelerate.util.AppUtil.isEmpty;
+import static org.springframework.util.ObjectUtils.isEmpty;
 
 import java.io.IOException;
 
@@ -19,8 +19,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
-
-import accelerate.exception.AccelerateException;
 
 /**
  * Utility class for converting object to/from JSON string
@@ -348,9 +346,9 @@ public final class JSONUtil {
 	 *            {@link Class} which should be instantiated from the JSON
 	 *            string
 	 * @return loaded instance
-	 * @throws AccelerateException
+	 * @throws IOException
 	 */
-	public static <T> T deserialize(String aJSONString, Class<T> aClass) throws AccelerateException {
+	public static <T> T deserialize(String aJSONString, Class<T> aClass) throws IOException {
 		ObjectMapper mapper = new ObjectMapper();
 		mapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
 
@@ -372,14 +370,10 @@ public final class JSONUtil {
 	 * @param aObjectMapper
 	 *            preconfigured instance of {@link ObjectMapper}
 	 * @return loaded instance
-	 * @throws AccelerateException
+	 * @throws IOException
 	 */
 	public static <T extends Object> T deserialize(String aJSONString, Class<T> aClass, ObjectMapper aObjectMapper)
-			throws AccelerateException {
-		try {
-			return aObjectMapper.readValue(aJSONString, aClass);
-		} catch (IOException error) {
-			throw new AccelerateException(error);
-		}
+			throws IOException {
+		return aObjectMapper.readValue(aJSONString, aClass);
 	}
 }

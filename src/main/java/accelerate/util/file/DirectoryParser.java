@@ -1,13 +1,11 @@
 package accelerate.util.file;
 
 import static accelerate.util.AppUtil.compare;
-import static accelerate.util.AppUtil.isEmpty;
 import static accelerate.util.FileUtil.getFileExtn;
 import static accelerate.util.FileUtil.getFileList;
+import static org.springframework.util.ObjectUtils.isEmpty;
 
 import java.io.File;
-
-import accelerate.exception.AccelerateException;
 
 /**
  * Utility class that provides methods to traverse a given directory. Users can
@@ -22,18 +20,16 @@ public class DirectoryParser {
 	/**
 	 * @param aFolderPath
 	 * @param aHandler
-	 * @throws AccelerateException
 	 */
-	public static void execute(String aFolderPath, FileHandler aHandler) throws AccelerateException {
+	public static void execute(String aFolderPath, FileHandler aHandler) {
 		execute(new File(aFolderPath), aHandler);
 	}
 
 	/**
 	 * @param aFolder
 	 * @param aHandler
-	 * @throws AccelerateException
 	 */
-	public static void execute(File aFolder, FileHandler aHandler) throws AccelerateException {
+	public static void execute(File aFolder, FileHandler aHandler) {
 		File rootDirectory = aFolder;
 		FileHandler handler = aHandler;
 
@@ -55,9 +51,8 @@ public class DirectoryParser {
 	/**
 	 * @param aFolder
 	 * @param aHandler
-	 * @throws AccelerateException
 	 */
-	private static void parseDirectory(File aFolder, FileHandler aHandler) throws AccelerateException {
+	private static void parseDirectory(File aFolder, FileHandler aHandler) {
 		if (aFolder == null) {
 			return;
 		}
@@ -98,16 +93,14 @@ public class DirectoryParser {
 		 * @param aFile
 		 * @return {@link File} Instance, Will differ if path modifications were
 		 *         made
-		 * @throws AccelerateException
 		 */
-		public File handleFile(File aFile) throws AccelerateException;
+		public File handleFile(File aFile);
 
 		/**
 		 * @param aFolder
 		 * @return {@link File} Instance, Will differ if path modifications were
 		 *         made
-		 * @throws AccelerateException
 		 */
-		public File handleDirectory(File aFolder) throws AccelerateException;
+		public File handleDirectory(File aFolder);
 	}
 }

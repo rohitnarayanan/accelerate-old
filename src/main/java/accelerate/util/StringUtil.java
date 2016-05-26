@@ -2,8 +2,8 @@ package accelerate.util;
 
 import static accelerate.util.AccelerateConstants.DOT_CHAR;
 import static accelerate.util.AccelerateConstants.EMPTY_STRING;
-import static accelerate.util.AppUtil.isEmpty;
 import static accelerate.util.UtilCache.getPattern;
+import static org.springframework.util.ObjectUtils.isEmpty;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import accelerate.exception.AccelerateRuntimeException;
+import accelerate.exception.AccelerateException;
 
 /**
  * This class provides utility methods for the application
@@ -239,7 +239,7 @@ public final class StringUtil {
 			} else if (fields.length == 2) {
 				tokenMap.put(fields[0], fields[1]);
 			} else {
-				throw new AccelerateRuntimeException("3 or more fields in record %s", aLine);
+				throw new AccelerateException("3 or more fields in record %s", aLine);
 			}
 		});
 
@@ -306,7 +306,8 @@ public final class StringUtil {
 		String value = aValue.toString();
 
 		if ((start < 0) || (end < 0) || (start >= length) || (end >= length) || (end < start)) {
-			throw new AccelerateRuntimeException("Invalid/Incompatible indexes");
+			// TODO:
+			throw new AccelerateException("Invalid/Incompatible indexes");
 		}
 
 		return value.substring(start, end);
@@ -332,7 +333,8 @@ public final class StringUtil {
 
 		int padLength = isEmpty(aInputString) ? aTargetLength : aInputString.length() - aTargetLength;
 		if (padLength < 0) {
-			throw new AccelerateRuntimeException("Invalid arguments");
+			// TODO:
+			throw new AccelerateException("Invalid arguments");
 		}
 
 		if (!aPadFlag) {

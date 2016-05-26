@@ -7,11 +7,11 @@ import static accelerate.util.AccelerateConstants.SPACE_CHAR;
 import static accelerate.util.AccelerateConstants.UNDERSCORE_CHAR;
 import static accelerate.util.AppUtil.compare;
 import static accelerate.util.AppUtil.compareAny;
-import static accelerate.util.AppUtil.isEmpty;
 import static accelerate.util.FileUtil.getFileName;
 import static accelerate.util.StringUtil.extractFromEnd;
 import static accelerate.util.StringUtil.extractUpto;
 import static accelerate.util.UtilCache.getPattern;
+import static org.springframework.util.ObjectUtils.isEmpty;
 
 import java.io.File;
 import java.io.Serializable;

@@ -1,7 +1,7 @@
 package accelerate.util;
 
 import static accelerate.util.AppUtil.compare;
-import static accelerate.util.AppUtil.isEmpty;
+import static org.springframework.util.ObjectUtils.isEmpty;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,7 +15,7 @@ import java.util.Properties;
 import org.apache.commons.lang3.ArrayUtils;
 
 import accelerate.databean.AccelerateDataBean;
-import accelerate.exception.AccelerateRuntimeException;
+import accelerate.exception.AccelerateException;
 
 /**
  * This class provides utility methods for the application
@@ -96,7 +96,7 @@ public final class CollectionUtil {
 	 * @return first element in the collection
 	 */
 	public static <E> E firstNotNullElement(Collection<E> aCollection) {
-		if (AppUtil.isEmpty(aCollection)) {
+		if (isEmpty(aCollection)) {
 			return null;
 		}
 
@@ -147,11 +147,11 @@ public final class CollectionUtil {
 	 * @param aStartIndex
 	 * @param aFromEndIndex
 	 * @return extracted sub list
-	 * @throws AccelerateRuntimeException
+	 * @throws AccelerateException
 	 *             on invalid arguments
 	 */
 	public static <E> List<E> extractUpto(List<E> aElementList, int aStartIndex, int aFromEndIndex)
-			throws AccelerateRuntimeException {
+			throws AccelerateException {
 		if (isEmpty(aElementList)) {
 			return Collections.emptyList();
 		}
@@ -161,7 +161,7 @@ public final class CollectionUtil {
 		int end = length - aFromEndIndex;
 
 		if ((start < 0) || (end < 0) || (start >= length) || (end >= length) || (end < start)) {
-			throw new AccelerateRuntimeException("Invalid/Incompatible indexes");
+			throw new AccelerateException("Invalid/Incompatible indexes");
 		}
 
 		return aElementList.subList(start, end);
@@ -175,11 +175,11 @@ public final class CollectionUtil {
 	 * @param aStartIndex
 	 * @param aFromEndIndex
 	 * @return extracted sub array
-	 * @throws AccelerateRuntimeException
+	 * @throws AccelerateException
 	 *             on invalid arguments
 	 */
 	public static <E> E[] extractUpto(E[] aElementArray, int aStartIndex, int aFromEndIndex)
-			throws AccelerateRuntimeException {
+			throws AccelerateException {
 		if (aElementArray == null) {
 			return null;
 		}
@@ -193,7 +193,7 @@ public final class CollectionUtil {
 		int end = length - aFromEndIndex;
 
 		if ((start < 0) || (end < 0) || (start >= length) || (end >= length) || (end < start)) {
-			throw new AccelerateRuntimeException("Invalid/Incompatible indexes");
+			throw new AccelerateException("Invalid/Incompatible indexes");
 		}
 
 		return ArrayUtils.subarray(aElementArray, start, end);
@@ -242,7 +242,7 @@ public final class CollectionUtil {
 	 */
 	public static <P, Q, R> Map<Q, R> addToValueMap(Map<P, Map<Q, R>> aMap, P aOuterKey, Q aInnerKey, R aValue) {
 		Map<Q, R> valueMap = aMap.get(aOuterKey);
-		if (valueMap == null || valueMap == Collections.EMPTY_MAP) {
+		if ((valueMap == null) || (valueMap == Collections.EMPTY_MAP)) {
 			valueMap = new HashMap<>();
 			aMap.put(aOuterKey, valueMap);
 		}
@@ -261,7 +261,7 @@ public final class CollectionUtil {
 	 */
 	public static <K, V> List<V> addToValueList(Map<K, List<V>> aMap, K aKey, V aValue) {
 		List<V> valueList = aMap.get(aKey);
-		if (valueList == null || valueList == Collections.EMPTY_LIST) {
+		if ((valueList == null) || (valueList == Collections.EMPTY_LIST)) {
 			valueList = new ArrayList<>();
 			aMap.put(aKey, valueList);
 		}

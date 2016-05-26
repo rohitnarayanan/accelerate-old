@@ -2,11 +2,11 @@ package accelerate.util;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
-import org.apache.commons.lang3.ArrayUtils;
+import org.springframework.util.Assert;
+import org.springframework.util.ObjectUtils;
 
 /**
  * This class provides utility methods for the application
@@ -24,25 +24,12 @@ public final class AppUtil {
 	}
 
 	/**
-	 * @param value
-	 * @return true if object is empty
+	 * @param aMessage
+	 * @param aValueList
 	 */
-	public static boolean isEmpty(Object value) {
-		if (value == null) {
-			return true;
-		} else if (value.getClass().isArray()) {
-			return ArrayUtils.getLength(value) == 0;
-		} else if (value instanceof Collection<?>) {
-			return ((Collection<?>) value).size() == 0;
-		} else if (value instanceof Map<?, ?>) {
-			return ((Map<?, ?>) value).isEmpty();
-		} else if (value instanceof String) {
-			return ((String) value).trim().length() == 0;
-		} else if (value instanceof CharSequence) {
-			return ((CharSequence) value).length() == 0;
-		}
-
-		return false;
+	public static void assertEmpty(String aMessage, Object... aValueList) {
+		Assert.notNull(aValueList, aMessage);
+		Arrays.stream(aValueList).forEach(aValue -> Assert.notNull(aValue, aMessage));
 	}
 
 	/**
@@ -55,12 +42,30 @@ public final class AppUtil {
 		}
 
 		for (Object value : aValueList) {
-			if (isEmpty(value)) {
+			if (ObjectUtils.isEmpty(value)) {
 				return true;
 			}
 		}
 
 		return false;
+	}
+
+	/**
+	 * @param aValueList
+	 * @return
+	 */
+	public static boolean isEmptyAll(Object... aValueList) {
+		if (aValueList == null) {
+			return true;
+		}
+
+		for (Object value : aValueList) {
+			if (!ObjectUtils.isEmpty(value)) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	/**
@@ -108,7 +113,7 @@ public final class AppUtil {
 	 * @return true if any of the compare values matches the leftValue
 	 */
 	public static <T> boolean compareAny(T aCompareValue, List<T> aCompareValueList) {
-		if (isEmpty(aCompareValue) || isEmpty(aCompareValueList)) {
+		if (ObjectUtils.isEmpty(aCompareValue) || ObjectUtils.isEmpty(aCompareValueList)) {
 			return false;
 		}
 

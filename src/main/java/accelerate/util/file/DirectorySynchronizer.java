@@ -2,13 +2,14 @@ package accelerate.util.file;
 
 import static accelerate.util.AccelerateConstants.HYPHEN_CHAR;
 import static accelerate.util.AccelerateConstants.UNIX_PATH_CHAR;
-import static accelerate.util.AppUtil.isEmpty;
 import static accelerate.util.FileUtil.copyFile;
 import static accelerate.util.FileUtil.getFileExtn;
 import static accelerate.util.FileUtil.getFileName;
 import static accelerate.util.FileUtil.getUnixPath;
+import static org.springframework.util.ObjectUtils.isEmpty;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,7 +27,6 @@ import accelerate.batch.AccelerateBatch;
 import accelerate.batch.AccelerateTask;
 import accelerate.databean.AccelerateDataBean;
 import accelerate.exception.AccelerateException;
-import accelerate.exception.AccelerateRuntimeException;
 import accelerate.util.CollectionUtil;
 
 /**
@@ -41,35 +41,31 @@ public class DirectorySynchronizer {
 	/**
 	 * @param aDirSyncInput
 	 * @return {@link DirSyncOutput} instance
-	 * @throws AccelerateException
+	 * 
 	 */
-	public static DirSyncOutput compare(DirSyncInput aDirSyncInput) throws AccelerateException {
-		try {
-			DirSyncOutput dirSyncOutput = new DirSyncOutput();
+	public static DirSyncOutput compare(DirSyncInput aDirSyncInput) {
+		DirSyncOutput dirSyncOutput = new DirSyncOutput();
 
-			validateInput(aDirSyncInput, dirSyncOutput);
-			if (dirSyncOutput.errorFlag) {
-				return dirSyncOutput;
-			}
-
-			DirSyncFileHandler sourceHandler = new DirSyncFileHandler(aDirSyncInput, true);
-			DirectoryParser.execute(aDirSyncInput.sourceDir, sourceHandler);
-
-			DirSyncFileHandler targetHandler = new DirSyncFileHandler(aDirSyncInput, false);
-			DirectoryParser.execute(aDirSyncInput.targetDir, targetHandler);
-
-			if (aDirSyncInput.ignoreExtensions) {
-				dirSyncOutput.message
-						.append("ignoreExtensions is active, disabling conflict comparison and synchronization !!");
-				aDirSyncInput.copyToSource = false;
-				aDirSyncInput.copyToTarget = false;
-			}
-
-			prepareOutput(aDirSyncInput, dirSyncOutput, sourceHandler, targetHandler);
+		validateInput(aDirSyncInput, dirSyncOutput);
+		if (dirSyncOutput.errorFlag) {
 			return dirSyncOutput;
-		} catch (Exception error) {
-			throw new AccelerateException(error);
 		}
+
+		DirSyncFileHandler sourceHandler = new DirSyncFileHandler(aDirSyncInput, true);
+		DirectoryParser.execute(aDirSyncInput.sourceDir, sourceHandler);
+
+		DirSyncFileHandler targetHandler = new DirSyncFileHandler(aDirSyncInput, false);
+		DirectoryParser.execute(aDirSyncInput.targetDir, targetHandler);
+
+		if (aDirSyncInput.ignoreExtensions) {
+			dirSyncOutput.message
+					.append("ignoreExtensions is active, disabling conflict comparison and synchronization !!");
+			aDirSyncInput.copyToSource = false;
+			aDirSyncInput.copyToTarget = false;
+		}
+
+		prepareOutput(aDirSyncInput, dirSyncOutput, sourceHandler, targetHandler);
+		return dirSyncOutput;
 	}
 
 	/**
@@ -79,10 +75,8 @@ public class DirectorySynchronizer {
 	 *            {@link DirSyncOutput} instance
 	 * @param aThreadPoolCount
 	 *            Number of concurrent tasks to run for copying files
-	 * @throws AccelerateException
 	 */
-	public static void synchronize(DirSyncInput aDirSyncInput, DirSyncOutput aDirSyncOutput, int aThreadPoolCount)
-			throws AccelerateException {
+	public static void synchronize(DirSyncInput aDirSyncInput, DirSyncOutput aDirSyncOutput, int aThreadPoolCount) {
 		if (aDirSyncOutput.errorFlag || !aDirSyncOutput.completedFlag) {
 			return;
 		}
@@ -92,48 +86,43 @@ public class DirectorySynchronizer {
 		counterMap.put("T", Collections.emptyMap());
 		counterMap.put("C", Collections.emptyMap());
 
-		try {
-			AccelerateBatch<DirSyncFileCopyTask> dirSyncBatch = new AccelerateBatch<>("DirectorySynchronizer",
-					aThreadPoolCount);
-			dirSyncBatch.registerTaskPostProcessor(task -> {
-				if (task.isCopyResult()) {
-					CollectionUtil.addToValueMap(counterMap, task.mode, task.getTaskKey(), null);
-				}
+		AccelerateBatch<DirSyncFileCopyTask> dirSyncBatch = new AccelerateBatch<>("DirectorySynchronizer",
+				aThreadPoolCount);
+		dirSyncBatch.registerTaskPostProcessor(task -> {
+			if (task.isCopyResult()) {
+				CollectionUtil.addToValueMap(counterMap, task.mode, task.getTaskKey(), null);
+			}
+		});
+
+		dirSyncBatch.initialize();
+
+		if (aDirSyncInput.copyToTarget) {
+			aDirSyncOutput.newSourceFiles.stream().forEach(file -> {
+				dirSyncBatch.submitTasks(
+						new DirSyncFileCopyTask(file, aDirSyncInput.sourceDir, aDirSyncInput.targetDir, "S"));
 			});
-
-			dirSyncBatch.initialize();
-
-			if (aDirSyncInput.copyToTarget) {
-				aDirSyncOutput.newSourceFiles.stream().forEach(file -> {
-					dirSyncBatch.submitTasks(
-							new DirSyncFileCopyTask(file, aDirSyncInput.sourceDir, aDirSyncInput.targetDir, "S"));
-				});
-			}
-
-			if (aDirSyncInput.copyToSource) {
-				aDirSyncOutput.newTargetFiles.stream().forEach(file -> {
-					dirSyncBatch.submitTasks(
-							new DirSyncFileCopyTask(file, aDirSyncInput.targetDir, aDirSyncInput.sourceDir, "T"));
-				});
-			}
-
-			if (aDirSyncInput.overwriteTarget) {
-				aDirSyncOutput.conflictedFiles.forEach((key, value) -> {
-					dirSyncBatch.submitTasks(new DirSyncFileCopyTask(value, "C"));
-				});
-			}
-
-			aDirSyncOutput.message.append("Missing files copied to Target @ ").append(aDirSyncInput.targetDir.getPath())
-					.append(": ").append(counterMap.get("S").size());
-			aDirSyncOutput.message.append("Missing files copied to Source @ ").append(aDirSyncInput.sourceDir.getPath())
-					.append(": ").append(counterMap.get("T").size());
-			aDirSyncOutput.message.append("Conflicted files copied to Target @ ")
-					.append(aDirSyncInput.targetDir.getPath()).append(": ").append(counterMap.get("C").size());
-			dirSyncBatch.shutdown(TimeUnit.HOURS, 2);
-		} catch (Exception error) {
-			aDirSyncOutput.message.append(error.getMessage());
-			throw new AccelerateException(error);
 		}
+
+		if (aDirSyncInput.copyToSource) {
+			aDirSyncOutput.newTargetFiles.stream().forEach(file -> {
+				dirSyncBatch.submitTasks(
+						new DirSyncFileCopyTask(file, aDirSyncInput.targetDir, aDirSyncInput.sourceDir, "T"));
+			});
+		}
+
+		if (aDirSyncInput.overwriteTarget) {
+			aDirSyncOutput.conflictedFiles.forEach((key, value) -> {
+				dirSyncBatch.submitTasks(new DirSyncFileCopyTask(value, "C"));
+			});
+		}
+
+		aDirSyncOutput.message.append("Missing files copied to Target @ ").append(aDirSyncInput.targetDir.getPath())
+				.append(": ").append(counterMap.get("S").size());
+		aDirSyncOutput.message.append("Missing files copied to Source @ ").append(aDirSyncInput.sourceDir.getPath())
+				.append(": ").append(counterMap.get("T").size());
+		aDirSyncOutput.message.append("Conflicted files copied to Target @ ").append(aDirSyncInput.targetDir.getPath())
+				.append(": ").append(counterMap.get("C").size());
+		dirSyncBatch.shutdown(TimeUnit.HOURS, 2);
 	}
 
 	/**
@@ -527,12 +516,14 @@ public class DirectorySynchronizer {
 			File destination = new File(this.targetRoot, getUnixPath(this.sourceFile).substring(sourceRootIndex));
 			try {
 				if (this.conflictResult != null) {
+
 					this.copyResult = copyFile(this.conflictResult.sourceFile, this.conflictResult.targetFile, true);
+
 				} else {
 					this.copyResult = copyFile(this.sourceFile, destination);
 				}
-			} catch (AccelerateException error) {
-				throw new AccelerateRuntimeException(error);
+			} catch (IOException error) {
+				throw new AccelerateException(error);
 			}
 		}
 

@@ -10,8 +10,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathFactory;
 
-import accelerate.exception.AccelerateException;
-
 /**
  * This class provides utility methods for the application
  *
@@ -74,17 +72,13 @@ public final class UtilCache {
 
 	/**
 	 * @return {@link DocumentBuilder} instance
-	 * @throws AccelerateException
+	 * @throws ParserConfigurationException
 	 */
-	public static DocumentBuilder getDocumentBuilder() throws AccelerateException {
+	public static DocumentBuilder getDocumentBuilder() throws ParserConfigurationException {
 		if (builder == null) {
 			synchronized (domFactory) {
 				if (builder == null) {
-					try {
-						builder = domFactory.newDocumentBuilder();
-					} catch (ParserConfigurationException error) {
-						throw new AccelerateException(error);
-					}
+					builder = domFactory.newDocumentBuilder();
 				}
 			}
 		}
