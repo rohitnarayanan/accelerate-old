@@ -4,7 +4,6 @@ import static accelerate.util.AccelerateConstants.DOT_CHAR;
 import static accelerate.util.AccelerateConstants.EMPTY_STRING;
 import static accelerate.util.AccelerateConstants.NEW_LINE;
 import static accelerate.util.AccelerateConstants.UNIX_PATH_CHAR;
-import static accelerate.util.AppUtil.compare;
 import static accelerate.util.StringUtil.join;
 import static java.lang.String.valueOf;
 import static org.springframework.util.ObjectUtils.isEmpty;
@@ -19,14 +18,16 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-
-import accelerate.exception.AccelerateException;
+import org.springframework.util.Assert;
 
 /**
  * PUT DESCRIPTION HERE
@@ -41,221 +42,6 @@ public final class FileUtil {
 	 * hidden constructor
 	 */
 	private FileUtil() {
-	}
-
-	/**
-	 * This method deletes the given directory.
-	 *
-	 * @param aDirPath
-	 *            - directory path
-	 * @return message string
-	 * @throws IOException
-	 */
-	public static String deleteDirectory(String aDirPath) throws IOException {
-		return deleteDirectory(new File(aDirPath));
-	}
-
-	/**
-	 * This method deletes the given directory.
-	 *
-	 * @param aDirFile
-	 *            - directory file
-	 * @return message string
-	 * @throws IOException
-	 */
-	public static String deleteDirectory(File aDirFile) throws IOException {
-		StringBuilder message = new StringBuilder();
-		if (aDirFile == null) {
-			message.append("Null Directory !!");
-		} else if (!aDirFile.exists()) {
-			message.append("Directory Not Found: ").append(aDirFile);
-		} else {
-			FileUtils.deleteDirectory(aDirFile);
-			message.append("Directory Deleted: ").append(aDirFile);
-		}
-
-		return message.toString();
-	}
-
-	/**
-	 * This method deletes files from a directory.
-	 *
-	 * @param aDirPath
-	 *            - directory path
-	 * @return message string
-	 * @throws IOException
-	 */
-	public static String cleanDirectory(String aDirPath) throws IOException {
-		return cleanDirectory(new File(aDirPath));
-	}
-
-	/**
-	 * This method deletes files from a directory.
-	 *
-	 * @param aDirFile
-	 *            - directory file
-	 * @return message string
-	 * @throws IOException
-	 */
-	public static String cleanDirectory(File aDirFile) throws IOException {
-		StringBuilder message = new StringBuilder();
-		message.append("Cleaning directory - ").append(aDirFile);
-		message.append(deleteDirectory(aDirFile));
-		message.append("Creating directory - ").append(aDirFile.mkdir());
-
-		return message.toString();
-	}
-
-	/**
-	 * This method deletes the given file.
-	 *
-	 * @param aFilePath
-	 *            - path of the file to be deleted
-	 * @return message string
-	 */
-	public static String deleteFile(String aFilePath) {
-		return deleteFiles(new File(aFilePath));
-	}
-
-	/**
-	 * This method deletes files from a directory.
-	 *
-	 * @param aDirPath
-	 *            - directory path
-	 * @param aFileNames
-	 *            - list of file names
-	 * @return message string
-	 */
-	public static String deleteFilesFromDir(String aDirPath, String... aFileNames) {
-		return deleteFilesFromDir(new File(aDirPath), aFileNames);
-	}
-
-	/**
-	 * This method deletes files from a directory
-	 *
-	 * @param aDirFile
-	 *            - directory file
-	 * @param aFileNames
-	 *            - list of file names
-	 * @return message string
-	 */
-	public static String deleteFilesFromDir(File aDirFile, String... aFileNames) {
-		if (aFileNames == null) {
-			return deleteFiles(new File[] {});
-		}
-
-		File[] fileList = new File[aFileNames.length];
-		for (int idx = 0; idx < aFileNames.length; idx++) {
-			fileList[idx] = new File(aDirFile, aFileNames[idx]);
-		}
-
-		return deleteFiles(fileList);
-	}
-
-	/**
-	 * This method deletes the given files.
-	 *
-	 * @param aFilePaths
-	 *            - full path of files
-	 * @return message string
-	 */
-	public static String deleteFiles(String... aFilePaths) {
-		if (aFilePaths == null) {
-			return deleteFiles(new File[] {});
-		}
-
-		File[] fileList = new File[aFilePaths.length];
-		for (int idx = 0; idx < aFilePaths.length; idx++) {
-			fileList[idx] = new File(aFilePaths[idx]);
-		}
-
-		return deleteFiles(fileList);
-	}
-
-	/**
-	 * This method deletes the given files.
-	 *
-	 * @param aFiles
-	 *            - list of files
-	 * @return message string
-	 */
-	public static String deleteFiles(File... aFiles) {
-		if (isEmpty(aFiles)) {
-			return "Empty File List !! Nothing Deleted.";
-		}
-
-		StringBuilder message = new StringBuilder();
-		int count = 0;
-		for (File file : aFiles) {
-			if (file.delete()) {
-				count++;
-			}
-		}
-
-		message.append("Deleted ").append(count).append(" of ").append(aFiles.length).append(" files !!");
-
-		return message.toString();
-	}
-
-	/**
-	 * This method renames the given file to new name.
-	 *
-	 * @param aFile
-	 *            - File to be renamed
-	 * @param aName
-	 *            - New Name to be given 'without the extension'.
-	 * @return array of file names
-	 */
-	public static File renameFile(File aFile, String aName) {
-		return renameFile(aFile, aName, getFileExtn(aFile));
-	}
-
-	/**
-	 * This method renames the given file to new name.
-	 *
-	 * @param aFile
-	 *            - File to be renamed
-	 * @param aName
-	 *            - New Name to be given.
-	 * @param aExtn
-	 *            - New Extn to be given.
-	 * @return array of file names
-	 */
-	public static File renameFile(File aFile, String aName, String aExtn) {
-		String extn = aFile.isDirectory() ? EMPTY_STRING : DOT_CHAR + aExtn;
-		File target = new File(aFile.getParent(), aName + extn);
-		aFile.renameTo(target);
-
-		return target;
-	}
-
-	/**
-	 * This method returns a sorted list of files present at the given path.
-	 *
-	 * @param aDirPath
-	 *            - Path to the directory
-	 * @return array of file names
-	 */
-	public static File[] getFileList(String aDirPath) {
-		return getFileList(new File(aDirPath));
-	}
-
-	/**
-	 * This method returns a sorted list of files in the given Directory.
-	 *
-	 * @param aFolder
-	 *            - Path to the directory
-	 * @return array of file names
-	 */
-	public static File[] getFileList(File aFolder) {
-		if (aFolder.exists() && aFolder.isDirectory()) {
-			File[] fileList = aFolder.listFiles();
-			Arrays.sort(fileList, (aFile1, aFile2) -> aFile1.getName().compareTo(aFile2.getName()));
-
-			return fileList;
-		}
-
-		return new File[] {};
 	}
 
 	/**
@@ -304,15 +90,6 @@ public final class FileUtil {
 	/**
 	 * @param aTargetFile
 	 * @param aLevel
-	 * @return Parent File Name
-	 */
-	public static String getParentName(File aTargetFile, int aLevel) {
-		return getParent(aTargetFile, aLevel).getName();
-	}
-
-	/**
-	 * @param aTargetFile
-	 * @param aLevel
 	 * @return Parent File
 	 */
 	public static File getParent(File aTargetFile, int aLevel) {
@@ -342,6 +119,15 @@ public final class FileUtil {
 	/**
 	 * @param aTargetFile
 	 * @param aLevel
+	 * @return Parent File Name
+	 */
+	public static String getParentName(File aTargetFile, int aLevel) {
+		return getParent(aTargetFile, aLevel).getName();
+	}
+
+	/**
+	 * @param aTargetFile
+	 * @param aLevel
 	 * @return short path
 	 */
 	public static String getShortPath(File aTargetFile, int aLevel) {
@@ -366,54 +152,85 @@ public final class FileUtil {
 	}
 
 	/**
-	 * @param source
-	 * @param destination
-	 * @return true, if copied successfully
-	 * @throws IOException
+	 * This method returns a sorted list of files in the given Directory.
+	 *
+	 * @param aFolder
+	 *            - Path to the directory
+	 * @return array of file names
 	 */
-	public static boolean copyFile(File source, File destination) throws IOException {
-		return copyFile(source, destination, false);
+	public static List<File> listFiles(File aFolder) {
+		if (aFolder.exists() && aFolder.isDirectory()) {
+			return Arrays.stream(aFolder.listFiles())
+					.sorted((aFile1, aFile2) -> aFile1.getName().compareTo(aFile2.getName()))
+					.collect(Collectors.toList());
+		}
+
+		return Collections.emptyList();
 	}
 
 	/**
-	 * @param source
-	 * @param destination
-	 * @param overwrite
-	 * @return true, if copied successfully
-	 * @throws IOException
+	 * This method renames the given file to new name preserving the extension
+	 *
+	 * @param aFile
+	 *            - File to be renamed
+	 * @param aName
+	 *            - New Name to be given 'without the extension'.
+	 * @return array of file names
 	 */
-	public static boolean copyFile(File source, File destination, boolean overwrite) throws IOException {
-		if (destination.exists() && !overwrite) {
-			String message = "Destination (" + destination.getPath() + ") exists and overwrite is disabled !!";
-			throw new AccelerateException(message);
-		}
+	public static File renameFile(File aFile, String aName) {
+		return renameFileAndExtn(aFile, aName, getFileExtn(aFile));
+	}
 
-		if (!source.exists()) {
-			String message = "Source (" + source.getPath() + ") does not exist !!";
-			throw new AccelerateException(message);
-		}
+	/**
+	 * This method renames the given file to new name with the provided
+	 * extension
+	 *
+	 * @param aFile
+	 *            - File to be renamed
+	 * @param aName
+	 *            - New Name to be given.
+	 * @param aExtn
+	 *            - New Extn to be given. It is ignored in case of directory
+	 *            rename
+	 * @return array of file names
+	 */
+	public static File renameFileAndExtn(File aFile, String aName, String aExtn) {
+		String extn = aFile.isDirectory() ? EMPTY_STRING : DOT_CHAR + aExtn;
+		File target = new File(aFile.getParent(), aName + extn);
+		aFile.renameTo(target);
 
-		if (source.isDirectory() && destination.isFile()) {
-			String message = "Cannot copy source folder (" + source.getPath() + "), destination ("
-					+ destination.getPath() + ") is a file !!";
-			throw new AccelerateException(message);
-		}
+		return target;
+	}
 
-		File targetFile = destination;
-		if (destination.isDirectory()) {
-			if (source.isFile() || !compare(source.getName(), destination.getName())) {
-				targetFile = new File(destination, source.getName());
-			}
-		}
+	/**
+	 * This method deletes the given files.
+	 *
+	 * @param aFileList
+	 *            - list of files
+	 * @return {@link Map} with result of delete operation for each file
+	 */
+	public static Map<String, Boolean> deleteFiles(File... aFileList) {
+		Assert.notNull(aFileList, "Invalid Call. File list cannot be emtpy");
+		Assert.noNullElements(aFileList, "Name of files to be deleted are required");
 
-		destination.getParentFile().mkdirs();
-		if (source.isDirectory()) {
-			FileUtils.copyDirectory(source, targetFile);
-		} else if (source.isFile()) {
-			FileUtils.copyFile(source, targetFile);
-		}
+		return Arrays.stream(aFileList).collect(Collectors.toMap(aFile -> aFile.getName(), aFile -> aFile.delete()));
+	}
 
-		return targetFile.exists();
+	/**
+	 * This method deletes files from a directory
+	 *
+	 * @param aDirFile
+	 *            - directory file
+	 * @param aFileNames
+	 *            - list of file names
+	 * @return {@link Map} with result of delete operation for each file
+	 */
+	public static Map<String, Boolean> deleteFilesFromDir(File aDirFile, String... aFileNames) {
+		Assert.noNullElements(new Object[] { aDirFile, aFileNames }, "Invalid Call. All arguments are required");
+		Assert.noNullElements(aFileNames, "Name of files to be deleted are required");
+
+		return Arrays.stream(aFileNames).map(fileName -> new File(aDirFile, fileName))
+				.collect(Collectors.toMap(aFile -> aFile.getName(), aFile -> aFile.delete()));
 	}
 
 	/**
@@ -421,8 +238,8 @@ public final class FileUtil {
 	 * @param aSplitSize
 	 * @param aSplitEqually
 	 * @return message
-	 * @throws AccelerateException
 	 * @throws IOException
+	 *             thrown due to multiple IO operations
 	 */
 	public static String splitFile(File aTargetFile, int aSplitSize, boolean aSplitEqually) throws IOException {
 		StringBuilder message = new StringBuilder();
@@ -434,7 +251,8 @@ public final class FileUtil {
 
 			File outputDir = new File(aTargetFile.getParentFile(), aTargetFile.getName() + ".split");
 			outputDir.mkdirs();
-			message.append(cleanDirectory(outputDir)).append(NEW_LINE);
+			message.append("Clearing output folder").append(JSONUtil.serialize(deleteFiles(outputDir.listFiles())))
+					.append(NEW_LINE);
 
 			String inputLine = null;
 			long byteCount = 0;
@@ -484,35 +302,11 @@ public final class FileUtil {
 	}
 
 	/**
-	 * @param aZipName
-	 * @param aFiles
-	 * @return Zip File
-	 * @throws IOException
-	 */
-	public static File zipFiles(String aZipName, File... aFiles) throws IOException {
-		File targetFile = new File(System.getProperty("java.io.tmpdir"), aZipName);
-		zipFiles(targetFile, aFiles);
-
-		return targetFile;
-	}
-
-	/**
-	 * @param aZipFile
-	 * @param aFiles
-	 * @throws IOException
-	 */
-	public static void zipFiles(File aZipFile, File... aFiles) throws IOException {
-		try (FileOutputStream fos = new FileOutputStream(aZipFile);) {
-			fos.write(getZipData(aFiles));
-		}
-	}
-
-	/**
 	 * @param aFiles
 	 * @return byte array containing the compressed data
 	 * @throws IOException
 	 */
-	public static byte[] getZipData(File... aFiles) throws IOException {
+	public static byte[] zipFiles(File... aFiles) throws IOException {
 		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 				ZipOutputStream zipStream = new ZipOutputStream(outputStream);) {
 			zipStream.setLevel(9);
@@ -531,14 +325,25 @@ public final class FileUtil {
 	}
 
 	/**
-	 * @param aFilePath
-	 * @param aData
-	 * @return {@link File} instance, the data was written to
+	 * @param aZipFile
+	 * @param aFiles
 	 * @throws IOException
 	 */
-	public static File writeStream(String aFilePath, byte[] aData) throws IOException {
-		File targetFile = new File(aFilePath);
-		writeStream(targetFile, aData);
+	public static void zipFilesToDisk(File aZipFile, File... aFiles) throws IOException {
+		try (FileOutputStream fos = new FileOutputStream(aZipFile);) {
+			fos.write(zipFiles(aFiles));
+		}
+	}
+
+	/**
+	 * @param aZipName
+	 * @param aFiles
+	 * @return Zip File
+	 * @throws IOException
+	 */
+	public static File zipFilesToDisk(String aZipName, File... aFiles) throws IOException {
+		File targetFile = new File(System.getProperty("java.io.tmpdir"), aZipName);
+		zipFilesToDisk(targetFile, aFiles);
 
 		return targetFile;
 	}
@@ -555,15 +360,6 @@ public final class FileUtil {
 	}
 
 	/**
-	 * @param aTargetPath
-	 * @return {@link ByteArrayOutputStream} instance, the data was read into
-	 * @throws IOException
-	 */
-	public static byte[] readStream(String aTargetPath) throws IOException {
-		return readStream(new File(aTargetPath));
-	}
-
-	/**
 	 * @param aTargetFile
 	 * @return {@link ByteArrayOutputStream} instance, the data was read into
 	 * @throws IOException
@@ -577,30 +373,12 @@ public final class FileUtil {
 	}
 
 	/**
-	 * @param aFilePath
-	 * @return {@link BufferedReader}
-	 * @throws IOException
-	 */
-	public static BufferedReader getBufferedReader(String aFilePath) throws IOException {
-		return getBufferedReader(new File(aFilePath));
-	}
-
-	/**
 	 * @param aFile
 	 * @return {@link BufferedReader}
 	 * @throws IOException
 	 */
 	public static BufferedReader getBufferedReader(File aFile) throws IOException {
 		return new BufferedReader(new FileReader(aFile));
-	}
-
-	/**
-	 * @param aFilePath
-	 * @return {@link BufferedWriter}
-	 * @throws IOException
-	 */
-	public static BufferedWriter getBufferedWriter(String aFilePath) throws IOException {
-		return getBufferedWriter(new File(aFilePath));
 	}
 
 	/**

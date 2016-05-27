@@ -9,6 +9,7 @@ import static org.springframework.util.ObjectUtils.isEmpty;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -139,37 +140,25 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 *            array containing string to be concatenated to form the
 	 *            property key
 	 * @return {@link String} value stored against the key
+	 * @throws AccelerateException
 	 */
 	@ManagedOperation(description = "This method returns the element stored in cache against the given key")
-	public String get(String... aPropertyKeys) {
+	public String get(String... aPropertyKeys) throws AccelerateException {
 		return get(join(aPropertyKeys));
 	}
 
 	/**
-	 * This method delegates to the
-	 * {@link #checkPropertyWithValue(String, String...)} method to check if the
-	 * property value is "Y".
-	 *
-	 * @param aPropertyKey
-	 *            key to be looked up
-	 * @return boolean result of the comparison
-	 */
-	public boolean checkProperty(String aPropertyKey) {
-		return checkPropertyWithValue(YES, aPropertyKey);
-	}
-
-	/**
-	 * This method creates a "." seperated key from the array of tokens passed
-	 * and delegates to the {@link #checkPropertyWithValue(String, String...)}
-	 * method to check if the property value is "Y".
+	 * This method uses the {@link #get(String...)} method to get the property
+	 * value and checks if the value is "true".
 	 *
 	 * @param aPropertyKeys
 	 *            array containing string to be concatenated to form the
 	 *            property key
 	 * @return boolean result of the comparison
+	 * @throws AccelerateException
 	 */
-	public boolean checkProperty(String... aPropertyKeys) {
-		return checkPropertyWithValue(YES, aPropertyKeys);
+	public boolean isEnabled(String... aPropertyKeys) throws AccelerateException {
+		return hasValue(Boolean.TRUE.toString(), aPropertyKeys);
 	}
 
 	/**
@@ -181,63 +170,23 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 * @param aPropertyKeys
 	 *            array of strings to be concatenated to form the property key
 	 * @return boolean result of the comparison
+	 * @throws AccelerateException
 	 */
-	public boolean checkPropertyWithValue(String aCompareValue, String... aPropertyKeys) {
+	public boolean hasValue(String aCompareValue, String... aPropertyKeys) throws AccelerateException {
 		return compare(get(aPropertyKeys), aCompareValue);
 	}
 
 	/**
-	 * This method returns the integer value for property value
-	 *
-	 * @param aPropertyKey
-	 *            key to be looked up
-	 * @return int value for the property
-	 */
-	public int getIntProperty(String aPropertyKey) {
-		String propertyValue = get(aPropertyKey);
-		if (!isEmpty(propertyValue)) {
-			return Integer.parseInt(propertyValue);
-		}
-
-		return 0;
-	}
-
-	/**
-	 * This method creates a "." seperated key from the array of tokens passed
-	 * and delegates to {@link #getIntProperty(String)} method to get the
-	 * integer property value.
-	 *
-	 * @param aPropertyKeys
-	 *            array of strings to be concatenated to form the property key
-	 * @return int value for the property
-	 */
-	public int getIntProperty(String... aPropertyKeys) {
-		return getIntProperty(join(aPropertyKeys));
-	}
-
-	/**
-	 * This method returns an array of values, delimited by ",", stored against
-	 * the given property key.
-	 *
-	 * @param aPropertyKey
-	 *            - set of property keys to be appended
-	 * @return array of values
-	 */
-	public String[] getPropertyList(String aPropertyKey) {
-		return StringUtil.split(get(aPropertyKey), COMMA_CHAR);
-	}
-
-	/**
-	 * This method creates a "." separated key from the array of tokens passed
-	 * and delegates to {@link #getPropertyList(String)} method to get the array
-	 * of property values.
+	 * This method get the property value using {@link #get(String...)} and then
+	 * return a {@link List} of tokens by spliting the value by ','.
 	 *
 	 * @param aPropertyKeys
 	 *            array of strings to be concatenated to form the property key
 	 * @return array of values
+	 * @throws AccelerateException
 	 */
-	public String[] getPropertyList(String... aPropertyKeys) {
-		return getPropertyList(join(aPropertyKeys));
+	public String[] getPropertyList(String... aPropertyKeys) throws AccelerateException {
+		return StringUtil.split(get(join(aPropertyKeys)), COMMA_CHAR);
 	}
 
 	/*
@@ -310,9 +259,10 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	/**
 	 * @param aKey
 	 * @return
+	 * @throws AccelerateException
 	 */
 	@Override
-	protected String fetch(String aKey) {
+	protected String fetch(String aKey) throws AccelerateException {
 		throw new AccelerateException("This cache is always loaded at startup !");
 	}
 

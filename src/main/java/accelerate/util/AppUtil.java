@@ -2,10 +2,8 @@ package accelerate.util;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Arrays;
 import java.util.List;
 
-import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 
 /**
@@ -21,15 +19,6 @@ public final class AppUtil {
 	 * hidden constructor
 	 */
 	private AppUtil() {
-	}
-
-	/**
-	 * @param aMessage
-	 * @param aValueList
-	 */
-	public static void assertEmpty(String aMessage, Object... aValueList) {
-		Assert.notNull(aValueList, aMessage);
-		Arrays.stream(aValueList).forEach(aValue -> Assert.notNull(aValue, aMessage));
 	}
 
 	/**

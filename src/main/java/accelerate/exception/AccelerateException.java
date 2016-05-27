@@ -48,8 +48,9 @@ public class AccelerateException extends NestedRuntimeException {
 
 	/**
 	 * @param aError
+	 * @throws AccelerateException
 	 */
-	public static void checkAndThrow(Exception aError) {
+	public static void checkAndThrow(Exception aError) throws AccelerateException {
 		throw (aError instanceof AccelerateException) ? (AccelerateException) aError : new AccelerateException(aError);
 	}
 }

@@ -1,7 +1,6 @@
 package accelerate.util;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
 import javax.mail.MessagingException;
@@ -9,6 +8,7 @@ import javax.mail.internet.MimeMessage;
 
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.util.Assert;
 
 /**
  * PUT DESCRIPTION HERE
@@ -40,25 +40,22 @@ public class AccelerateEmail extends JavaMailSenderImpl {
 	/**
 	 * @param aAttachName
 	 * @param aAttachFiles
-	 * @throws IOException
 	 * @throws MessagingException
 	 */
-	public void addAttachments(String aAttachName, File... aAttachFiles) throws IOException, MessagingException {
-		File targetFile = FileUtil.zipFiles(aAttachName, aAttachFiles);
-		this.mimeMessageHelper.addAttachment(aAttachName, targetFile);
+	public void addAttachments(String aAttachName, File... aAttachFiles) throws MessagingException {
+
+		Assert.noNullElements(aAttachFiles, "Files to be attached are required");
+
+		for (File file : aAttachFiles) {
+			this.mimeMessageHelper.addAttachment(aAttachName, file);
+		}
 	}
 
 	/**
-	 * @param aAttachName
-	 * @param aAttachFile
-	 * @throws MessagingException
+	 * Need to rewrite the method to take the values as parameters to make it
+	 * truly configurable
 	 */
-	public void addAttachment(String aAttachName, File aAttachFile) throws MessagingException {
-		this.mimeMessageHelper.addAttachment(aAttachName, aAttachFile);
-	}
-
-	/**
-	 */
+	@Deprecated()
 	public void useSSL() {
 		getJavaMailProperties().put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
 		getJavaMailProperties().put("mail.smtp.auth", "true");

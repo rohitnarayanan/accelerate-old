@@ -2,7 +2,6 @@ package accelerate.util.file;
 
 import static accelerate.util.AccelerateConstants.HYPHEN_CHAR;
 import static accelerate.util.AccelerateConstants.UNIX_PATH_CHAR;
-import static accelerate.util.FileUtil.copyFile;
 import static accelerate.util.FileUtil.getFileExtn;
 import static accelerate.util.FileUtil.getFileName;
 import static accelerate.util.FileUtil.getUnixPath;
@@ -23,11 +22,14 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.io.FileUtils;
+
 import accelerate.batch.AccelerateBatch;
 import accelerate.batch.AccelerateTask;
 import accelerate.databean.AccelerateDataBean;
 import accelerate.exception.AccelerateException;
 import accelerate.util.CollectionUtil;
+import accelerate.util.file.DirectoryParser.FileHandler;
 
 /**
  * Utility class that provides methods to compare and synchronize 2 directories.
@@ -41,9 +43,12 @@ public class DirectorySynchronizer {
 	/**
 	 * @param aDirSyncInput
 	 * @return {@link DirSyncOutput} instance
+	 * @throws AccelerateException
+	 *             thrown by
+	 *             {@link DirectoryParser#execute(String, FileHandler)}
 	 * 
 	 */
-	public static DirSyncOutput compare(DirSyncInput aDirSyncInput) {
+	public static DirSyncOutput compare(DirSyncInput aDirSyncInput) throws AccelerateException {
 		DirSyncOutput dirSyncOutput = new DirSyncOutput();
 
 		validateInput(aDirSyncInput, dirSyncOutput);
@@ -75,8 +80,11 @@ public class DirectorySynchronizer {
 	 *            {@link DirSyncOutput} instance
 	 * @param aThreadPoolCount
 	 *            Number of concurrent tasks to run for copying files
+	 * @throws AccelerateException
+	 *             thrown by {@link AccelerateBatch#initialize()}
 	 */
-	public static void synchronize(DirSyncInput aDirSyncInput, DirSyncOutput aDirSyncOutput, int aThreadPoolCount) {
+	public static void synchronize(DirSyncInput aDirSyncInput, DirSyncOutput aDirSyncOutput, int aThreadPoolCount)
+			throws AccelerateException {
 		if (aDirSyncOutput.errorFlag || !aDirSyncOutput.completedFlag) {
 			return;
 		}
@@ -508,20 +516,26 @@ public class DirectorySynchronizer {
 			this.mode = aMode;
 		}
 
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see accelerate.batch.AccelerateTask#execute()
+		 */
 		/**
+		 * @throws AccelerateException
 		 */
 		@Override
-		protected void execute() {
+		protected void execute() throws AccelerateException {
 			int sourceRootIndex = this.sourceRoot.getPath().length();
 			File destination = new File(this.targetRoot, getUnixPath(this.sourceFile).substring(sourceRootIndex));
 			try {
-				if (this.conflictResult != null) {
-
-					this.copyResult = copyFile(this.conflictResult.sourceFile, this.conflictResult.targetFile, true);
-
-				} else {
-					this.copyResult = copyFile(this.sourceFile, destination);
+				if (this.conflictResult == null && destination.exists()) {
+					this.copyResult = false;
+					return;
 				}
+
+				FileUtils.copyFile(this.sourceFile, destination);
+				this.copyResult = destination.exists();
 			} catch (IOException error) {
 				throw new AccelerateException(error);
 			}

@@ -7,7 +7,6 @@ import static org.springframework.util.ObjectUtils.isEmpty;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -15,7 +14,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import accelerate.exception.AccelerateException;
+import org.springframework.util.Assert;
 
 /**
  * This class provides utility methods for the application
@@ -230,20 +229,9 @@ public final class StringUtil {
 			return Collections.emptyMap();
 		}
 
-		Map<String, String> tokenMap = new HashMap<>();
-
-		Arrays.stream(StringUtil.split(aInputString, aRecordDelim)).forEach(aLine -> {
-			String[] fields = StringUtil.split(aLine, aFieldDelim);
-			if (fields.length == 1) {
-				tokenMap.put(fields[0], null);
-			} else if (fields.length == 2) {
-				tokenMap.put(fields[0], fields[1]);
-			} else {
-				throw new AccelerateException("3 or more fields in record %s", aLine);
-			}
-		});
-
-		return tokenMap;
+		return Arrays.stream(StringUtil.split(aInputString, aRecordDelim))
+				.map(aLine -> StringUtil.split(aLine, aFieldDelim)).collect(Collectors.toMap(aValues -> aValues[0],
+						aValues -> (aValues.length == 1) ? aValues[0] : aValues[1]));
 	}
 
 	/**
@@ -300,17 +288,19 @@ public final class StringUtil {
 	 * @return Clipped String
 	 */
 	private static String _extract(CharSequence aValue, int aStartIndex, int aEndIndex) {
+		Assert.notNull(aValue, "String value is required");
+
 		int length = aValue.length();
 		int start = (aStartIndex < 0) ? 0 : aStartIndex;
 		int end = (aEndIndex < 0) ? length : aEndIndex;
-		String value = aValue.toString();
 
-		if ((start < 0) || (end < 0) || (start >= length) || (end >= length) || (end < start)) {
-			// TODO:
-			throw new AccelerateException("Invalid/Incompatible indexes");
-		}
+		Assert.isTrue((start >= 0), "start index cannot be less than 0");
+		Assert.isTrue((end >= 0), "end index cannot be less than 0");
+		Assert.isTrue((start < length), "start index cannot be beyond the string length");
+		Assert.isTrue((end <= length), "end index cannot be beyond the string length");
+		Assert.isTrue((end > length), "end index cannot be before start index");
 
-		return value.substring(start, end);
+		return aValue.subSequence(start, end).toString();
 	}
 
 	/**
@@ -330,12 +320,8 @@ public final class StringUtil {
 	 */
 	public static String padString(String aInputString, int aTargetLength, Character aPadChar, boolean aPadFlag) {
 		StringBuilder buffer = new StringBuilder();
-
 		int padLength = isEmpty(aInputString) ? aTargetLength : aInputString.length() - aTargetLength;
-		if (padLength < 0) {
-			// TODO:
-			throw new AccelerateException("Invalid arguments");
-		}
+		Assert.isTrue((padLength > 0), "Invalid target length");
 
 		if (!aPadFlag) {
 			buffer.append(aInputString);

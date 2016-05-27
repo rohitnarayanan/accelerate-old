@@ -11,7 +11,6 @@ import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 
 import accelerate.exception.AccelerateException;
-import accelerate.util.AppUtil;
 import accelerate.util.JSONUtil;
 
 /**
@@ -149,7 +148,8 @@ public class AccelerateDataBean implements Serializable {
 	 *             {@link String}
 	 */
 	public final AccelerateDataBean addAll(Object... aArgs) throws AccelerateException {
-		AppUtil.assertEmpty("Invalid Call. All arguments are required", aArgs);
+		Assert.notNull(aArgs, "Arguments are required");
+		Assert.noNullElements(aArgs, "Arguments are required");
 		Assert.isTrue(((aArgs.length % 2) == 0), "Incorrect number of arguments");
 
 		for (int idx = 0; idx < aArgs.length; idx += 2) {
@@ -170,8 +170,9 @@ public class AccelerateDataBean implements Serializable {
 	 * 
 	 * @param aArgs
 	 * @return
+	 * @throws AccelerateException
 	 */
-	public static final AccelerateDataBean build(Object... aArgs) {
+	public static final AccelerateDataBean build(Object... aArgs) throws AccelerateException {
 		AccelerateDataBean bean = new AccelerateDataBean();
 		bean.addAll(aArgs);
 		return bean;

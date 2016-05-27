@@ -61,8 +61,10 @@ public final class CollectionUtil {
 	 * @param mapInstanceA
 	 * @param mapInstanceB
 	 * @return result string
+	 * @throws AccelerateException
 	 */
-	public static AccelerateDataBean compareMaps(Map<?, ?> mapInstanceA, Map<?, ?> mapInstanceB) {
+	public static AccelerateDataBean compareMaps(Map<?, ?> mapInstanceA, Map<?, ?> mapInstanceB)
+			throws AccelerateException {
 		AccelerateDataBean extraA = new AccelerateDataBean();
 		AccelerateDataBean extraB = new AccelerateDataBean();
 		AccelerateDataBean conflict = new AccelerateDataBean();

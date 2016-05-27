@@ -197,7 +197,7 @@ public class StaticListenerHelper implements ApplicationListener<ApplicationRead
 				Class<?> targetClass = Class.forName(aClassName);
 				ReflectionUtil.invokeMethod(targetClass, null, aHandlerMap.get(aHandlerKey),
 						new Class<?>[] { ApplicationContext.class }, new Object[] { this.applicationContext });
-			} catch (Exception error) {
+			} catch (ClassNotFoundException error) {
 				throw new AccelerateException(error);
 			}
 		});

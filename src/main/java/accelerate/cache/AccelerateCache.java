@@ -172,9 +172,10 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	 * This method sets the age of the cache
 	 *
 	 * @param aCacheAge
+	 * @throws AccelerateException
 	 */
 	@ManagedOperation(description = "This method sets the age of the cache")
-	public void age(String aCacheAge) {
+	public void age(String aCacheAge) throws AccelerateException {
 		if (!isLoadedAtStartup()) {
 			throw new AccelerateException("Cache Not LoadedAtStartup");
 		}
@@ -230,8 +231,9 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	 * This method returns the base map which stores the cache
 	 *
 	 * @return {@link Cache} instance
+	 * @throws AccelerateException
 	 */
-	public Cache cache() {
+	public Cache cache() throws AccelerateException {
 		if (!this.initialized) {
 			throw new AccelerateException("Not Initialized");
 		}
@@ -298,9 +300,10 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	 * @param aKey
 	 *            key to be looked up in the cache
 	 * @return value instance stored against the key
+	 * @throws AccelerateException
 	 */
 	@SuppressWarnings("unchecked")
-	public V get(K aKey) {
+	public V get(K aKey) throws AccelerateException {
 		if (!this.initialized) {
 			throw new AccelerateException("Not Initialized");
 		}
@@ -347,8 +350,9 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	 *            key against which the value should be stored
 	 * @param aValue
 	 *            value which has to be added to the cache
+	 * @throws AccelerateException
 	 */
-	public void put(K aKey, V aValue) {
+	public void put(K aKey, V aValue) throws AccelerateException {
 		if (!this.initialized) {
 			throw new AccelerateException("Not Initialized");
 		}
@@ -540,8 +544,9 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	 * @param aKey
 	 *            Key for which the value is to be fetched
 	 * @return Value retrieved from the data source
+	 * @throws AccelerateException
 	 */
-	protected abstract V fetch(K aKey);
+	protected abstract V fetch(K aKey) throws AccelerateException;
 
 	/**
 	 * This method calculates the cache duration to determine when the cache is

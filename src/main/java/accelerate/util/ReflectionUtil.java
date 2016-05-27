@@ -6,6 +6,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import org.springframework.util.Assert;
+
 import accelerate.exception.AccelerateException;
 
 /**
@@ -36,7 +38,8 @@ public final class ReflectionUtil {
 	 */
 	public static Object getFieldValue(Class<?> aTargetClass, Object aTargetInstance, String aTargetField)
 			throws AccelerateException {
-		AppUtil.assertEmpty("Invalid Call. All arguments are required", aTargetClass, aTargetInstance, aTargetField);
+		Assert.noNullElements(new Object[] { aTargetClass, aTargetInstance, aTargetField },
+				"Invalid Call. All arguments are required");
 
 		try {
 			Field field = aTargetClass.getField(aTargetField);
@@ -66,8 +69,8 @@ public final class ReflectionUtil {
 	 */
 	public static void setFieldValue(Class<?> aTargetClass, Object aTargetInstance, String aTargetField,
 			Object aFieldValue) throws AccelerateException {
-		AppUtil.assertEmpty("Invalid Call. All arguments are required", aTargetClass, aTargetInstance, aTargetField,
-				aFieldValue);
+		Assert.noNullElements(new Object[] { aTargetClass, aTargetInstance, aTargetField, aFieldValue },
+				"Invalid Call. All arguments are required");
 
 		try {
 			Field field = aTargetClass.getField(aTargetField);
@@ -97,8 +100,8 @@ public final class ReflectionUtil {
 	 */
 	public static Object invokeMethod(Class<?> aTargetClass, Object aTargetInstance, String aTargetMethodName,
 			Class<?>[] aMethodArgTypes, Object[] aMethodArgs) throws AccelerateException {
-		AppUtil.assertEmpty("Invalid Call .Target Class and method name arguments are required", aTargetClass,
-				aTargetMethodName);
+		Assert.noNullElements(new Object[] { aTargetClass, aTargetMethodName },
+				"Invalid Call. All arguments are required");
 
 		try {
 			Method method = aTargetClass.getMethod(aTargetMethodName, aMethodArgTypes);
@@ -118,9 +121,13 @@ public final class ReflectionUtil {
 	 * @param aTargetInstance
 	 * @param aTargetField
 	 * @return String
+	 * @throws AccelerateException
+	 *             thrown by
+	 *             {@link #invokeMethod(Class, Object, String, Class[], Object[])}
 	 */
-	public static Object invokeGetter(Object aTargetInstance, String aTargetField) {
-		AppUtil.assertEmpty("Invalid Call .All arguments are required", aTargetInstance, aTargetField);
+	public static Object invokeGetter(Object aTargetInstance, String aTargetField) throws AccelerateException {
+		Assert.noNullElements(new Object[] { aTargetInstance, aTargetField },
+				"Invalid Call. All arguments are required");
 
 		String getterName = camelCase("get", aTargetField);
 		return invokeMethod(aTargetInstance.getClass(), aTargetInstance, getterName, (Class<?>[]) null,
@@ -131,13 +138,17 @@ public final class ReflectionUtil {
 	 * @param aTargetInstance
 	 * @param aTargetField
 	 * @param aFieldValue
+	 * @throws AccelerateException
+	 *             thrown by
+	 *             {@link #invokeMethod(Class, Object, String, Class[], Object[])}
 	 */
-	public static void invokeSetter(Object aTargetInstance, String aTargetField, Object aFieldValue) {
-		AppUtil.assertEmpty("Invalid Call .All arguments are required", aTargetInstance, aTargetField, aFieldValue);
+	public static void invokeSetter(Object aTargetInstance, String aTargetField, Object aFieldValue)
+			throws AccelerateException {
+		Assert.noNullElements(new Object[] { aTargetInstance, aTargetField, aFieldValue },
+				"Invalid Call. All arguments are required");
 
 		String setterName = camelCase("set", aTargetField);
 		invokeMethod(aTargetInstance.getClass(), aTargetInstance, setterName, new Class<?>[] { aFieldValue.getClass() },
 				new Object[] { aFieldValue });
-
 	}
 }

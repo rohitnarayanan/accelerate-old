@@ -1,7 +1,8 @@
 package test.accelerate;
 
-import java.util.Arrays;
-import java.util.stream.Collectors;
+import java.io.File;
+
+import accelerate.util.FileUtil;
 
 /**
  * Basic class to quick test code
@@ -14,9 +15,7 @@ import java.util.stream.Collectors;
 public class QuickTest {
 	public static void main(String[] args) {
 		try {
-			Object[] arr = new Object[] { "ok", null, "ko" };
-			Arrays.stream(arr).map(val -> val.toString()).collect(Collectors.toList());
-			System.out.println("QuickTest");
+			System.out.println(FileUtil.deleteFilesFromDir(null, null));
 		} catch (Exception error) {
 			error.printStackTrace();
 		}

@@ -16,17 +16,19 @@ import static org.springframework.util.ObjectUtils.isEmpty;
 import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.Assert;
 
 import accelerate.cache.PropertyCache;
 import accelerate.exception.AccelerateException;
 import accelerate.util.FileUtil;
+import accelerate.util.JSONUtil;
 import accelerate.util.StringUtil;
 
 /**
@@ -49,21 +51,8 @@ public class FileRenamer {
 	 * @throws AccelerateException
 	 */
 	public static FileRenamerOutput rename(FileRenamerInput aInput) throws AccelerateException {
-		if ((aInput == null) || isEmpty(aInput.filePath)) {
-			throw new AccelerateException("Invalid Input");
-		}
-
-		if (aInput.enablePatternReplace) {
-			if (compareAny(true, isEmpty(aInput.findPattern), isEmpty(aInput.replaceString))) {
-				throw new AccelerateException(
-						"For pattern replacem findPattern{%s} and replaceString{%s} are required !!",
-						aInput.findPattern, aInput.replaceString);
-			}
-		}
-
-		if (aInput.configProps == null) {
-			aInput.configProps = new HashMap<>();
-		}
+		Assert.noNullElements(new Object[] { aInput, aInput.filePath, aInput.findPattern, aInput.replaceString },
+				"Invalid Input - " + JSONUtil.serialize(aInput));
 
 		FileRenamerOutput output = new FileRenamerOutput();
 		DirectoryParser.execute(aInput.filePath, new FileRenameHandler(aInput, output));
@@ -139,7 +128,7 @@ public class FileRenamer {
 		/**
 		 * {@link PropertyCache} instance to manage properties
 		 */
-		public Map<String, String> configProps = null;
+		public Map<String, String> configProps = Collections.emptyMap();
 	}
 
 	/**

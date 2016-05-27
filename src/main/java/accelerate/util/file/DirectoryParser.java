@@ -2,10 +2,12 @@ package accelerate.util.file;
 
 import static accelerate.util.AppUtil.compare;
 import static accelerate.util.FileUtil.getFileExtn;
-import static accelerate.util.FileUtil.getFileList;
+import static accelerate.util.FileUtil.listFiles;
 import static org.springframework.util.ObjectUtils.isEmpty;
 
 import java.io.File;
+
+import accelerate.exception.AccelerateException;
 
 /**
  * Utility class that provides methods to traverse a given directory. Users can
@@ -20,16 +22,20 @@ public class DirectoryParser {
 	/**
 	 * @param aFolderPath
 	 * @param aHandler
+	 * @throws AccelerateException
+	 *             thrown by {@link #execute(String, FileHandler)}
 	 */
-	public static void execute(String aFolderPath, FileHandler aHandler) {
+	public static void execute(String aFolderPath, FileHandler aHandler) throws AccelerateException {
 		execute(new File(aFolderPath), aHandler);
 	}
 
 	/**
 	 * @param aFolder
 	 * @param aHandler
+	 * @throws AccelerateException
+	 *             thrown by {@link #parseDirectory(File, FileHandler)}
 	 */
-	public static void execute(File aFolder, FileHandler aHandler) {
+	public static void execute(File aFolder, FileHandler aHandler) throws AccelerateException {
 		File rootDirectory = aFolder;
 		FileHandler handler = aHandler;
 
@@ -51,8 +57,11 @@ public class DirectoryParser {
 	/**
 	 * @param aFolder
 	 * @param aHandler
+	 * @throws AccelerateException
+	 *             thrown by {@link FileHandler#handleDirectory(File)} or
+	 *             {@link FileHandler#handleFile(File)}
 	 */
-	private static void parseDirectory(File aFolder, FileHandler aHandler) {
+	private static void parseDirectory(File aFolder, FileHandler aHandler) throws AccelerateException {
 		if (aFolder == null) {
 			return;
 		}
@@ -62,7 +71,7 @@ public class DirectoryParser {
 			return;
 		}
 
-		for (File file : getFileList(aFolder)) {
+		for (File file : listFiles(aFolder)) {
 			if (file.isDirectory()) {
 				File folder = aHandler.handleDirectory(file);
 				parseDirectory(folder, aHandler);
@@ -93,14 +102,18 @@ public class DirectoryParser {
 		 * @param aFile
 		 * @return {@link File} Instance, Will differ if path modifications were
 		 *         made
+		 * @throws AccelerateException
+		 *             processing error
 		 */
-		public File handleFile(File aFile);
+		public File handleFile(File aFile) throws AccelerateException;
 
 		/**
 		 * @param aFolder
 		 * @return {@link File} Instance, Will differ if path modifications were
 		 *         made
+		 * @throws AccelerateException
+		 *             processing error
 		 */
-		public File handleDirectory(File aFolder);
+		public File handleDirectory(File aFolder) throws AccelerateException;
 	}
 }
