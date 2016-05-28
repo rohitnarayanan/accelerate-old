@@ -1,13 +1,17 @@
 package accelerate.util.file;
 
-import static accelerate.util.AppUtil.compare;
-import static accelerate.util.FileUtil.getFileExtn;
 import static accelerate.util.FileUtil.listFiles;
-import static org.springframework.util.ObjectUtils.isEmpty;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
+import org.springframework.util.Assert;
 
 import accelerate.exception.AccelerateException;
+import accelerate.util.FileUtil;
 
 /**
  * Utility class that provides methods to traverse a given directory. Users can
@@ -20,67 +24,50 @@ import accelerate.exception.AccelerateException;
  */
 public class DirectoryParser {
 	/**
-	 * @param aFolderPath
+	 * @param aFolder
+	 * @param aFileFilter
 	 * @param aHandler
+	 * @return List of all files that were processed
 	 * @throws AccelerateException
-	 *             thrown by {@link #execute(String, FileHandler)}
+	 *             thrown by
+	 *             {@link #parseDirectory(File, Predicate, FileHandler, List)}
 	 */
-	public static void execute(String aFolderPath, FileHandler aHandler) throws AccelerateException {
-		execute(new File(aFolderPath), aHandler);
+	public static List<File> execute(File aFolder, Predicate<File> aFileFilter, FileHandler aHandler)
+			throws AccelerateException {
+		Assert.isTrue((aFolder != null) && aFolder.exists() && aFolder.isDirectory(),
+				"Invalid folder - " + FileUtil.getPath(aFolder));
+		List<File> fileList = new ArrayList<>();
+		parseDirectory(aFolder, aFileFilter, aHandler, fileList);
+		return fileList;
 	}
 
 	/**
 	 * @param aFolder
+	 * @param aFileFilter
 	 * @param aHandler
-	 * @throws AccelerateException
-	 *             thrown by {@link #parseDirectory(File, FileHandler)}
-	 */
-	public static void execute(File aFolder, FileHandler aHandler) throws AccelerateException {
-		File rootDirectory = aFolder;
-		FileHandler handler = aHandler;
-
-		if ((rootDirectory == null) || !rootDirectory.exists()) {
-			System.out.println("Invalid Root: " + rootDirectory);
-			return;
-		}
-
-		if (rootDirectory.isFile()) {
-			if (isEmpty(handler.getExtnFilter()) || compare(getFileExtn(rootDirectory), handler.getExtnFilter())) {
-				handler.handleFile(rootDirectory);
-			}
-			return;
-		}
-
-		parseDirectory(rootDirectory, aHandler);
-	}
-
-	/**
-	 * @param aFolder
-	 * @param aHandler
+	 * @param aFileList
 	 * @throws AccelerateException
 	 *             thrown by {@link FileHandler#handleDirectory(File)} or
 	 *             {@link FileHandler#handleFile(File)}
 	 */
-	private static void parseDirectory(File aFolder, FileHandler aHandler) throws AccelerateException {
-		if (aFolder == null) {
-			return;
-		}
+	private static void parseDirectory(File aFolder, Predicate<File> aFileFilter, FileHandler aHandler,
+			final List<File> aFileList) throws AccelerateException {
+		aFileList.addAll(listFiles(aFolder).stream()
+				.filter(aFile -> (aFileFilter == null) ? true : aFileFilter.test(aFile)).map(aFile -> {
+					if (aHandler == null) {
+						return aFile;
+					}
 
-		if (!aFolder.exists()) {
-			System.out.println("Missing Folder: " + aFolder);
-			return;
-		}
+					File newFile = null;
+					if (aFile.isDirectory()) {
+						newFile = aHandler.handleDirectory(aFile);
+						parseDirectory(newFile, aFileFilter, aHandler, aFileList);
+					} else {
+						newFile = aHandler.handleFile(aFile);
+					}
 
-		for (File file : listFiles(aFolder)) {
-			if (file.isDirectory()) {
-				File folder = aHandler.handleDirectory(file);
-				parseDirectory(folder, aHandler);
-			} else {
-				if (isEmpty(aHandler.getExtnFilter()) || compare(getFileExtn(file), aHandler.getExtnFilter())) {
-					aHandler.handleFile(file);
-				}
-			}
-		}
+					return newFile;
+				}).collect(Collectors.toList()));
 	}
 
 	/**
@@ -93,17 +80,11 @@ public class DirectoryParser {
 	 */
 	public interface FileHandler {
 		/**
-		 * @return File Extn that should be targeted. null if all files should
-		 *         be processed
-		 */
-		public String getExtnFilter();
-
-		/**
 		 * @param aFile
 		 * @return {@link File} Instance, Will differ if path modifications were
 		 *         made
 		 * @throws AccelerateException
-		 *             processing error
+		 *             Allowing implementations to wrap exceptions in one class
 		 */
 		public File handleFile(File aFile) throws AccelerateException;
 
@@ -112,7 +93,7 @@ public class DirectoryParser {
 		 * @return {@link File} Instance, Will differ if path modifications were
 		 *         made
 		 * @throws AccelerateException
-		 *             processing error
+		 *             Allowing implementations to wrap exceptions in one class
 		 */
 		public File handleDirectory(File aFolder) throws AccelerateException;
 	}

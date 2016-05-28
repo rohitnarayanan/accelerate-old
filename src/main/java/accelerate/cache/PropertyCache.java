@@ -1,24 +1,20 @@
 package accelerate.cache;
 
 import static accelerate.util.AccelerateConstants.COMMA_CHAR;
-import static accelerate.util.AccelerateConstants.YES;
+import static accelerate.util.AccelerateConstants.DOT_CHAR;
+import static accelerate.util.AccelerateConstants.EMPTY_STRING;
 import static accelerate.util.AppUtil.compare;
 import static accelerate.util.ResourceUtil.LoadPropertyMap;
 import static accelerate.util.StringUtil.join;
 import static org.springframework.util.ObjectUtils.isEmpty;
 
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 
 import javax.sql.DataSource;
 
-import org.springframework.cache.Cache;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedOperation;
 
@@ -36,10 +32,8 @@ import accelerate.util.StringUtil;
  * configuration properties in the form of key-value pairs
  * </p>
  * <p>
- * The properties can also be defined in a database table named as
- * {@link #configTableName} table with the key stored in {@link #keyColumnName}
- * column and value in {@link #valueColumnName} column. These properties can be
- * overridden too.
+ * The properties can also be defined in a database table and the user will have
+ * to provide the query ({@link #configQuery}) to fetch them.
  * </p>
  * <p>
  * Users also have the option of saving the properties for multiple environments
@@ -64,24 +58,15 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	private String configURL = null;
 
 	/**
+	 * SQL query to fetch properties from the database. It is expected that the
+	 * select clause will be of the format key_column, value_column
+	 */
+	private String configQuery = null;
+
+	/**
 	 * {@link DataSource} instance to query db for properties
 	 */
 	private DataSource dataSource = null;
-
-	/**
-	 * Name of the database table that contains the properties
-	 */
-	private String configTableName = "APP_PROPERTIES";
-
-	/**
-	 * Name of the table column that contains the property key
-	 */
-	private String keyColumnName = "PROPERTY_KEY";
-
-	/**
-	 * Name of the table column that contains the property value
-	 */
-	private String valueColumnName = "PROPERTY_VALUE";
 
 	/**
 	 * Name of the profile for which to cache the properties. Usually properties
@@ -90,12 +75,7 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 * <p>
 	 * Allows to store same properties with different values.
 	 */
-	private String profileName = "";
-
-	/**
-	 * Default value if property cannot be converted
-	 */
-	private int errorIntValue = Integer.MIN_VALUE;
+	private String profileName = null;
 
 	/**
 	 * Default Constructor
@@ -122,6 +102,8 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 *
 	 * @param aJsonNode
 	 * @throws AccelerateException
+	 *             thrown by
+	 *             {@link ReflectionUtil#setFieldValue(Class, Object, String, Object)}
 	 */
 	public PropertyCache(JsonNode aJsonNode) throws AccelerateException {
 		this(AccelerateConstants.EMPTY_STRING);
@@ -140,11 +122,22 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 *            array containing string to be concatenated to form the
 	 *            property key
 	 * @return {@link String} value stored against the key
-	 * @throws AccelerateException
 	 */
 	@ManagedOperation(description = "This method returns the element stored in cache against the given key")
-	public String get(String... aPropertyKeys) throws AccelerateException {
+	public String get(String... aPropertyKeys) {
 		return get(join(aPropertyKeys));
+	}
+
+	/**
+	 * This method get the property value using {@link #get(String...)} and then
+	 * return a {@link List} of tokens by spliting the value by ','.
+	 *
+	 * @param aPropertyKeys
+	 *            array of strings to be concatenated to form the property key
+	 * @return array of values
+	 */
+	public List<String> getPropertyList(String... aPropertyKeys) {
+		return StringUtil.split(get(join(aPropertyKeys)), COMMA_CHAR);
 	}
 
 	/**
@@ -155,9 +148,8 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 *            array containing string to be concatenated to form the
 	 *            property key
 	 * @return boolean result of the comparison
-	 * @throws AccelerateException
 	 */
-	public boolean isEnabled(String... aPropertyKeys) throws AccelerateException {
+	public boolean isEnabled(String... aPropertyKeys) {
 		return hasValue(Boolean.TRUE.toString(), aPropertyKeys);
 	}
 
@@ -170,36 +162,9 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 * @param aPropertyKeys
 	 *            array of strings to be concatenated to form the property key
 	 * @return boolean result of the comparison
-	 * @throws AccelerateException
 	 */
-	public boolean hasValue(String aCompareValue, String... aPropertyKeys) throws AccelerateException {
+	public boolean hasValue(String aCompareValue, String... aPropertyKeys) {
 		return compare(get(aPropertyKeys), aCompareValue);
-	}
-
-	/**
-	 * This method get the property value using {@link #get(String...)} and then
-	 * return a {@link List} of tokens by spliting the value by ','.
-	 *
-	 * @param aPropertyKeys
-	 *            array of strings to be concatenated to form the property key
-	 * @return array of values
-	 * @throws AccelerateException
-	 */
-	public String[] getPropertyList(String... aPropertyKeys) throws AccelerateException {
-		return StringUtil.split(get(join(aPropertyKeys)), COMMA_CHAR);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see accelerate.cache.AccelerateCache#isLoadedAtStartup()
-	 */
-	/**
-	 * @return
-	 */
-	@Override
-	public boolean isLoadedAtStartup() {
-		return true;
 	}
 
 	/*
@@ -209,61 +174,46 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 * cache.Cache)
 	 */
 	/**
-	 * @param aCache
-	 * @return
+	 * @param aCacheMap
 	 * @throws AccelerateException
+	 *             thrown by
+	 *             {@link ResourceUtil#LoadPropertyMap(org.springframework.context.ApplicationContext, String)}
 	 */
 	@Override
-	protected Set<String> loadCache(Cache aCache) throws AccelerateException {
-		Set<String> keySet = new HashSet<>();
+	protected void loadCache(final Map<String, String> aCacheMap) throws AccelerateException {
+		final String prefix = isEmpty(this.profileName) ? EMPTY_STRING : this.profileName + DOT_CHAR;
 
-		if (isEmpty(getConfigURL())) {
-			return keySet;
-		}
-
-		final Map<String, String> propertyMap = LoadPropertyMap(this.applicationContext, getConfigURL());
-		if (compare(propertyMap.get(join(this.profileName, "fetchFromDB")), YES)) {
-			final int length = !isEmpty(this.profileName) ? this.profileName.length() + 1 : 0;
-
-			StringBuilder sql = new StringBuilder();
-			sql.append("select * from ").append(getConfigTableName());
-			if (length > 0) {
-				sql.append("where ").append(getKeyColumnName()).append(" like '").append(this.profileName)
-						.append(".%'");
-			}
-
-			/*
-			 * Query the database
-			 */
-			JdbcTemplate jdbcTemplate = new JdbcTemplate(getDataSource());
-			jdbcTemplate.query(sql.toString(), (RowMapper<Object>) (aResultSet, aRowNum) -> {
-				propertyMap.put(aResultSet.getString(getKeyColumnName()).substring(length),
-						aResultSet.getString(getValueColumnName()));
-				return null;
+		/*
+		 * If config URL is provided load properties
+		 */
+		if (!isEmpty(getConfigURL())) {
+			LoadPropertyMap(this.applicationContext, getConfigURL()).forEach((key, value) -> {
+				if (key.startsWith(prefix)) {
+					aCacheMap.put(key.substring(prefix.length()), value);
+				}
 			});
 		}
 
-		for (Entry<String, String> entry : propertyMap.entrySet()) {
-			aCache.put(entry.getKey(), entry.getValue());
+		/*
+		 * If configQuery is not set or db loading is disabled in the property
+		 * file skipthen try loading properties from database.
+		 */
+		if (isEmpty(getConfigQuery()) || !compare(aCacheMap.get("fetchFromDB"), Boolean.TRUE.toString())) {
+			return;
 		}
-		keySet.addAll(propertyMap.keySet());
 
-		return keySet;
-	}
+		/*
+		 * Query the database
+		 */
+		JdbcTemplate jdbcTemplate = new JdbcTemplate(this.dataSource);
+		jdbcTemplate.query(this.configQuery, (aResultSet, aRowNum) -> {
+			String key = aResultSet.getString(1);
+			if (key.startsWith(prefix)) {
+				aCacheMap.put(key.substring(prefix.length()), aResultSet.getString(2));
+			}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see accelerate.cache.AccelerateCache#fetch(java.lang.Object)
-	 */
-	/**
-	 * @param aKey
-	 * @return
-	 * @throws AccelerateException
-	 */
-	@Override
-	protected String fetch(String aKey) throws AccelerateException {
-		throw new AccelerateException("This cache is always loaded at startup !");
+			return null;
+		});
 	}
 
 	/**
@@ -272,7 +222,7 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 * @return configURL
 	 */
 	@ManagedAttribute
-	protected String getConfigURL() {
+	public String getConfigURL() {
 		return this.configURL;
 	}
 
@@ -282,86 +232,28 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 * @param aConfigURL
 	 */
 	@ManagedAttribute
-	protected void setConfigURL(String aConfigURL) {
+	public void setConfigURL(String aConfigURL) {
 		this.configURL = aConfigURL;
 	}
 
 	/**
-	 * Getter method for "dataSource" property
-	 *
-	 * @return dataSource
-	 */
-	protected DataSource getDataSource() {
-		return this.dataSource;
-	}
-
-	/**
-	 * Setter method for "dataSource" property
-	 *
-	 * @param aDataSource
-	 */
-	protected void setDataSource(DataSource aDataSource) {
-		this.dataSource = aDataSource;
-	}
-
-	/**
-	 * Getter method for "configTableName" property
-	 *
-	 * @return configTableName
+	 * Getter method for "configQuery" property
+	 * 
+	 * @return configQuery
 	 */
 	@ManagedAttribute
-	protected String getConfigTableName() {
-		return this.configTableName;
+	public String getConfigQuery() {
+		return this.configQuery;
 	}
 
 	/**
-	 * Setter method for "configTableName" property
-	 *
-	 * @param aConfigTableName
+	 * Setter method for "configQuery" property
+	 * 
+	 * @param aConfigQuery
 	 */
 	@ManagedAttribute
-	protected void setConfigTableName(String aConfigTableName) {
-		this.configTableName = aConfigTableName;
-	}
-
-	/**
-	 * Getter method for "keyColumnName" property
-	 *
-	 * @return keyColumnName
-	 */
-	@ManagedAttribute
-	protected String getKeyColumnName() {
-		return this.keyColumnName;
-	}
-
-	/**
-	 * Setter method for "keyColumnName" property
-	 *
-	 * @param aKeyColumnName
-	 */
-	@ManagedAttribute
-	protected void setKeyColumnName(String aKeyColumnName) {
-		this.keyColumnName = aKeyColumnName;
-	}
-
-	/**
-	 * Getter method for "valueColumnName" property
-	 *
-	 * @return valueColumnName
-	 */
-	@ManagedAttribute
-	protected String getValueColumnName() {
-		return this.valueColumnName;
-	}
-
-	/**
-	 * Setter method for "valueColumnName" property
-	 *
-	 * @param aValueColumnName
-	 */
-	@ManagedAttribute
-	protected void setValueColumnName(String aValueColumnName) {
-		this.valueColumnName = aValueColumnName;
+	public void setConfigQuery(String aConfigQuery) {
+		this.configQuery = aConfigQuery;
 	}
 
 	/**
@@ -370,7 +262,7 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 * @return profileName
 	 */
 	@ManagedAttribute
-	protected String getProfileName() {
+	public String getProfileName() {
 		return this.profileName;
 	}
 
@@ -380,27 +272,16 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 * @param aProfileName
 	 */
 	@ManagedAttribute
-	protected void setProfileName(String aProfileName) {
+	public void setProfileName(String aProfileName) {
 		this.profileName = aProfileName;
 	}
 
 	/**
-	 * Getter method for "errorIntValue" property
+	 * Setter method for "dataSource" property
 	 *
-	 * @return errorIntValue
+	 * @param aDataSource
 	 */
-	@ManagedAttribute
-	protected int getErrorIntValue() {
-		return this.errorIntValue;
-	}
-
-	/**
-	 * Setter method for "errorIntValue" property
-	 *
-	 * @param aErrorIntValue
-	 */
-	@ManagedAttribute
-	protected void setErrorIntValue(int aErrorIntValue) {
-		this.errorIntValue = aErrorIntValue;
+	public void setDataSource(DataSource aDataSource) {
+		this.dataSource = aDataSource;
 	}
 }

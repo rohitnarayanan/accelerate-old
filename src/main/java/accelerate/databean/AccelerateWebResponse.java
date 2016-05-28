@@ -1,5 +1,6 @@
 package accelerate.databean;
 
+import accelerate.exception.AccelerateException;
 import accelerate.util.JSONUtil;
 
 /**
@@ -81,9 +82,12 @@ public class AccelerateWebResponse extends AccelerateDataBean {
 	 */
 	/**
 	 * @return
+	 * @throws AccelerateException
+	 *             thrown due to
+	 *             {@link JSONUtil#serializeOnly(Object, String...)}
 	 */
 	@Override
-	public String toShortJSON() {
+	public String toShortJSON() throws AccelerateException {
 		return JSONUtil.serializeOnly(this, "returnCode", "viewName", "accelerateMessage");
 	}
 

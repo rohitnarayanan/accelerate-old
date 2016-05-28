@@ -2,9 +2,7 @@ package accelerate.util.file;
 
 import static accelerate.util.AccelerateConstants.HYPHEN_CHAR;
 import static accelerate.util.AccelerateConstants.UNIX_PATH_CHAR;
-import static accelerate.util.FileUtil.getFileExtn;
-import static accelerate.util.FileUtil.getFileName;
-import static accelerate.util.FileUtil.getUnixPath;
+import static accelerate.util.FileUtil.getPath;
 import static org.springframework.util.ObjectUtils.isEmpty;
 
 import java.io.File;
@@ -28,7 +26,9 @@ import accelerate.batch.AccelerateBatch;
 import accelerate.batch.AccelerateTask;
 import accelerate.databean.AccelerateDataBean;
 import accelerate.exception.AccelerateException;
+import accelerate.util.AppUtil;
 import accelerate.util.CollectionUtil;
+import accelerate.util.FileUtil;
 import accelerate.util.file.DirectoryParser.FileHandler;
 
 /**
@@ -45,7 +45,7 @@ public class DirectorySynchronizer {
 	 * @return {@link DirSyncOutput} instance
 	 * @throws AccelerateException
 	 *             thrown by
-	 *             {@link DirectoryParser#execute(String, FileHandler)}
+	 *             {@link DirectoryParser#execute(File, java.util.function.Predicate, FileHandler)}
 	 * 
 	 */
 	public static DirSyncOutput compare(DirSyncInput aDirSyncInput) throws AccelerateException {
@@ -57,10 +57,14 @@ public class DirectorySynchronizer {
 		}
 
 		DirSyncFileHandler sourceHandler = new DirSyncFileHandler(aDirSyncInput, true);
-		DirectoryParser.execute(aDirSyncInput.sourceDir, sourceHandler);
+		DirectoryParser.execute(aDirSyncInput.sourceDir,
+				aFile -> AppUtil.compareAny(accelerate.util.FileUtil.getFileExtn(aFile), aDirSyncInput.ignoreExtns),
+				sourceHandler);
 
 		DirSyncFileHandler targetHandler = new DirSyncFileHandler(aDirSyncInput, false);
-		DirectoryParser.execute(aDirSyncInput.targetDir, targetHandler);
+		DirectoryParser.execute(aDirSyncInput.targetDir,
+				aFile -> AppUtil.compareAny(accelerate.util.FileUtil.getFileExtn(aFile), aDirSyncInput.ignoreExtns),
+				targetHandler);
 
 		if (aDirSyncInput.ignoreExtensions) {
 			dirSyncOutput.message
@@ -80,11 +84,8 @@ public class DirectorySynchronizer {
 	 *            {@link DirSyncOutput} instance
 	 * @param aThreadPoolCount
 	 *            Number of concurrent tasks to run for copying files
-	 * @throws AccelerateException
-	 *             thrown by {@link AccelerateBatch#initialize()}
 	 */
-	public static void synchronize(DirSyncInput aDirSyncInput, DirSyncOutput aDirSyncOutput, int aThreadPoolCount)
-			throws AccelerateException {
+	public static void synchronize(DirSyncInput aDirSyncInput, DirSyncOutput aDirSyncOutput, int aThreadPoolCount) {
 		if (aDirSyncOutput.errorFlag || !aDirSyncOutput.completedFlag) {
 			return;
 		}
@@ -106,21 +107,21 @@ public class DirectorySynchronizer {
 
 		if (aDirSyncInput.copyToTarget) {
 			aDirSyncOutput.newSourceFiles.stream().forEach(file -> {
-				dirSyncBatch.submitTasks(
-						new DirSyncFileCopyTask(file, aDirSyncInput.sourceDir, aDirSyncInput.targetDir, "S"));
+				dirSyncBatch
+						.submit(new DirSyncFileCopyTask(file, aDirSyncInput.sourceDir, aDirSyncInput.targetDir, "S"));
 			});
 		}
 
 		if (aDirSyncInput.copyToSource) {
 			aDirSyncOutput.newTargetFiles.stream().forEach(file -> {
-				dirSyncBatch.submitTasks(
-						new DirSyncFileCopyTask(file, aDirSyncInput.targetDir, aDirSyncInput.sourceDir, "T"));
+				dirSyncBatch
+						.submit(new DirSyncFileCopyTask(file, aDirSyncInput.targetDir, aDirSyncInput.sourceDir, "T"));
 			});
 		}
 
 		if (aDirSyncInput.overwriteTarget) {
 			aDirSyncOutput.conflictedFiles.forEach((key, value) -> {
-				dirSyncBatch.submitTasks(new DirSyncFileCopyTask(value, "C"));
+				dirSyncBatch.submit(new DirSyncFileCopyTask(value, "C"));
 			});
 		}
 
@@ -362,10 +363,12 @@ public class DirectorySynchronizer {
 		 * Index for length of root
 		 */
 		protected int pathIndex = 0;
+
 		/**
 		 * {@link Map} of {@link File} instances read
 		 */
 		protected Map<String, File> fileMap = null;
+
 		/**
 		 * Index for length of root
 		 */
@@ -392,28 +395,20 @@ public class DirectorySynchronizer {
 		}
 
 		/**
-		 * @return
-		 */
-		@Override
-		public String getExtnFilter() {
-			return null;
-		}
-
-		/**
 		 * @param aFile
 		 * @return {@link File} instance
 		 */
 		@Override
 		public File handleFile(File aFile) {
-			if (this.dirSyncInput.ignoreExtns.contains(getFileExtn(aFile))) {
+			if (this.dirSyncInput.ignoreExtns.contains(FileUtil.getFileExtn(aFile))) {
 				return aFile;
 			}
 
 			StringBuilder key = new StringBuilder();
-			key.append(getUnixPath(aFile.getParentFile()).substring(this.pathIndex));
+			key.append(FileUtil.getPath(aFile.getParentFile()).substring(this.pathIndex));
 			key.append(UNIX_PATH_CHAR);
 			if (this.dirSyncInput.ignoreExtensions) {
-				key.append(getFileName(aFile));
+				key.append(FileUtil.getFileName(aFile));
 			} else {
 				key.append(aFile.getName());
 			}
@@ -428,7 +423,7 @@ public class DirectorySynchronizer {
 		 */
 		@Override
 		public File handleDirectory(File aFolder) {
-			String shortPath = getUnixPath(aFolder).substring(this.pathIndex);
+			String shortPath = FileUtil.getPath(aFolder).substring(this.pathIndex);
 			File targetFolder = new File(this.compareRoot, shortPath);
 			if (!targetFolder.exists()) {
 				this.fileMap.put(shortPath, aFolder);
@@ -523,11 +518,12 @@ public class DirectorySynchronizer {
 		 */
 		/**
 		 * @throws AccelerateException
+		 *             thrown due to {@link FileUtils#copyFile(File, File)}
 		 */
 		@Override
 		protected void execute() throws AccelerateException {
 			int sourceRootIndex = this.sourceRoot.getPath().length();
-			File destination = new File(this.targetRoot, getUnixPath(this.sourceFile).substring(sourceRootIndex));
+			File destination = new File(this.targetRoot, getPath(this.sourceFile).substring(sourceRootIndex));
 			try {
 				if (this.conflictResult == null && destination.exists()) {
 					this.copyResult = false;

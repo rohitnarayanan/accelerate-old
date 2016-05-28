@@ -2,7 +2,6 @@ package accelerate.util;
 
 import static accelerate.util.AccelerateConstants.DOT_CHAR;
 import static accelerate.util.AccelerateConstants.EMPTY_STRING;
-import static accelerate.util.UtilCache.getPattern;
 import static org.springframework.util.ObjectUtils.isEmpty;
 
 import java.util.Arrays;
@@ -15,6 +14,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
 /**
  * This class provides utility methods for the application
@@ -101,27 +101,27 @@ public final class StringUtil {
 	}
 
 	/**
-	 * @param aKeys
+	 * @param aTokens
 	 *            - List of keys
 	 * @return dot delimited key string
 	 */
-	public static String join(CharSequence... aKeys) {
-		return join(CollectionUtil.toList(aKeys), DOT_CHAR);
+	public static String join(CharSequence... aTokens) {
+		Assert.notEmpty(aTokens, "No tokens provided");
+		return join(CollectionUtil.toList(aTokens), DOT_CHAR);
 	}
 
 	/**
-	 * @param aKeys
+	 * @param aTokens
 	 *            - List of keys
 	 * @param aDelim
 	 *            - Delimiting character
 	 * @return key string delimited by given character
 	 */
-	public static String join(List<? extends CharSequence> aKeys, CharSequence aDelim) {
-		if (isEmpty(aKeys)) {
-			return EMPTY_STRING;
-		}
+	public static String join(List<? extends CharSequence> aTokens, CharSequence aDelim) {
+		Assert.notEmpty(aTokens, "No tokens provided");
+		Assert.notNull(aDelim, "No delimiter provided");
 
-		return aKeys.stream().collect(Collectors.joining((aDelim != null) ? aDelim : EMPTY_STRING));
+		return aTokens.stream().collect(Collectors.joining(aDelim));
 	}
 
 	/**
@@ -131,9 +131,9 @@ public final class StringUtil {
 	 * @param aGlobalReplace
 	 * @return Modified String
 	 */
-	public static String replace(String aTargetString, String aPattern, String aReplacement, boolean aGlobalReplace) {
-		String newName = aTargetString;
-		Matcher patternMatcher = UtilCache.getPattern(aPattern).matcher(aTargetString);
+	public static String replace(CharSequence aTargetString, String aPattern, String aReplacement,
+			boolean aGlobalReplace) {
+		Matcher patternMatcher = Pattern.compile(aPattern).matcher(aTargetString);
 
 		if (aGlobalReplace) {
 			StringBuffer buffer = new StringBuffer();
@@ -142,17 +142,17 @@ public final class StringUtil {
 			}
 
 			patternMatcher.appendTail(buffer);
-			newName = buffer.toString();
-		} else {
-			if (patternMatcher.find()) {
-				StringBuffer buffer = new StringBuffer();
-				patternMatcher.appendReplacement(buffer, aReplacement);
-				patternMatcher.appendTail(buffer);
-				newName = buffer.toString();
-			}
+			return buffer.toString();
 		}
 
-		return newName;
+		if (patternMatcher.find()) {
+			StringBuffer buffer = new StringBuffer();
+			patternMatcher.appendReplacement(buffer, aReplacement);
+			patternMatcher.appendTail(buffer);
+			return buffer.toString();
+		}
+
+		return aTargetString.toString();
 	}
 
 	/**
@@ -162,14 +162,14 @@ public final class StringUtil {
 	 *            - Variable number of string inputs to search
 	 * @return true if match found
 	 */
-	public static List<String> grep(CharSequence aPattern, List<String> aCompareList) {
+	public static List<String> grep(String aPattern, String... aCompareList) {
 		if (isEmpty(aPattern) || isEmpty((aCompareList))) {
 			return Collections.emptyList();
 		}
 
-		Matcher matcher = getPattern(aPattern.toString()).matcher(EMPTY_STRING);
+		Matcher matcher = Pattern.compile(aPattern.toString()).matcher(EMPTY_STRING);
 
-		return aCompareList.stream().filter(aValue -> {
+		return Arrays.stream(aCompareList).filter(aValue -> {
 			matcher.reset(aValue);
 			return matcher.find();
 		}).collect(Collectors.toList());
@@ -182,8 +182,8 @@ public final class StringUtil {
 	 *            - Variable number of string inputs to search
 	 * @return true if match found
 	 */
-	public static boolean grepCheck(CharSequence aPattern, List<String> aCompareList) {
-		return grep(aPattern, aCompareList).isEmpty();
+	public static boolean grepCheck(String aPattern, String... aCompareList) {
+		return !grep(aPattern, aCompareList).isEmpty();
 	}
 
 	/**
@@ -209,12 +209,13 @@ public final class StringUtil {
 	 * @param aDelim
 	 * @return array of delimited values
 	 */
-	public static String[] split(CharSequence aSplitLine, CharSequence aDelim) {
+	public static List<String> split(CharSequence aSplitLine, String aDelim) {
 		if (isEmpty(aSplitLine)) {
-			return new String[] {};
+			return Collections.emptyList();
 		}
 
-		return getPattern(aDelim.toString()).split(aSplitLine);
+		return Arrays.stream(StringUtils.delimitedListToStringArray(aSplitLine.toString(), aDelim))
+				.filter(token -> StringUtils.hasLength(token)).collect(Collectors.toList());
 	}
 
 	/**
@@ -223,15 +224,14 @@ public final class StringUtil {
 	 * @param aFieldDelim
 	 * @return array of delimited values
 	 */
-	public static Map<String, String> multiSplit(CharSequence aInputString, CharSequence aRecordDelim,
-			CharSequence aFieldDelim) {
+	public static Map<String, String> multiSplit(CharSequence aInputString, String aRecordDelim, String aFieldDelim) {
 		if (isEmpty(aInputString)) {
 			return Collections.emptyMap();
 		}
 
-		return Arrays.stream(StringUtil.split(aInputString, aRecordDelim))
-				.map(aLine -> StringUtil.split(aLine, aFieldDelim)).collect(Collectors.toMap(aValues -> aValues[0],
-						aValues -> (aValues.length == 1) ? aValues[0] : aValues[1]));
+		return StringUtil.split(aInputString, aRecordDelim).stream().map(aLine -> StringUtil.split(aLine, aFieldDelim))
+				.collect(Collectors.toMap(aValues -> aValues.get(0),
+						aValues -> (aValues.size() == 1) ? aValues.get(0) : aValues.get(1)));
 	}
 
 	/**
@@ -343,19 +343,17 @@ public final class StringUtil {
 	 * @return
 	 */
 	public static String camelCase(String... aInputList) {
-		boolean flag = true;
-		StringBuilder buffer = new StringBuilder();
-		for (String token : aInputList) {
-			if (flag) {
-				buffer.append(Character.toLowerCase(token.charAt(0)));
-				flag = false;
+		final Boolean[] flag = new Boolean[] { true };
+
+		return Arrays.stream(aInputList).map(token -> {
+			Character firstChar = null;
+			if (flag[0]) {
+				firstChar = Character.toLowerCase(token.charAt(0));
+				flag[0] = false;
 			} else {
-				buffer.append(Character.toUpperCase(token.charAt(0)));
+				firstChar = Character.toUpperCase(token.charAt(0));
 			}
-
-			buffer.append(token.substring(1));
-		}
-
-		return buffer.toString();
+			return firstChar + token.substring(1);
+		}).collect(Collectors.joining());
 	}
 }

@@ -3,7 +3,6 @@ package accelerate.util;
 import static accelerate.util.AccelerateConstants.DOT_CHAR;
 import static accelerate.util.AccelerateConstants.EMPTY_STRING;
 import static accelerate.util.AccelerateConstants.NEW_LINE;
-import static accelerate.util.AccelerateConstants.UNIX_PATH_CHAR;
 import static accelerate.util.StringUtil.join;
 import static java.lang.String.valueOf;
 import static org.springframework.util.ObjectUtils.isEmpty;
@@ -16,18 +15,23 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
+
+import accelerate.exception.AccelerateException;
+import accelerate.util.file.DirectoryParser;
 
 /**
  * PUT DESCRIPTION HERE
@@ -37,6 +41,10 @@ import org.springframework.util.Assert;
  * @since Oct 15, 2009
  */
 public final class FileUtil {
+	/**
+	 * 
+	 */
+	static final Logger _logger = LoggerFactory.getLogger(FileUtil.class);
 
 	/**
 	 * hidden constructor
@@ -82,9 +90,12 @@ public final class FileUtil {
 	 * @param aTargetFile
 	 * @return Unix Style File Path
 	 */
-	public static String getUnixPath(File aTargetFile) {
-		Pattern pattern = UtilCache.getPattern("\\\\");
-		return pattern.matcher(aTargetFile.getPath()).replaceAll(UNIX_PATH_CHAR);
+	public static String getPath(File aTargetFile) {
+		if (aTargetFile == null) {
+			return EMPTY_STRING;
+		}
+
+		return StringUtils.cleanPath(aTargetFile.getPath());
 	}
 
 	/**
@@ -169,6 +180,36 @@ public final class FileUtil {
 	}
 
 	/**
+	 * @param aRootPath
+	 *            path to the file or folder of files
+	 * @param aNamePattern
+	 *            text to be searched in the filename
+	 * @return {@link List} of {@link File} that match the search criteria
+	 * @throws AccelerateException
+	 *             throw by
+	 *             {@link DirectoryParser#execute(File, java.util.function.Predicate, accelerate.util.file.DirectoryParser.FileHandler)}
+	 */
+	public static List<File> findFilesByName(String aRootPath, String aNamePattern) throws AccelerateException {
+		return DirectoryParser.execute(new File(aRootPath),
+				aFile -> StringUtil.grepCheck(aNamePattern, aFile.getName()), null);
+	}
+
+	/**
+	 * @param aRootPath
+	 *            path to the file or folder of files
+	 * @param aSearchExtn
+	 *            extension of the file
+	 * @return {@link List} of {@link File} that match the search criteria
+	 * @throws AccelerateException
+	 *             throw by
+	 *             {@link DirectoryParser#execute(File, java.util.function.Predicate, accelerate.util.file.DirectoryParser.FileHandler)}
+	 */
+	public static List<File> findFilesByExtn(String aRootPath, String aSearchExtn) throws AccelerateException {
+		return DirectoryParser.execute(new File(aRootPath),
+				aFile -> AppUtil.compare(accelerate.util.FileUtil.getFileExtn(aFile), aSearchExtn), null);
+	}
+
+	/**
 	 * This method renames the given file to new name preserving the extension
 	 *
 	 * @param aFile
@@ -200,6 +241,47 @@ public final class FileUtil {
 		aFile.renameTo(target);
 
 		return target;
+	}
+
+	/**
+	 * @param aRootFolder
+	 * @param aFileFilter
+	 * @param aFindPattern
+	 * @param aReplacement
+	 * @param aGlobalReplace
+	 * @return
+	 * @throws AccelerateException
+	 */
+	public static List<File> renameFiles(File aRootFolder, Predicate<File> aFileFilter, final String aFindPattern,
+			final String aReplacement, final boolean aGlobalReplace) throws AccelerateException {
+		Assert.noNullElements(new Object[] { aRootFolder, aFindPattern, aReplacement, aGlobalReplace },
+				"Invalid Input. Required arguments are missing");
+
+		return DirectoryParser.execute(aRootFolder, aFileFilter, new DirectoryParser.FileHandler() {
+			@Override
+			public File handleFile(File aFile) throws AccelerateException {
+				String currentName = aFile.getName();
+				String newName = StringUtil.replace(currentName, aFindPattern, aReplacement, aGlobalReplace);
+
+				if (AppUtil.compare(newName, currentName)) {
+					return aFile;
+				}
+
+				File newFile = new File(aFile.getParentFile(), newName);
+				if (newFile.exists()) {
+					_logger.debug("Cannot rename file [{}] to as file [{}] already exists", aFile, newName);
+					return aFile;
+				}
+
+				_logger.debug("Renaming file [{}] to [{}]", aFile, newName);
+				return FileUtil.renameFile(aFile, newName);
+			}
+
+			@Override
+			public File handleDirectory(File aFolder) throws AccelerateException {
+				return handleFile(aFolder);
+			}
+		});
 	}
 
 	/**
@@ -238,10 +320,9 @@ public final class FileUtil {
 	 * @param aSplitSize
 	 * @param aSplitEqually
 	 * @return message
-	 * @throws IOException
-	 *             thrown due to multiple IO operations
+	 * @throws AccelerateException
 	 */
-	public static String splitFile(File aTargetFile, int aSplitSize, boolean aSplitEqually) throws IOException {
+	public static String splitFile(File aTargetFile, int aSplitSize, boolean aSplitEqually) throws AccelerateException {
 		StringBuilder message = new StringBuilder();
 
 		try (BufferedReader errorLogReader = new BufferedReader(new FileReader(aTargetFile));) {
@@ -298,15 +379,17 @@ public final class FileUtil {
 			message.append(splitFile.getName()).append(NEW_LINE).append(NEW_LINE);
 			message.append("process finished in ").append(System.currentTimeMillis() - l).append("ms").append(NEW_LINE);
 			return message.toString();
+		} catch (Exception error) {
+			return AccelerateException.checkAndThrow(error);
 		}
 	}
 
 	/**
 	 * @param aFiles
 	 * @return byte array containing the compressed data
-	 * @throws IOException
+	 * @throws AccelerateException
 	 */
-	public static byte[] zipFiles(File... aFiles) throws IOException {
+	public static byte[] zipFiles(File... aFiles) throws AccelerateException {
 		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 				ZipOutputStream zipStream = new ZipOutputStream(outputStream);) {
 			zipStream.setLevel(9);
@@ -321,17 +404,21 @@ public final class FileUtil {
 
 			zipStream.finish();
 			return outputStream.toByteArray();
+		} catch (Exception error) {
+			return AccelerateException.checkAndThrow(error);
 		}
 	}
 
 	/**
 	 * @param aZipFile
 	 * @param aFiles
-	 * @throws IOException
+	 * @throws AccelerateException
 	 */
-	public static void zipFilesToDisk(File aZipFile, File... aFiles) throws IOException {
+	public static void zipFilesToDisk(File aZipFile, File... aFiles) throws AccelerateException {
 		try (FileOutputStream fos = new FileOutputStream(aZipFile);) {
 			fos.write(zipFiles(aFiles));
+		} catch (Exception error) {
+			AccelerateException.checkAndThrow(error);
 		}
 	}
 
@@ -339,9 +426,9 @@ public final class FileUtil {
 	 * @param aZipName
 	 * @param aFiles
 	 * @return Zip File
-	 * @throws IOException
+	 * @throws AccelerateException
 	 */
-	public static File zipFilesToDisk(String aZipName, File... aFiles) throws IOException {
+	public static File zipFilesToDisk(String aZipName, File... aFiles) throws AccelerateException {
 		File targetFile = new File(System.getProperty("java.io.tmpdir"), aZipName);
 		zipFilesToDisk(targetFile, aFiles);
 
@@ -351,42 +438,54 @@ public final class FileUtil {
 	/**
 	 * @param aTargetFile
 	 * @param aData
-	 * @throws IOException
+	 * @throws AccelerateException
 	 */
-	public static void writeStream(File aTargetFile, byte[] aData) throws IOException {
+	public static void writeStream(File aTargetFile, byte[] aData) throws AccelerateException {
 		try (FileOutputStream outputStream = new FileOutputStream(aTargetFile);) {
 			outputStream.write(aData);
+		} catch (Exception error) {
+			AccelerateException.checkAndThrow(error);
 		}
 	}
 
 	/**
 	 * @param aTargetFile
 	 * @return {@link ByteArrayOutputStream} instance, the data was read into
-	 * @throws IOException
+	 * @throws AccelerateException
 	 */
-	public static byte[] readStream(File aTargetFile) throws IOException {
+	public static byte[] readStream(File aTargetFile) throws AccelerateException {
 		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 				FileInputStream inputStream = new FileInputStream(aTargetFile);) {
 			IOUtils.copy(inputStream, outputStream);
 			return outputStream.toByteArray();
+		} catch (Exception error) {
+			return AccelerateException.checkAndThrow(error);
 		}
 	}
 
 	/**
 	 * @param aFile
 	 * @return {@link BufferedReader}
-	 * @throws IOException
+	 * @throws AccelerateException
 	 */
-	public static BufferedReader getBufferedReader(File aFile) throws IOException {
-		return new BufferedReader(new FileReader(aFile));
+	public static BufferedReader getBufferedReader(File aFile) throws AccelerateException {
+		try {
+			return new BufferedReader(new FileReader(aFile));
+		} catch (Exception error) {
+			return AccelerateException.checkAndThrow(error);
+		}
 	}
 
 	/**
 	 * @param aFile
 	 * @return {@link BufferedWriter}
-	 * @throws IOException
+	 * @throws AccelerateException
 	 */
-	public static BufferedWriter getBufferedWriter(File aFile) throws IOException {
-		return new BufferedWriter(new FileWriter(aFile));
+	public static BufferedWriter getBufferedWriter(File aFile) throws AccelerateException {
+		try {
+			return new BufferedWriter(new FileWriter(aFile));
+		} catch (Exception error) {
+			return AccelerateException.checkAndThrow(error);
+		}
 	}
 }

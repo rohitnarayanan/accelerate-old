@@ -14,7 +14,6 @@ import org.springframework.util.ObjectUtils;
  * @since Jun 12, 2009
  */
 public final class AppUtil {
-
 	/**
 	 * hidden constructor
 	 */

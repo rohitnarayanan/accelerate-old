@@ -1,7 +1,6 @@
 package accelerate.batch;
 
 import static accelerate.util.CollectionUtil.toList;
-import static org.springframework.util.ObjectUtils.isEmpty;
 
 import java.util.HashMap;
 import java.util.List;
@@ -9,9 +8,14 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jmx.export.annotation.ManagedOperation;
 import org.springframework.jmx.export.annotation.ManagedResource;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.util.Assert;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 import accelerate.databean.AccelerateDataBean;
 import accelerate.exception.AccelerateException;
@@ -33,6 +37,11 @@ public class AccelerateBatch<T extends AccelerateTask> extends ThreadPoolTaskExe
 	 * serialVersionUID
 	 */
 	private static final long serialVersionUID = 1L;
+
+	/**
+	 * 
+	 */
+	protected static final Logger _logger = LoggerFactory.getLogger(AccelerateBatch.class);
 
 	/**
 	 * Name of the Batch
@@ -104,9 +113,7 @@ public class AccelerateBatch<T extends AccelerateTask> extends ThreadPoolTaskExe
 	@Override
 	@ManagedOperation(description = "This methods activates the batch")
 	public synchronized void initialize() {
-		if (this.initialized) {
-			throw new AccelerateException("Batch is already initialized !");
-		}
+		Assert.state(!this.initialized, "Batch already initialized");
 
 		setThreadGroupName(this.batchName);
 		setThreadNamePrefix("AccelerateTask");
@@ -128,6 +135,9 @@ public class AccelerateBatch<T extends AccelerateTask> extends ThreadPoolTaskExe
 	@Override
 	@ManagedOperation(description = "This method shuts down the current batch instance")
 	public void shutdown() {
+		Assert.state(this.initialized, "Batch not initialized");
+
+		_logger.debug("Shutdown requested");
 		super.shutdown();
 	}
 
@@ -140,16 +150,11 @@ public class AccelerateBatch<T extends AccelerateTask> extends ThreadPoolTaskExe
 	 */
 	@ManagedOperation(description = "This method shuts down the current batch instance and blocks the caller till it shuts down or the timeout provided elapses, whichever is earlier.")
 	public synchronized void shutdown(TimeUnit aTimeUnit, long aTimeout) {
+		Assert.state(this.initialized, "Batch not initialized");
+
+		_logger.debug("Shutdown requested in [{}] seconds", aTimeUnit.toSeconds(aTimeout));
 		setAwaitTerminationSeconds((int) aTimeUnit.toSeconds(aTimeout));
 		this.shutdown();
-	}
-
-	/**
-	 * This method tries to shutdown the current batch instance immediately
-	 */
-	@ManagedOperation(description = "This method tries to shutdown the current batch instance immediately")
-	public synchronized void shutdownNow() {
-		getThreadPoolExecutor().shutdownNow();
 	}
 
 	/**
@@ -165,6 +170,9 @@ public class AccelerateBatch<T extends AccelerateTask> extends ThreadPoolTaskExe
 	 */
 	@ManagedOperation(description = "This method handles a pause interrupt sent by JMX and attempts to pause the execution of all running tasks")
 	public synchronized void pause() {
+		Assert.state(this.initialized, "Batch not initialized");
+
+		_logger.debug("Pausing [{}] tasks ", this.tasks.size());
 		this.paused = true;
 		this.tasks.values().forEach(task -> task.pause(this.monitor));
 	}
@@ -175,6 +183,9 @@ public class AccelerateBatch<T extends AccelerateTask> extends ThreadPoolTaskExe
 	 */
 	@ManagedOperation(description = "This method handles a resume interrupt via by the JMX and attempts to resume the execution of all paused tasks")
 	public synchronized void resume() {
+		Assert.state(this.initialized, "Batch not initialized");
+
+		_logger.debug("Resuming [{}] tasks ", this.tasks.size());
 		this.paused = false;
 		this.tasks.values().forEach(task -> task.resume());
 
@@ -189,6 +200,8 @@ public class AccelerateBatch<T extends AccelerateTask> extends ThreadPoolTaskExe
 	 *
 	 * @return JSON string
 	 * @throws AccelerateException
+	 *             wrapping {@link JsonProcessingException} thrown from
+	 *             {@link JSONUtil#serialize(Object)}
 	 */
 	@ManagedOperation(description = "This method returns JSON string with basic status information on the batch")
 	public String getStatus() throws AccelerateException {
@@ -201,28 +214,21 @@ public class AccelerateBatch<T extends AccelerateTask> extends ThreadPoolTaskExe
 
 	/**
 	 * @param aTaskList
-	 * @throws AccelerateException
 	 */
 	@SafeVarargs
-	public final void submitTasks(T... aTaskList) throws AccelerateException {
-		submitTasks(toList(aTaskList));
+	public final void submit(T... aTaskList) {
+		this.submit(toList(aTaskList));
 	}
 
 	/**
 	 * @param aTaskList
-	 * @throws AccelerateException
-	 *             on invalid batch state or empty argument
 	 */
 	@SuppressWarnings("unchecked")
-	public final synchronized void submitTasks(List<T> aTaskList) throws AccelerateException {
-		if (!this.initialized) {
-			throw new AccelerateException(
-					"Batch has been shutdown! Invoke activate() reinitialize the batch before submitting tasks");
-		}
+	public final synchronized void submit(List<T> aTaskList) {
+		Assert.state(this.initialized, "Batch not initialized");
+		Assert.notEmpty(aTaskList, "No tasks provided");
 
-		if (isEmpty(aTaskList)) {
-			throw new AccelerateException("No tasks provided!");
-		}
+		_logger.debug("Submitting [{}] tasks ", aTaskList.size());
 
 		aTaskList.stream().forEach(task -> {
 			this.tasks.put(task.getTaskKey(), task);
@@ -239,7 +245,7 @@ public class AccelerateBatch<T extends AccelerateTask> extends ThreadPoolTaskExe
 				task.pause(this.monitor);
 			}
 
-			task.submitted(submit(task));
+			task.submitted(super.submit(task));
 		});
 	}
 

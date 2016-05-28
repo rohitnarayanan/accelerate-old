@@ -1,9 +1,9 @@
 package accelerate.cache;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -14,14 +14,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
-import org.springframework.cache.Cache.ValueWrapper;
-import org.springframework.cache.CacheManager;
 import org.springframework.context.ApplicationContext;
 import org.springframework.jmx.export.annotation.ManagedOperation;
 import org.springframework.jmx.export.annotation.ManagedResource;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.util.Assert;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonView;
 
 import accelerate.exception.AccelerateException;
@@ -34,7 +34,7 @@ import accelerate.util.StringUtil;
  * persistence mechanism. It is designed to be loaded at startup and provide
  * quick lookup to small data sets. Accelerate also provides JMX operations to
  * manage the cache and a web UI to view the cache.
- * <p>
+ * 
  * It is not a replacement for more comprehensive caching frameworks like
  * ehcache etc.
  *
@@ -78,58 +78,12 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	 * {@link StaticListenerHelper} instance
 	 */
 	@Autowired
-	protected StaticListenerHelper staticListenerHelper = null;
+	private StaticListenerHelper staticListenerHelper = null;
 
 	/**
-	 * {@link CacheManager} instance that manages the cache
+	 * 
 	 */
-	protected CacheManager cacheManagerBean = null;
-
-	/**
-	 * Name of the cache manager
-	 */
-	protected String cacheManager = "accelerateCacheManager";
-
-	/**
-	 * {@link Cache} instance to store
-	 */
-	protected Cache cache = null;
-
-	/**
-	 * Cache Key List
-	 */
-	@JsonView(JsonDetails.class)
-	protected Set<K> keyList = null;
-
-	/**
-	 * Cache Duration
-	 */
-	protected long cacheDuration = -1;
-
-	/**
-	 * Init time of Cache
-	 */
-	protected long cacheInitializedTime = -1;
-
-	/**
-	 * Refresh Time of Cache
-	 */
-	protected long cacheRefreshedTime = -1;
-
-	/**
-	 * Is the cache refreshable or permanent
-	 */
-	protected boolean refreshable = false;
-
-	/**
-	 * Is the cache being refreshed
-	 */
-	protected boolean refreshing = false;
-
-	/**
-	 * Is the cache initialized
-	 */
-	protected boolean initialized = false;
+	protected Map<K, V> cacheMap = Collections.emptyMap();
 
 	/**
 	 * Name of the cache
@@ -142,6 +96,36 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	private String cacheAge = null;
 
 	/**
+	 * Cache Duration
+	 */
+	protected long cacheDuration = -1;
+
+	/**
+	 * Is the cache refreshable or permanent
+	 */
+	protected boolean refreshable = false;
+
+	/**
+	 * Init time of Cache
+	 */
+	protected long cacheInitializedTime = -1;
+
+	/**
+	 * Refresh Time of Cache
+	 */
+	protected long cacheRefreshedTime = -1;
+
+	/**
+	 * Semaphore to block while cache is being refresh
+	 */
+	protected Boolean refreshMonitor = false;
+
+	/**
+	 * Is the cache initialized
+	 */
+	protected boolean initialized = false;
+
+	/**
 	 * Default Constructor
 	 *
 	 * @param aCacheName
@@ -152,11 +136,204 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	 *            {@link Class} instance for the cache value type
 	 */
 	public AccelerateCache(String aCacheName, Class<K> aKeyClass, Class<V> aValueClass) {
+		Assert.noNullElements(new Object[] { aCacheName, aKeyClass, aValueClass }, "All arguments are required");
 		this.cacheName = aCacheName;
 		this.keyClass = aKeyClass;
 		this.valueClass = aValueClass;
 	}
 
+	/**
+	 * This method initializes the cache. This is the first method that should
+	 * be called before the cache can be used. It also should be registered as
+	 * the "init-method" method in case the Cache class is going to be managed
+	 * by Spring Framework.
+	 *
+	 * @return cache instance to allow chained calls to API
+	 * @throws AccelerateException
+	 *             wrapping all possible exceptions
+	 */
+	@PostConstruct
+	public AccelerateCache<K, V> initialize() throws AccelerateException {
+		Assert.state(!this.initialized, "Batch already initialized");
+
+		try {
+			this.cacheMap = new HashMap<>();
+			loadCache(this.cacheMap);
+			this.cacheInitializedTime = System.currentTimeMillis();
+			this.cacheRefreshedTime = System.currentTimeMillis();
+
+			calculateCacheDuration();
+			this.initialized = true;
+			this.staticListenerHelper.notifyCacheLoad(AccelerateCache.this);
+
+			this.initialized = true;
+			_logger.info("Cache [{}] Initialized", name());
+		} catch (Exception error) {
+			AccelerateException.checkAndThrow(error, "Error in initializing cache [%s]", name());
+		}
+
+		return this;
+	}
+
+	/*
+	 * Cache main operations
+	 */
+	/**
+	 * This method refreshes the cache
+	 *
+	 * @throws AccelerateException
+	 *             thrown by {@link #loadCache(Map)} and
+	 *             {@link StaticListenerHelper#notifyCacheLoad(AccelerateCache)}
+	 */
+	@ManagedOperation(description = "This method refreshes the cache")
+	public void refresh() throws AccelerateException {
+		Assert.state(this.initialized, "Batch not initialized");
+		Assert.state(this.refreshable, "Batch not refreshable");
+
+		_logger.debug("Refreshing Cache [{}]", name());
+
+		this.refreshMonitor = true;
+
+		// reload the cache
+		Map<K, V> tmpMap = new HashMap<>();
+		loadCache(tmpMap);
+		this.cacheMap = tmpMap;
+
+		// update refresh time and age
+		this.cacheRefreshedTime = System.currentTimeMillis();
+
+		// notify all registered listeners
+		this.staticListenerHelper.notifyCacheLoad(AccelerateCache.this);
+
+		// reset refresh monitor and wake all threads waiting for access
+		this.refreshMonitor = false;
+		synchronized (this.refreshMonitor) {
+			this.refreshMonitor.notifyAll();
+		}
+
+		_logger.info("Cache [{}] Refreshed", name());
+	}
+
+	/**
+	 * This method sets the age of the cache
+	 *
+	 * @param aCacheAge
+	 */
+	@ManagedOperation(description = "This method sets the age of the cache")
+	public void setCacheAge(String aCacheAge) {
+		this.cacheAge = aCacheAge;
+		calculateCacheDuration();
+	}
+
+	/*
+	 * Cache modification operations
+	 */
+	/**
+	 * This method returns the element stored in cache against the given key
+	 *
+	 * @param aKey
+	 *            key to be looked up in the cache
+	 * @return value instance stored against the key
+	 */
+	public V get(K aKey) {
+		return this.cacheMap.get(aKey);
+	}
+
+	/**
+	 * This method returns the JSON form of value stored in cache against the
+	 * given key
+	 *
+	 * @param aKeyString
+	 *            key string to fetch value stored in the cache
+	 * @return value instance stored against the key
+	 * @throws AccelerateException
+	 *             thrown by {@link JSONUtil#serialize(Object)} and
+	 *             {@link JSONUtil#deserialize(String, Class)}
+	 */
+	@ManagedOperation(description = "This method returns the JSON form of value stored in cache against the given key")
+	public String getJSON(String aKeyString) throws AccelerateException {
+		K key = JSONUtil.deserialize(aKeyString, this.keyClass);
+		return JSONUtil.serialize(get(key));
+	}
+
+	/**
+	 * This method stores the given key-value pair in cache
+	 *
+	 * @param aKey
+	 *            key against which the value should be stored
+	 * @param aValue
+	 *            value which has to be added to the cache
+	 */
+	public void put(K aKey, V aValue) {
+		Assert.state(this.initialized, "Batch not initialized");
+		this.cacheMap.put(aKey, aValue);
+	}
+
+	/**
+	 * This method stores the given key-value pair in cache after converting
+	 * them
+	 *
+	 * @param aKeyString
+	 *            Key to be added to the cache
+	 * @param aValueString
+	 *            Value to be stored in the cache. It can be a simple String or
+	 *            JSON representation
+	 * @throws AccelerateException
+	 *             thrown by {@link JSONUtil#serialize(Object)} and
+	 *             {@link JSONUtil#deserialize(String, Class)}
+	 */
+	@SuppressWarnings("unchecked")
+	@ManagedOperation(description = "This method stores the given key-value pair in cache after converting them")
+	public void putJSON(String aKeyString, String aValueString) throws AccelerateException {
+		Assert.state(this.initialized, "Batch not initialized");
+
+		K key = JSONUtil.deserialize(aKeyString, this.keyClass);
+		V value = null;
+		if (String.class.equals(this.valueClass)) {
+			value = (V) aValueString;
+		} else {
+			value = JSONUtil.deserialize(aValueString, this.valueClass);
+		}
+
+		put(key, value);
+	}
+
+	/**
+	 * This method removes the stored element from cache against the given key
+	 *
+	 * @param aKey
+	 *            cache key which is to be removed
+	 * @return value that was removed. null, if the key was not found in the map
+	 */
+	public V remove(K aKey) {
+		Assert.state(this.initialized, "Batch not initialized");
+
+		return this.cacheMap.remove(aKey);
+	}
+
+	/**
+	 * This method removes the stored element from cache against the given key
+	 *
+	 * @param aKeyString
+	 *            cache key which is to be removed
+	 * @return value that was removed. null, if the key was not found in the map
+	 * @throws AccelerateException
+	 *             thrown by {@link JSONUtil#serialize(Object)} and
+	 *             {@link JSONUtil#deserialize(String, Class)}
+	 */
+	@ManagedOperation(description = "This method allows to remove the given key from the cache")
+	public String removeJSON(String aKeyString) throws AccelerateException {
+		Assert.state(this.initialized, "Batch not initialized");
+
+		K key = JSONUtil.deserialize(aKeyString, this.keyClass);
+		V value = this.cacheMap.remove(key);
+
+		return JSONUtil.serialize(value);
+	}
+
+	/*
+	 * Cache info methods
+	 */
 	/**
 	 * This method returns the name of the cache
 	 *
@@ -169,19 +346,34 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	}
 
 	/**
-	 * This method sets the age of the cache
+	 * This method returns the number of keys stored in cache
 	 *
-	 * @param aCacheAge
-	 * @throws AccelerateException
+	 * @return cache size
 	 */
-	@ManagedOperation(description = "This method sets the age of the cache")
-	public void age(String aCacheAge) throws AccelerateException {
-		if (!isLoadedAtStartup()) {
-			throw new AccelerateException("Cache Not LoadedAtStartup");
-		}
+	@ManagedOperation(description = "This method returns the number of keys stored in cache")
+	@JsonView(JsonSummary.class)
+	public int size() {
+		return this.cacheMap.size();
+	}
 
-		this.cacheAge = aCacheAge;
-		calculateCacheDuration();
+	/**
+	 * This method returns the base map which stores the cache
+	 *
+	 * @return {@link Cache} instance
+	 */
+	public Map<K, V> cache() {
+		return Collections.unmodifiableMap(this.cacheMap);
+	}
+
+	/**
+	 * This method returns all the keys stored in cache
+	 *
+	 * @return {@link List} instance
+	 */
+	@ManagedOperation(description = "This method returns all the keys stored in cache")
+	@JsonView(JsonDetails.class)
+	public Set<K> keys() {
+		return this.cacheMap.keySet();
 	}
 
 	/**
@@ -204,11 +396,9 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	@JsonView(JsonSummary.class)
 	@JsonFormat(pattern = "MM/dd/yyyy HH:ss:SSS z")
 	public Date initializedTime() {
-		if (this.cacheInitializedTime > 0) {
-			return new Date(this.cacheInitializedTime);
-		}
+		Assert.state(this.initialized, "Batch not initialized");
 
-		return null;
+		return new Date(this.cacheInitializedTime);
 	}
 
 	/**
@@ -220,333 +410,44 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	@JsonView(JsonSummary.class)
 	@JsonFormat(pattern = "MM/dd/yyyy HH:ss:SSS z")
 	public Date lastRefreshedTime() {
-		if (this.cacheRefreshedTime > 0) {
-			return new Date(this.cacheRefreshedTime);
-		}
+		Assert.state(this.initialized, "Batch not initialized");
 
-		return null;
+		return new Date(this.cacheRefreshedTime);
 	}
-
-	/**
-	 * This method returns the base map which stores the cache
-	 *
-	 * @return {@link Cache} instance
-	 * @throws AccelerateException
-	 */
-	public Cache cache() throws AccelerateException {
-		if (!this.initialized) {
-			throw new AccelerateException("Not Initialized");
-		}
-
-		return this.cache;
-	}
-
-	/**
-	 * This method returns the number of keys stored in cache
-	 *
-	 * @return cache size
-	 */
-	@ManagedOperation(description = "This method returns the number of keys stored in cache")
-	@JsonView(JsonSummary.class)
-	public int size() {
-		if (this.initialized) {
-			return this.keyList.size();
-		}
-
-		return -1;
-	}
-
-	/**
-	 * This method returns all the keys stored in cache
-	 *
-	 * @return {@link List} instance
-	 */
-	@ManagedOperation(description = "This method returns all the keys stored in cache")
-	public Set<K> keys() {
-		if (this.initialized) {
-			return this.keyList;
-		}
-
-		return Collections.emptySet();
-	}
-
-	/**
-	 * This method sets the name of the cache manager. It re-initializes the
-	 * cache too.
-	 *
-	 * @param aCacheManager
-	 * @throws AccelerateException
-	 */
-	@ManagedOperation(description = "This method sets the name of the cache manager")
-	public void cacheManager(String aCacheManager) throws AccelerateException {
-		this.cacheManager = aCacheManager;
-		this.cache.clear();
-		initialize();
-	}
-
-	/**
-	 * This method returns the name of the cache manager
-	 *
-	 * @return cache name
-	 */
-	@ManagedOperation(description = "This method returns the name of the cache manager")
-	public String cacheManager() {
-		return this.cacheManager;
-	}
-
-	/**
-	 * This method returns the element stored in cache against the given key
-	 *
-	 * @param aKey
-	 *            key to be looked up in the cache
-	 * @return value instance stored against the key
-	 * @throws AccelerateException
-	 */
-	@SuppressWarnings("unchecked")
-	public V get(K aKey) throws AccelerateException {
-		if (!this.initialized) {
-			throw new AccelerateException("Not Initialized");
-		}
-
-		V value = null;
-		ValueWrapper valueWrapper = this.cache.get(aKey);
-		if (valueWrapper != null) {
-			value = (V) valueWrapper.get();
-		} else if (!isLoadedAtStartup()) {
-			value = fetch(aKey);
-			this.cache.put(aKey, value);
-			manageKeyList(aKey, 0);
-		}
-
-		return value;
-	}
-
-	/**
-	 * This method returns the JSON form of value stored in cache against the
-	 * given key
-	 *
-	 * @param aKeyString
-	 *            key string to fetch value stored in the cache
-	 * @return value instance stored against the key
-	 * @throws AccelerateException
-	 * @throws IOException
-	 */
-	@ManagedOperation(description = "This method returns the JSON form of value stored in cache against the given key")
-	public String getSerialized(String aKeyString) throws AccelerateException, IOException {
-		if (!this.initialized) {
-			throw new AccelerateException("Not Initialized");
-		}
-
-		K key = JSONUtil.deserialize(aKeyString, this.keyClass);
-		V value = get(key);
-
-		return JSONUtil.serialize(value, Include.NON_EMPTY, false, true, true);
-	}
-
-	/**
-	 * This method stores the given key-value pair in cache
-	 *
-	 * @param aKey
-	 *            key against which the value should be stored
-	 * @param aValue
-	 *            value which has to be added to the cache
-	 * @throws AccelerateException
-	 */
-	public void put(K aKey, V aValue) throws AccelerateException {
-		if (!this.initialized) {
-			throw new AccelerateException("Not Initialized");
-		}
-
-		this.cache.put(aKey, aValue);
-		manageKeyList(aKey, 0);
-	}
-
-	/**
-	 * This method stores the given key-value pair in cache after converting
-	 * them
-	 *
-	 * @param aKeyString
-	 *            Key to be added to the cache
-	 * @param aValueString
-	 *            Value to be stored in the cache. It can be a simple String or
-	 *            JSON representation
-	 * @throws AccelerateException
-	 * @throws IOException
-	 */
-	@SuppressWarnings("unchecked")
-	@ManagedOperation(description = "This method stores the given key-value pair in cache after converting them")
-	public void putSerialized(String aKeyString, String aValueString) throws AccelerateException, IOException {
-		if (!this.initialized) {
-			throw new AccelerateException("Not Initialized");
-		}
-
-		K key = JSONUtil.deserialize(aKeyString, this.keyClass);
-		V value = null;
-		if (String.class.equals(this.valueClass)) {
-			value = (V) aValueString;
-		} else {
-			value = JSONUtil.deserialize(aValueString, this.valueClass);
-		}
-
-		put(key, value);
-	}
-
-	/**
-	 * This method removes the stored element from cache against the given key
-	 *
-	 * @param aKey
-	 *            cache key which is to be removed
-	 * @return value that was removed. null, if the key was not found in the map
-	 * @throws AccelerateException
-	 */
-	@SuppressWarnings("unchecked")
-	public V delete(K aKey) throws AccelerateException {
-		if (!this.initialized) {
-			throw new AccelerateException("Not Initialized");
-		}
-
-		V value = null;
-		ValueWrapper valueWrapper = this.cache.get(aKey);
-		if (valueWrapper != null) {
-			value = (V) valueWrapper.get();
-		}
-
-		this.cache.evict(aKey);
-		manageKeyList(aKey, 1);
-		return value;
-	}
-
-	/**
-	 * This method refreshes the cache
-	 *
-	 * @return flag to indicate success of operation
-	 * @throws AccelerateException
-	 */
-	@ManagedOperation(description = "This method refreshes the cache")
-	public boolean refresh() throws AccelerateException {
-		if (!this.initialized) {
-			throw new AccelerateException("Not Initialized");
-		}
-
-		if (!this.refreshable) {
-			throw new AccelerateException("Not Refeshable");
-		}
-
-		_logger.info("{}: Refreshing Cache", name());
-
-		this.refreshing = true;
-		boolean returnFlag = true;
-
-		try {
-			Cache tmpCache = this.cacheManagerBean.getCache("tmp_" + name());
-
-			if (tmpCache == null) {
-				throw new AccelerateException("Temp Cache Not Available: tmp_" + name());
-			}
-
-			Set<K> tmpKeyList = loadCache(this.cache);
-			for (K key : this.keyList) {
-				if (!tmpKeyList.contains(key)) {
-					this.cache.evict(key);
-				}
-			}
-
-			this.cacheRefreshedTime = System.currentTimeMillis();
-			this.staticListenerHelper.notifyCacheLoad(AccelerateCache.this);
-		} catch (Exception error) {
-			_logger.error("{}: Cache Refresh Error", name(), error);
-			returnFlag = false;
-		}
-
-		this.refreshing = false;
-		_logger.info("{}: Cache Refreshed", name());
-
-		return returnFlag;
-	}
-
-	/**
-	 * This method initializes the cache. This is the first method that should
-	 * be called before the cache can be used. It also should be registered as
-	 * the "init-method" method in case the Cache class is going to be managed
-	 * by Spring Framework.
-	 *
-	 * @return cache instance to allow chained calls to API
-	 * @throws AccelerateException
-	 */
-	@PostConstruct
-	public AccelerateCache<K, V> initialize() throws AccelerateException {
-		try {
-			this.cacheManagerBean = this.applicationContext.getBean(cacheManager(), CacheManager.class);
-			this.cache = this.cacheManagerBean.getCache(name());
-
-			if (this.cache == null) {
-				throw new AccelerateException("Cache Not Available");
-			}
-
-			this.cache.clear();
-			if (isLoadedAtStartup()) {
-				this.keyList = loadCache(this.cache);
-				this.cacheInitializedTime = System.currentTimeMillis();
-				this.cacheRefreshedTime = System.currentTimeMillis();
-
-				calculateCacheDuration();
-				this.initialized = true;
-				this.staticListenerHelper.notifyCacheLoad(AccelerateCache.this);
-			}
-
-			this.initialized = true;
-			_logger.info("{}: Cache Initialized", name());
-		} catch (Exception error) {
-			_logger.error("{}: Cache Initialize Error", name(), error);
-			throw new AccelerateException("Initialize Error", error);
-		}
-
-		return this;
-	}
-
-	/**
-	 * This method manages the list keys stored in the cache
-	 *
-	 * @param aKey
-	 * @param aAddRemoveFlag
-	 */
-	protected synchronized void manageKeyList(K aKey, int aAddRemoveFlag) {
-		if (aAddRemoveFlag == 0) {
-			this.keyList.add(aKey);
-		} else {
-			this.keyList.remove(aKey);
-		}
-	}
-
-	/**
-	 * This method implementation should return true if the cache loads all data
-	 * at startup, and return false if the cache is loaded as used on an ongoing
-	 * basis.
-	 *
-	 * @return boolean value
-	 */
-	protected abstract boolean isLoadedAtStartup();
 
 	/**
 	 * This method fetches the data to be loaded into the cache, from the data
 	 * source.
+	 * 
+	 * @param aCacheMap
 	 *
-	 * @param aCache
-	 *            {@link Cache} instance to load initial data
-	 * @return {@link Set} of keys added to cache
 	 * @throws AccelerateException
+	 *             Allowing implementations to wrap exceptions in one class
 	 */
-	protected abstract Set<K> loadCache(Cache aCache) throws AccelerateException;
+	protected abstract void loadCache(Map<K, V> aCacheMap) throws AccelerateException;
 
 	/**
-	 * This method fetches the value for the given key from the data source.
-	 *
-	 * @param aKey
-	 *            Key for which the value is to be fetched
-	 * @return Value retrieved from the data source
+	 * A scheduled cron to run every 5 mins to check if the cache needs to be
+	 * refreshed
+	 * 
 	 * @throws AccelerateException
+	 *             thrown by {@link #refresh()}
 	 */
-	protected abstract V fetch(K aKey) throws AccelerateException;
+	@Scheduled(fixedDelay = 5 * 60 * 1000)
+	@Async
+	private void checkRefresh() throws AccelerateException {
+		/*
+		 * if cache has not been initialized or is not refreshable or is
+		 * currently refreshing, return
+		 */
+		if (!this.initialized || !this.refreshable || this.refreshMonitor) {
+			return;
+		}
+
+		if ((System.currentTimeMillis() - this.cacheRefreshedTime) > this.cacheDuration) {
+			refresh();
+		}
+	}
 
 	/**
 	 * This method calculates the cache duration to determine when the cache is

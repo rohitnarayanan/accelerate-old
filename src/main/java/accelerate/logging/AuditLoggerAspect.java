@@ -50,7 +50,7 @@ public class AuditLoggerAspect {
 	public static Object audit(ProceedingJoinPoint aJoinPoint) throws Throwable {
 		Throwable error = null;
 		Object returnObject = null;
-		String signature = StringUtil.split(aJoinPoint.getSignature().toString(), SPACE_CHAR)[1];
+		String signature = StringUtil.split(aJoinPoint.getSignature().toString(), SPACE_CHAR).get(1);
 		StopWatch stopWatch = logMethodStart(signature);
 
 		try {

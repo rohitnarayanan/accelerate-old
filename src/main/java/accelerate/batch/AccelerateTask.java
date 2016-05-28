@@ -8,9 +8,11 @@ import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.Assert;
 
 import accelerate.databean.AccelerateDataBean;
 import accelerate.exception.AccelerateException;
+import accelerate.logging.Auditable;
 
 /**
  * Abstract implementation for {@link Runnable}
@@ -99,6 +101,7 @@ public abstract class AccelerateTask extends AccelerateDataBean implements Calla
 	 * @param aTaskKey
 	 */
 	public AccelerateTask(String aTaskKey) {
+		Assert.notNull(aTaskKey, "Task key is required");
 		this.taskKey = aTaskKey;
 	}
 
@@ -151,6 +154,7 @@ public abstract class AccelerateTask extends AccelerateDataBean implements Calla
 	/**
 	 * @return
 	 * @throws AccelerateException
+	 *             thrown by {@link #execute()}
 	 */
 	@Override
 	public AccelerateTask call() throws AccelerateException {
@@ -158,21 +162,29 @@ public abstract class AccelerateTask extends AccelerateDataBean implements Calla
 			this.thread = Thread.currentThread();
 			this.startTime = System.currentTimeMillis();
 			this.executing = true;
+			_logger.debug("Starting execution for task [{}]", this.taskKey);
 			execute();
+			this.complete = true;
+		} catch (Exception error) {
+			_logger.debug("Error in execution for task [{}]", this.taskKey);
+			this.taskError = error;
+			AccelerateException.checkAndThrow(error);
 		} finally {
 			this.endTime = System.currentTimeMillis();
 			this.executing = false;
-			this.complete = true;
 
 			this.postProccessor.accept(this);
 		}
 
+		_logger.debug("Completed execution for task [{}]", this.taskKey);
 		return this;
 	}
 
 	/**
 	 * @throws AccelerateException
+	 *             to allow implementations to wrap exceptions in one class
 	 */
+	@Auditable
 	protected abstract void execute() throws AccelerateException;
 
 	/**
@@ -180,22 +192,25 @@ public abstract class AccelerateTask extends AccelerateDataBean implements Calla
 	 * pause execution on receiving an interrupt by {@link AccelerateBatch}
 	 *
 	 * @throws AccelerateException
+	 *             thrown on {@link InterruptedException} due to
+	 *             {@link Object#wait()}
 	 */
 	final void checkPause() throws AccelerateException {
 		if (!this.pause) {
+			_logger.debug("Task [{}] is not paused", this.taskKey);
 			return;
 		}
 
 		synchronized (this.monitor) {
 			try {
-				_logger.info("Pausing: {}", getTaskKey());
+				_logger.debug("Pausing task [{}]", getTaskKey());
 				this.monitor.wait();
 			} catch (InterruptedException error) {
 				throw new AccelerateException(error);
 			}
 		}
 
-		_logger.info("Resuming: {}", getTaskKey());
+		_logger.debug("Resuming task [{}]", getTaskKey());
 	}
 
 	/**

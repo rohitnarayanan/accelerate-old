@@ -62,9 +62,11 @@ public class AccelerateDataBean implements Serializable {
 	 */
 	/**
 	 * @return
+	 * @throws AccelerateException
+	 *             thrown due to {@link #toJSON()}
 	 */
 	@Override
-	public String toString() {
+	public String toString() throws AccelerateException {
 		return toJSON();
 	}
 
@@ -143,22 +145,14 @@ public class AccelerateDataBean implements Serializable {
 	 * @param aArgs
 	 *            Variable number of key value pairs
 	 * @return selft instance for chaining calls
-	 * @throws AccelerateException
-	 *             If key value pairs do not match, or keys are not of type
-	 *             {@link String}
 	 */
-	public final AccelerateDataBean addAll(Object... aArgs) throws AccelerateException {
+	public final AccelerateDataBean addAll(Object... aArgs) {
 		Assert.notNull(aArgs, "Arguments are required");
 		Assert.noNullElements(aArgs, "Arguments are required");
 		Assert.isTrue(((aArgs.length % 2) == 0), "Incorrect number of arguments");
 
 		for (int idx = 0; idx < aArgs.length; idx += 2) {
-			try {
-				this.model.put((String) aArgs[idx], aArgs[idx + 1]);
-			} catch (ClassCastException error) {
-				throw new AccelerateException("Error:[{}] for key:[{}] at Index:[{}]", error.getMessage(), aArgs[idx],
-						idx);
-			}
+			this.model.put((String) aArgs[idx], aArgs[idx + 1]);
 		}
 
 		return this;
@@ -170,9 +164,8 @@ public class AccelerateDataBean implements Serializable {
 	 * 
 	 * @param aArgs
 	 * @return
-	 * @throws AccelerateException
 	 */
-	public static final AccelerateDataBean build(Object... aArgs) throws AccelerateException {
+	public static final AccelerateDataBean build(Object... aArgs) {
 		AccelerateDataBean bean = new AccelerateDataBean();
 		bean.addAll(aArgs);
 		return bean;
@@ -182,8 +175,10 @@ public class AccelerateDataBean implements Serializable {
 	 * This methods returns a JSON representation of this bean
 	 *
 	 * @return JSON Representation
+	 * @throws AccelerateException
+	 *             thrown due to {@link #toJSON(boolean)}
 	 */
-	public String toJSON() {
+	public String toJSON() throws AccelerateException {
 		return toJSON(false);
 	}
 
@@ -192,8 +187,10 @@ public class AccelerateDataBean implements Serializable {
 	 * 
 	 * @param aForce
 	 * @return
+	 * @throws AccelerateException
+	 *             thrown due to {@link JSONUtil#serialize(Object)}
 	 */
-	public String toJSON(boolean aForce) {
+	public String toJSON(boolean aForce) throws AccelerateException {
 		if (isLargeDataset() && !aForce) {
 			return toShortJSON();
 		}
@@ -211,8 +208,10 @@ public class AccelerateDataBean implements Serializable {
 	 * memory or disk space
 	 *
 	 * @return log string
+	 * @throws AccelerateException
+	 *             thrown due to {@link JSONUtil#serialize(Object)}
 	 */
-	public String toShortJSON() {
+	public String toShortJSON() throws AccelerateException {
 		return (getIdField() != null) ? JSONUtil.serializeOnly(this, getIdField())
 				: "{\"id\":\"" + super.toString() + "\"}";
 	}

@@ -11,6 +11,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.io.IOUtils;
@@ -28,11 +30,36 @@ import accelerate.exception.AccelerateException;
  * @since 14-May-2015
  */
 public final class ResourceUtil {
+	/**
+	 * {@link DocumentBuilderFactory} singleton instance for SAX parsing
+	 */
+	private static DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
+
+	/**
+	 * {@link DocumentBuilder} singleton instance for SAX parsing
+	 */
+	private static DocumentBuilder builder = null;
 
 	/**
 	 * hidden constructor
 	 */
 	private ResourceUtil() {
+	}
+
+	/**
+	 * @return {@link DocumentBuilder} instance
+	 * @throws ParserConfigurationException
+	 */
+	public static DocumentBuilder getDocumentBuilder() throws ParserConfigurationException {
+		if (builder == null) {
+			synchronized (domFactory) {
+				if (builder == null) {
+					builder = domFactory.newDocumentBuilder();
+				}
+			}
+		}
+
+		return builder;
 	}
 
 	/**
@@ -58,7 +85,7 @@ public final class ResourceUtil {
 	 */
 	public static Document loadXMLDOM(InputStream aInputStream) throws AccelerateException {
 		try {
-			return UtilCache.getDocumentBuilder().parse(aInputStream);
+			return getDocumentBuilder().parse(aInputStream);
 		} catch (SAXException | IOException | ParserConfigurationException error) {
 			throw new AccelerateException(error);
 		}

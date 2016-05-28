@@ -11,6 +11,8 @@ import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 
 import accelerate.databean.AccelerateDataBean;
+import accelerate.exception.AccelerateException;
+import accelerate.util.JSONUtil;
 
 /**
  * Logger Utility Class for the application. Current implementation is based on
@@ -25,8 +27,11 @@ public class AccelerateLogUtil {
 	 * @param aLogger
 	 * @param aLogLevel
 	 * @param aRequest
+	 * @throws AccelerateException
+	 *             thrown due to {@link JSONUtil#serialize(Object)}
 	 */
-	public static void logRequest(Logger aLogger, LogLevel aLogLevel, HttpServletRequest aRequest) {
+	public static void logRequest(Logger aLogger, LogLevel aLogLevel, HttpServletRequest aRequest)
+			throws AccelerateException {
 		if (!checkLogger(aLogger, aLogLevel)) {
 			return;
 		}
@@ -38,11 +43,14 @@ public class AccelerateLogUtil {
 	 * @param aLogger
 	 * @param aLogLevel
 	 * @param aBean
+	 * @throws AccelerateException
+	 *             thrown due to {@link JSONUtil#serialize(Object)}
 	 */
-	public static void logBean(Logger aLogger, LogLevel aLogLevel, Object aBean) {
+	public static void logBean(Logger aLogger, LogLevel aLogLevel, Object aBean) throws AccelerateException {
 		if (!checkLogger(aLogger, aLogLevel)) {
 			return;
 		}
+
 		String message = null;
 		if (aBean instanceof AccelerateDataBean) {
 			message = ((AccelerateDataBean) aBean).toJSON();
