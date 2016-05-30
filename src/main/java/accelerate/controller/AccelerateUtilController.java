@@ -1,28 +1,34 @@
 package accelerate.controller;
 
-import static accelerate.util.AppUtil.getErrorLog;
-import static accelerate.util.ReflectionUtil.invokeGetter;
+import static accelerate.util.AccelerateConstants.COMMA_CHAR;
+import static accelerate.util.AccelerateConstants.EMPTY_STRING;
 
+import java.io.File;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.context.EnvironmentAware;
+import org.springframework.core.env.Environment;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.thymeleaf.context.WebContext;
+import org.springframework.web.bind.annotation.RequestParam;
 
-import accelerate.spring.AccelerateProperties;
+import accelerate.databean.AccelerateDataBean;
+import accelerate.util.AccelerateConstants;
+import accelerate.util.AppUtil;
+import accelerate.util.CollectionUtil;
 import accelerate.util.StringUtil;
+import accelerate.util.WebUtil;
 
 /**
  * {@link org.springframework.web.servlet.mvc.Controller} providing basic pages
@@ -35,136 +41,122 @@ import accelerate.util.StringUtil;
 @Controller
 @ConditionalOnWebApplication
 @ConditionalOnProperty(name = "accelerate.web.ui")
-@RequestMapping("/aclUtil")
-public class AccelerateUtilController {
+@RequestMapping("/acl/util")
+public class AccelerateUtilController implements EnvironmentAware {
 	/**
 	 * 
 	 */
-	protected static final Logger _logger = LoggerFactory.getLogger(AccelerateUtilController.class);
+	private Environment enviroment = null;
 
-	/**
-	 * {@link List} of request attributes that are printed
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.springframework.context.EnvironmentAware#setEnvironment(org.
+	 * springframework.core.env.Environment)
 	 */
-	private static List<String> fieldList = new ArrayList<>();
-
-	static {
-		fieldList.add("serverName");
-		fieldList.add("serverPort");
-		fieldList.add("servletPath");
-		fieldList.add("queryString");
-		fieldList.add("requestURI");
-		fieldList.add("requestURL");
-		fieldList.add("remoteAddr");
-		fieldList.add("remoteHost");
-		fieldList.add("remotePort");
-		fieldList.add("remoteUser");
-		fieldList.add("localAddr");
-		fieldList.add("localName");
-		fieldList.add("localPort");
-		fieldList.add("protocol");
+	/**
+	 * @param aEnvironment
+	 */
+	@Override
+	public void setEnvironment(Environment aEnvironment) {
+		this.enviroment = aEnvironment;
 	}
 
 	/**
-	 * {@link AccelerateProperties} instance
+	 * Getter method for "enviroment" property
+	 * 
+	 * @return enviroment
 	 */
-	@Autowired
-	private AccelerateProperties accelerateProperties = null;
+	private Environment getEnviroment() {
+		return this.enviroment;
+	}
+
+	/**
+	 * @return
+	 */
+	@RequestMapping(method = RequestMethod.GET, path = "/info/jvm", produces = MediaType.APPLICATION_JSON_VALUE)
+	public static AccelerateDataBean jvmInfo() {
+		Runtime runtime = Runtime.getRuntime();
+		return AccelerateDataBean.build("JVM Max Size", Math.round((runtime.maxMemory() / 1024) / 1024) + "mb",
+				"Current JVM Size", Math.round((runtime.totalMemory() / 1024) / 1024) + "mb", "Used Memory",
+				Math.round(((runtime.totalMemory() - runtime.freeMemory()) / 1024) / 1024) + "mb", "Free Memory",
+				Math.round((runtime.freeMemory() / 1024) / 1024) + "mb");
+	}
 
 	/**
 	 * @param aRequest
-	 *            {@link HttpServletRequest} instance
-	 * @param aResponse
-	 *            {@link HttpServletResponse} instance
-	 * @return {@link WebContext} instance
+	 * @return
 	 */
-	protected WebContext populateContextAttributes(HttpServletRequest aRequest, HttpServletResponse aResponse) {
-		/*
-		 * Request Details
-		 */
-		List<String[]> requestFieldList = new ArrayList<>();
-		for (String field : fieldList) {
-			String fieldValue = null;
+	@RequestMapping(method = RequestMethod.GET, path = "/info/request")
+	public static AccelerateDataBean requestInfo(HttpServletRequest aRequest) {
+		return AccelerateDataBean.build("getContextPath", aRequest.getContextPath(), "getLocalAddr",
+				aRequest.getLocalAddr(), "getLocalName", aRequest.getLocalName(), "getLocalPort",
+				aRequest.getLocalPort(), "getPathInfo", aRequest.getPathInfo(), "getPathTranslated",
+				aRequest.getPathTranslated(), "getQueryString", aRequest.getQueryString(), "getRemoteAddr",
+				aRequest.getRemoteAddr(), "getRemoteHost", aRequest.getRemoteHost(), "getRemotePort",
+				aRequest.getRemotePort(), "getRemoteUser", aRequest.getRemoteUser(), "getRequestURI",
+				aRequest.getRequestURI(), "getRequestURL", aRequest.getRequestURL(), "getServerName",
+				aRequest.getServerName(), "getServerPort", aRequest.getServerPort(), "getServletPath",
+				aRequest.getServletPath());
+	}
 
-			try {
-				fieldValue = StringUtil.toString(invokeGetter(aRequest, field));
-			} catch (Exception error) {
-				fieldValue = error.getMessage();
+	/**
+	 * @param aKeys
+	 * @return
+	 */
+	@RequestMapping(method = RequestMethod.GET, path = "/info/env")
+	public Map<String, String> envInfo(@RequestParam(name = "keys", defaultValue = "") String aKeys) {
+		return StringUtil.split(aKeys, COMMA_CHAR).stream()
+				.map(key -> new String[] { key, this.enviroment.getProperty(key, EMPTY_STRING) })
+				.collect(Collectors.toMap(values -> values[0], values -> values[1]));
+	}
+
+	/**
+	 * @param aRequest
+	 * @param aResponse
+	 */
+	@RequestMapping(method = RequestMethod.POST, path = "/temp/deleteCookies")
+	public static void deleteCookies(HttpServletRequest aRequest, HttpServletResponse aResponse) {
+		WebUtil.deleteCookies(aRequest, aResponse, CollectionUtil
+				.toArray(StringUtil.split(aRequest.getParameter("list"), AccelerateConstants.COMMA_CHAR)));
+	}
+
+	/**
+	 * @param aDirPath
+	 * @return
+	 */
+	@RequestMapping(method = RequestMethod.GET, value = "/logs/list")
+	public static List<String> listLogs(@RequestParam(name = "dir", defaultValue = "") String aDirPath) {
+		List<String> fileList = new ArrayList<String>();
+		File logDir = new File(AppUtil.isEmpty(aDirPath) ? aLogPath : aDirPath);
+		if (logDir.exists() && logDir.isDirectory()) {
+			for (String fileName : logDir.list()) {
+				fileList.add(fileName);
 			}
-
-			requestFieldList.add(new String[] { field, fieldValue });
+		} else {
+			fileList.add(logDir.getPath() + "is not a directory or does not exist");
 		}
 
-		/*
-		 * Request Params
-		 */
-		List<String[]> requestParamList = new ArrayList<>();
-		Enumeration<String> paramNames = aRequest.getParameterNames();
-		while (paramNames.hasMoreElements()) {
-			String paramName = paramNames.nextElement();
-			requestParamList.add(new String[] { paramName, aRequest.getParameter(paramName) });
-		}
-
-		WebContext context = new WebContext(aRequest, aResponse, aRequest.getServletContext());
-		context.setVariable("accelerateProperties", this.accelerateProperties);
-		context.setVariable("requestFieldList", requestFieldList);
-		context.setVariable("requestParamList", requestParamList);
-
-		return context;
+		return fileList;
 	}
 
 	/**
-	 * @param aRequest
-	 *            {@link HttpServletRequest} instance
-	 * @param aResponse
-	 *            {@link HttpServletResponse} instance
-	 * @return thymeleaf view name for the index page
+	 * @param aDirPath
+	 * @param aFileNames
+	 * @param aLogPath
+	 * @return
 	 */
-	@RequestMapping(value = "/index", method = RequestMethod.GET)
-	public String index(HttpServletRequest aRequest, HttpServletResponse aResponse) {
-		populateContextAttributes(aRequest, aResponse);
-
-		return "acl#util/index";
-	}
-
-	/**
-	 * @param aRequest
-	 *            {@link HttpServletRequest} instance
-	 * @param aResponse
-	 *            {@link HttpServletResponse} instance
-	 * @return thymeleaf view name for the debug page
-	 */
-	@RequestMapping(value = "/debug")
-	public String debug(HttpServletRequest aRequest, HttpServletResponse aResponse) {
-		populateContextAttributes(aRequest, aResponse);
-
-		return "acl#util/debug";
-	}
-
-	/**
-	 * @param aRequest
-	 *            {@link HttpServletRequest} instance
-	 * @param aResponse
-	 *            {@link HttpServletResponse} instance
-	 * @return thymeleaf view name for the error page
-	 */
-	@RequestMapping("/error")
-	public String error(HttpServletRequest aRequest, HttpServletResponse aResponse) {
-		try {
-			WebContext context = populateContextAttributes(aRequest, aResponse);
-			context.setVariable("requestURI",
-					StringUtil.toString(aRequest.getAttribute(RequestDispatcher.ERROR_REQUEST_URI)));
-			context.setVariable("errorStatusCode",
-					StringUtil.toString(aRequest.getAttribute(RequestDispatcher.ERROR_STATUS_CODE)));
-			context.setVariable("errorMessage",
-					StringUtil.toString(aRequest.getAttribute(RequestDispatcher.ERROR_MESSAGE)));
-			context.setVariable("errorType",
-					StringUtil.toString(aRequest.getAttribute(RequestDispatcher.ERROR_EXCEPTION_TYPE)));
-			context.setVariable("errorStackTrace",
-					getErrorLog((Throwable) aRequest.getAttribute(RequestDispatcher.ERROR_EXCEPTION)));
-		} catch (Exception error) {
-			_logger.warn("Error compiling error information", error);
+	@RequestMapping(method = RequestMethod.POST, value = "/logs/delete")
+	public static int deleteLogs(@RequestParam(name = "dir", defaultValue = "") String aDirPath,
+			@RequestParam(name = "files", defaultValue = "", required = false) String aFileNames,
+			@Value("${lse.logs.logPath}") String aLogPath) {
+		String[] fileList = StringUtil.tokenize(aFileNames, AccelerateConstants.COMMA_CHAR);
+		int count = 0;
+		File logDir = new File(AppUtil.isEmpty(aDirPath) ? aLogPath : aDirPath);
+		for (String fileName : fileList) {
+			File logFile = new File(logDir, fileName.trim());
+			count = count + (logFile.delete() ? 1 : 0);
 		}
-
-		return "acl#util/error";
+		return count;
 	}
 }
