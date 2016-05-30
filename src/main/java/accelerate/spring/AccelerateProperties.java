@@ -34,14 +34,14 @@ public class AccelerateProperties implements Serializable {
 	private String appName = null;
 
 	/**
-	 * URL to be redirected to for the Application HomePage
+	 * Base package of the Application
 	 */
-	private String homePage = null;
+	private String appBasePackage = null;
 
 	/**
 	 * Base package of the Application
 	 */
-	private String appBasePackage = null;
+	private Map<String, String> util = new HashMap<>();
 
 	/**
 	 * Base package of the Application
@@ -85,24 +85,6 @@ public class AccelerateProperties implements Serializable {
 	}
 
 	/**
-	 * Getter method for "homePage" property
-	 *
-	 * @return homePage
-	 */
-	public String getHomePage() {
-		return this.homePage;
-	}
-
-	/**
-	 * Setter method for "homePage" property
-	 *
-	 * @param aHomePage
-	 */
-	public void setHomePage(String aHomePage) {
-		this.homePage = aHomePage;
-	}
-
-	/**
 	 * Getter method for "appBasePackage" property
 	 *
 	 * @return appBasePackage
@@ -118,6 +100,24 @@ public class AccelerateProperties implements Serializable {
 	 */
 	public void setAppBasePackage(String aAppBasePackage) {
 		this.appBasePackage = aAppBasePackage;
+	}
+
+	/**
+	 * Getter method for "util" property
+	 * 
+	 * @return util
+	 */
+	public Map<String, String> getUtil() {
+		return this.util;
+	}
+
+	/**
+	 * Setter method for "util" property
+	 * 
+	 * @param aUtil
+	 */
+	public void setUtil(Map<String, String> aUtil) {
+		this.util = aUtil;
 	}
 
 	/**

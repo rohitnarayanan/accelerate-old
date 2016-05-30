@@ -525,7 +525,7 @@ public class DirectorySynchronizer {
 			int sourceRootIndex = this.sourceRoot.getPath().length();
 			File destination = new File(this.targetRoot, getPath(this.sourceFile).substring(sourceRootIndex));
 			try {
-				if (this.conflictResult == null && destination.exists()) {
+				if ((this.conflictResult == null) && destination.exists()) {
 					this.copyResult = false;
 					return;
 				}

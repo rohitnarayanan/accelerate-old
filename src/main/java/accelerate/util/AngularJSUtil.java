@@ -1,6 +1,8 @@
 package accelerate.util;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -9,6 +11,11 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.csrf.CsrfException;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
@@ -23,6 +30,15 @@ import org.springframework.web.util.WebUtils;
  * @since Mar 10, 2016
  */
 public final class AngularJSUtil {
+	/**
+	 * {@link Logger} instance
+	 */
+	private static final Logger LOGGER = LoggerFactory.getLogger(AngularJSUtil.class);
+
+	/**
+	 * 
+	 */
+	private static final String ANGULAR_AJAX_HEADER = "AJAX-REQUEST";
 
 	/**
 	 * hidden constructor
@@ -67,5 +83,47 @@ public final class AngularJSUtil {
 		HttpSessionCsrfTokenRepository repository = new HttpSessionCsrfTokenRepository();
 		repository.setHeaderName("X-XSRF-TOKEN");
 		return repository;
+	}
+
+	/**
+	 * @param aRequest
+	 * @param aResponse
+	 * @param aAuthException
+	 * @return
+	 * @throws IOException
+	 */
+	public static boolean handleAuthEntry(HttpServletRequest aRequest, HttpServletResponse aResponse,
+			AuthenticationException aAuthException) throws IOException {
+		if (AppUtil.compare(aRequest.getHeader(ANGULAR_AJAX_HEADER), AccelerateConstants.TRUE)) {
+			Map<String, Object> responseData = new HashMap<>();
+			responseData.put("authenticated", "false");
+			responseData.put("authError", aAuthException.getClass().getName());
+			aResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+			aResponse.getWriter().write(JSONUtil.serialize(responseData));
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * @param aRequest
+	 * @param aResponse
+	 * @param aAccessDeniedException
+	 * @return
+	 * @throws IOException
+	 */
+	public static boolean handleAccessDenied(HttpServletRequest aRequest, HttpServletResponse aResponse,
+			AccessDeniedException aAccessDeniedException) throws IOException {
+		if (AppUtil.compare(aRequest.getHeader(ANGULAR_AJAX_HEADER), AccelerateConstants.TRUE)) {
+			LOGGER.info("Auth error[{}] for url[{}], method[{}]", aAccessDeniedException.getMessage(),
+					aRequest.getRequestURL(), aRequest.getMethod());
+			int errorCode = (aAccessDeniedException instanceof CsrfException) ? HttpServletResponse.SC_UNAUTHORIZED
+					: HttpServletResponse.SC_FORBIDDEN;
+			aResponse.sendError(errorCode, aAccessDeniedException.getMessage());
+			return false;
+		}
+
+		return true;
 	}
 }

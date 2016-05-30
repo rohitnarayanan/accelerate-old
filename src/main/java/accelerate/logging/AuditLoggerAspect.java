@@ -30,7 +30,7 @@ public class AuditLoggerAspect {
 	/**
 	 * 
 	 */
-	protected static final Logger _logger = LoggerFactory.getLogger(AuditLoggerAspect.class);
+	protected static final Logger LOGGER = LoggerFactory.getLogger(AuditLoggerAspect.class);
 
 	/**
 	 * This method profiles the execution of the method that has been captured
@@ -73,7 +73,7 @@ public class AuditLoggerAspect {
 	 * @return
 	 */
 	public static StopWatch logMethodStart(String aSignature) {
-		_logger.debug("{},{},{}", "Start", aSignature, System.currentTimeMillis());
+		LOGGER.debug("{},{},{}", "Start", aSignature, System.currentTimeMillis());
 		StopWatch stopWatch = new StopWatch();
 		stopWatch.start();
 		return stopWatch;
@@ -88,7 +88,7 @@ public class AuditLoggerAspect {
 	public static void logMethodEnd(String aSignature, Throwable aError, StopWatch aStopWatch) {
 		aStopWatch.stop();
 
-		_logger.debug("{},{},{}", "Time", aSignature, aStopWatch.getTotalTimeMillis());
-		_logger.debug("{},{},{}", (aError != null) ? "ErrorExit" : "End", aSignature, System.currentTimeMillis());
+		LOGGER.debug("{},{},{}", "Time", aSignature, aStopWatch.getTotalTimeMillis());
+		LOGGER.debug("{},{},{}", (aError != null) ? "ErrorExit" : "End", aSignature, System.currentTimeMillis());
 	}
 }

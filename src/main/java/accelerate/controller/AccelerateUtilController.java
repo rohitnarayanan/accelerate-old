@@ -4,15 +4,13 @@ import static accelerate.util.AccelerateConstants.COMMA_CHAR;
 import static accelerate.util.AccelerateConstants.EMPTY_STRING;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.EnvironmentAware;
@@ -25,7 +23,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import accelerate.databean.AccelerateDataBean;
 import accelerate.util.AccelerateConstants;
-import accelerate.util.AppUtil;
 import accelerate.util.CollectionUtil;
 import accelerate.util.StringUtil;
 import accelerate.util.WebUtil;
@@ -60,15 +57,6 @@ public class AccelerateUtilController implements EnvironmentAware {
 	@Override
 	public void setEnvironment(Environment aEnvironment) {
 		this.enviroment = aEnvironment;
-	}
-
-	/**
-	 * Getter method for "enviroment" property
-	 * 
-	 * @return enviroment
-	 */
-	private Environment getEnviroment() {
-		return this.enviroment;
 	}
 
 	/**
@@ -122,41 +110,37 @@ public class AccelerateUtilController implements EnvironmentAware {
 	}
 
 	/**
-	 * @param aDirPath
-	 * @return
-	 */
-	@RequestMapping(method = RequestMethod.GET, value = "/logs/list")
-	public static List<String> listLogs(@RequestParam(name = "dir", defaultValue = "") String aDirPath) {
-		List<String> fileList = new ArrayList<String>();
-		File logDir = new File(AppUtil.isEmpty(aDirPath) ? aLogPath : aDirPath);
-		if (logDir.exists() && logDir.isDirectory()) {
-			for (String fileName : logDir.list()) {
-				fileList.add(fileName);
-			}
-		} else {
-			fileList.add(logDir.getPath() + "is not a directory or does not exist");
-		}
-
-		return fileList;
-	}
-
-	/**
-	 * @param aDirPath
-	 * @param aFileNames
 	 * @param aLogPath
 	 * @return
 	 */
-	@RequestMapping(method = RequestMethod.POST, value = "/logs/delete")
-	public static int deleteLogs(@RequestParam(name = "dir", defaultValue = "") String aDirPath,
-			@RequestParam(name = "files", defaultValue = "", required = false) String aFileNames,
-			@Value("${lse.logs.logPath}") String aLogPath) {
-		String[] fileList = StringUtil.tokenize(aFileNames, AccelerateConstants.COMMA_CHAR);
-		int count = 0;
-		File logDir = new File(AppUtil.isEmpty(aDirPath) ? aLogPath : aDirPath);
-		for (String fileName : fileList) {
-			File logFile = new File(logDir, fileName.trim());
-			count = count + (logFile.delete() ? 1 : 0);
+	@RequestMapping(method = RequestMethod.GET, value = "/logs/list")
+	public static AccelerateDataBean listLogs(@RequestParam(name = "dir") String aLogPath) {
+		AccelerateDataBean dataBean = AccelerateDataBean.build("directory", aLogPath);
+		File logDir = new File(aLogPath);
+		if (logDir.exists()) {
+			if (logDir.isDirectory()) {
+				dataBean.put("logs",
+						Arrays.stream(logDir.listFiles()).map(aFile -> aFile.getName()).collect(Collectors.toList()));
+			} else {
+				dataBean.put("msg", "directory does not exist");
+			}
+		} else {
+			dataBean.put("msg", "directory does not exist");
 		}
-		return count;
+
+		return dataBean;
+	}
+
+	/**
+	 * @param aLogPath
+	 * @param aFileNames
+	 * @return
+	 */
+	@RequestMapping(method = RequestMethod.POST, value = "/logs/delete")
+	public static Map<String, Boolean> deleteLogs(@RequestParam(name = "dir") String aLogPath,
+			@RequestParam(name = "files", required = false) String aFileNames) {
+		return StringUtil.split(aFileNames, AccelerateConstants.COMMA_CHAR).stream()
+				.map(aFileName -> new File(aLogPath, aFileName))
+				.collect(Collectors.toMap(aFile -> aFile.getName(), aFile -> aFile.delete()));
 	}
 }

@@ -15,6 +15,8 @@ import java.util.stream.Stream;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -52,6 +54,11 @@ public class StaticListenerHelper implements ApplicationListener<ApplicationRead
 	 * serialVersionUID
 	 */
 	private static final long serialVersionUID = 1L;
+
+	/**
+	 * {@link Logger} instance
+	 */
+	private static final Logger LOGGER = LoggerFactory.getLogger(StaticListenerHelper.class);
 
 	/**
 	 * List of classes annotated with @AccelerateContextListener. Static
@@ -141,6 +148,8 @@ public class StaticListenerHelper implements ApplicationListener<ApplicationRead
 	private void initializeContextListenerMap() throws AccelerateException {
 		this.staticContextListeners = findCandidateComponents(StaticContextListener.class).stream()
 				.flatMap(beanDefinition -> {
+					LOGGER.debug("Registering StaticContextListener [{}]", beanDefinition.getBeanClassName());
+
 					AnnotationAttributes annotationAttributes = getAnnotationAttributes(beanDefinition);
 					return Stream.of(
 							AccelerateDataBean.build("event", "onContextStarted", "listenerClass",
@@ -160,6 +169,8 @@ public class StaticListenerHelper implements ApplicationListener<ApplicationRead
 	 */
 	private void initializeCacheListenerMap() throws AccelerateException {
 		this.staticCacheListeners = findCandidateComponents(StaticCacheListener.class).stream().map(beanDefinition -> {
+			LOGGER.debug("Registering StaticCacheListener [{}]", beanDefinition.getBeanClassName());
+
 			AnnotationAttributes annotationAttributes = getAnnotationAttributes(beanDefinition);
 			return AccelerateDataBean.build("cacheName", annotationAttributes.getString("name"), "listenerClass",
 					beanDefinition.getBeanClassName(), "handleMethod", annotationAttributes.getString("handler"));

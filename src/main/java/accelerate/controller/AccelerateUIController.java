@@ -18,7 +18,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.thymeleaf.context.WebContext;
 
 import accelerate.spring.AccelerateProperties;
@@ -110,20 +109,6 @@ public class AccelerateUIController {
 		context.setVariable("requestParamList", requestParamList);
 
 		return context;
-	}
-
-	/**
-	 * @param aRequest
-	 *            {@link HttpServletRequest} instance
-	 * @param aResponse
-	 *            {@link HttpServletResponse} instance
-	 * @return thymeleaf view name for the index page
-	 */
-	@RequestMapping(value = "/index", method = RequestMethod.GET)
-	public String index(HttpServletRequest aRequest, HttpServletResponse aResponse) {
-		populateContextAttributes(aRequest, aResponse);
-
-		return "acl#util/index";
 	}
 
 	/**

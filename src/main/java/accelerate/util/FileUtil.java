@@ -44,7 +44,7 @@ public final class FileUtil {
 	/**
 	 * 
 	 */
-	static final Logger _logger = LoggerFactory.getLogger(FileUtil.class);
+	static final Logger LOGGER = LoggerFactory.getLogger(FileUtil.class);
 
 	/**
 	 * hidden constructor
@@ -269,11 +269,11 @@ public final class FileUtil {
 
 				File newFile = new File(aFile.getParentFile(), newName);
 				if (newFile.exists()) {
-					_logger.debug("Cannot rename file [{}] to as file [{}] already exists", aFile, newName);
+					LOGGER.debug("Cannot rename file [{}] to as file [{}] already exists", aFile, newName);
 					return aFile;
 				}
 
-				_logger.debug("Renaming file [{}] to [{}]", aFile, newName);
+				LOGGER.debug("Renaming file [{}] to [{}]", aFile, newName);
 				return FileUtil.renameFile(aFile, newName);
 			}
 

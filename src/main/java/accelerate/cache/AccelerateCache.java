@@ -56,7 +56,7 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	/**
 	 * 
 	 */
-	protected static final Logger _logger = LoggerFactory.getLogger(AccelerateCache.class);
+	protected static final Logger LOGGER = LoggerFactory.getLogger(AccelerateCache.class);
 
 	/**
 	 * {@link Class} instance for the cache key type
@@ -167,7 +167,7 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 			this.staticListenerHelper.notifyCacheLoad(AccelerateCache.this);
 
 			this.initialized = true;
-			_logger.info("Cache [{}] Initialized", name());
+			LOGGER.info("Cache [{}] Initialized", name());
 		} catch (Exception error) {
 			AccelerateException.checkAndThrow(error, "Error in initializing cache [%s]", name());
 		}
@@ -190,7 +190,7 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 		Assert.state(this.initialized, "Batch not initialized");
 		Assert.state(this.refreshable, "Batch not refreshable");
 
-		_logger.debug("Refreshing Cache [{}]", name());
+		LOGGER.debug("Refreshing Cache [{}]", name());
 
 		this.refreshMonitor = true;
 
@@ -211,7 +211,7 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 			this.refreshMonitor.notifyAll();
 		}
 
-		_logger.info("Cache [{}] Refreshed", name());
+		LOGGER.info("Cache [{}] Refreshed", name());
 	}
 
 	/**

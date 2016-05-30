@@ -41,7 +41,7 @@ public class AccelerateBatch<T extends AccelerateTask> extends ThreadPoolTaskExe
 	/**
 	 * 
 	 */
-	protected static final Logger _logger = LoggerFactory.getLogger(AccelerateBatch.class);
+	protected static final Logger LOGGER = LoggerFactory.getLogger(AccelerateBatch.class);
 
 	/**
 	 * Name of the Batch
@@ -137,7 +137,7 @@ public class AccelerateBatch<T extends AccelerateTask> extends ThreadPoolTaskExe
 	public void shutdown() {
 		Assert.state(this.initialized, "Batch not initialized");
 
-		_logger.debug("Shutdown requested");
+		LOGGER.debug("Shutdown requested");
 		super.shutdown();
 	}
 
@@ -152,7 +152,7 @@ public class AccelerateBatch<T extends AccelerateTask> extends ThreadPoolTaskExe
 	public synchronized void shutdown(TimeUnit aTimeUnit, long aTimeout) {
 		Assert.state(this.initialized, "Batch not initialized");
 
-		_logger.debug("Shutdown requested in [{}] seconds", aTimeUnit.toSeconds(aTimeout));
+		LOGGER.debug("Shutdown requested in [{}] seconds", aTimeUnit.toSeconds(aTimeout));
 		setAwaitTerminationSeconds((int) aTimeUnit.toSeconds(aTimeout));
 		this.shutdown();
 	}
@@ -172,7 +172,7 @@ public class AccelerateBatch<T extends AccelerateTask> extends ThreadPoolTaskExe
 	public synchronized void pause() {
 		Assert.state(this.initialized, "Batch not initialized");
 
-		_logger.debug("Pausing [{}] tasks ", this.tasks.size());
+		LOGGER.debug("Pausing [{}] tasks ", this.tasks.size());
 		this.paused = true;
 		this.tasks.values().forEach(task -> task.pause(this.monitor));
 	}
@@ -185,7 +185,7 @@ public class AccelerateBatch<T extends AccelerateTask> extends ThreadPoolTaskExe
 	public synchronized void resume() {
 		Assert.state(this.initialized, "Batch not initialized");
 
-		_logger.debug("Resuming [{}] tasks ", this.tasks.size());
+		LOGGER.debug("Resuming [{}] tasks ", this.tasks.size());
 		this.paused = false;
 		this.tasks.values().forEach(task -> task.resume());
 
@@ -228,7 +228,7 @@ public class AccelerateBatch<T extends AccelerateTask> extends ThreadPoolTaskExe
 		Assert.state(this.initialized, "Batch not initialized");
 		Assert.notEmpty(aTaskList, "No tasks provided");
 
-		_logger.debug("Submitting [{}] tasks ", aTaskList.size());
+		LOGGER.debug("Submitting [{}] tasks ", aTaskList.size());
 
 		aTaskList.stream().forEach(task -> {
 			this.tasks.put(task.getTaskKey(), task);

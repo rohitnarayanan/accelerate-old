@@ -31,7 +31,7 @@ public abstract class AccelerateTask extends AccelerateDataBean implements Calla
 	/**
 	 * 
 	 */
-	protected static final Logger _logger = LoggerFactory.getLogger(AccelerateTask.class);
+	protected static final Logger LOGGER = LoggerFactory.getLogger(AccelerateTask.class);
 
 	/**
 	 * Key Id for the task
@@ -162,11 +162,11 @@ public abstract class AccelerateTask extends AccelerateDataBean implements Calla
 			this.thread = Thread.currentThread();
 			this.startTime = System.currentTimeMillis();
 			this.executing = true;
-			_logger.debug("Starting execution for task [{}]", this.taskKey);
+			LOGGER.debug("Starting execution for task [{}]", this.taskKey);
 			execute();
 			this.complete = true;
 		} catch (Exception error) {
-			_logger.debug("Error in execution for task [{}]", this.taskKey);
+			LOGGER.debug("Error in execution for task [{}]", this.taskKey);
 			this.taskError = error;
 			AccelerateException.checkAndThrow(error);
 		} finally {
@@ -176,7 +176,7 @@ public abstract class AccelerateTask extends AccelerateDataBean implements Calla
 			this.postProccessor.accept(this);
 		}
 
-		_logger.debug("Completed execution for task [{}]", this.taskKey);
+		LOGGER.debug("Completed execution for task [{}]", this.taskKey);
 		return this;
 	}
 
@@ -197,20 +197,20 @@ public abstract class AccelerateTask extends AccelerateDataBean implements Calla
 	 */
 	final void checkPause() throws AccelerateException {
 		if (!this.pause) {
-			_logger.debug("Task [{}] is not paused", this.taskKey);
+			LOGGER.debug("Task [{}] is not paused", this.taskKey);
 			return;
 		}
 
 		synchronized (this.monitor) {
 			try {
-				_logger.debug("Pausing task [{}]", getTaskKey());
+				LOGGER.debug("Pausing task [{}]", getTaskKey());
 				this.monitor.wait();
 			} catch (InterruptedException error) {
 				throw new AccelerateException(error);
 			}
 		}
 
-		_logger.debug("Resuming task [{}]", getTaskKey());
+		LOGGER.debug("Resuming task [{}]", getTaskKey());
 	}
 
 	/**
