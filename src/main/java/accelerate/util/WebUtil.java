@@ -10,12 +10,7 @@ import javax.servlet.http.HttpSession;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.core.session.SessionRegistry;
-import org.springframework.security.core.session.SessionRegistryImpl;
-import org.springframework.security.web.DefaultRedirectStrategy;
-import org.springframework.security.web.RedirectStrategy;
 import org.springframework.util.Assert;
-import org.springframework.web.util.UrlPathHelper;
 
 /**
  * PUT DESCRIPTION HERE
@@ -29,21 +24,6 @@ public class WebUtil {
 	 * {@link Logger} instance
 	 */
 	private static final Logger LOGGER = LoggerFactory.getLogger(WebUtil.class);
-
-	/**
-	 * static instance
-	 */
-	public static final UrlPathHelper URL_PATH_HELPER = new UrlPathHelper();
-
-	/**
-	 * 
-	 */
-	public static final RedirectStrategy REDIRECT_STRATEGY = new DefaultRedirectStrategy();
-
-	/**
-	 * 
-	 */
-	public static final SessionRegistry SESSION_REGISTRY = new SessionRegistryImpl();
 
 	/**
 	 * 

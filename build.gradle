@@ -53,19 +53,11 @@ dependencies {
 		exclude group: 'org.apache.tomcat', module: 'tomcat-jdbc'
 	}
 
-	// javax dependencies
+	// external dependencies
 	compile("javax.servlet:javax.servlet-api")
-	compile("javax.cache:cache-api")
-
-	// apache commons dependencies
 	compile("org.apache.commons:commons-lang3")
 	compile("commons-beanutils:commons-beanutils")
 	compile("commons-fileupload:commons-fileupload")
-
-	// webjars
-	compile("org.webjars:jquery:2.2.1")
-	compile("org.webjars:bootstrap:3.3.6")
-	
 	
 	//test dependencies
 	testCompile("org.springframework.boot:spring-boot-starter-test")

@@ -10,6 +10,8 @@ import org.springframework.ui.ModelMap;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import accelerate.exception.AccelerateException;
 import accelerate.util.JSONUtil;
 
@@ -45,6 +47,7 @@ public class AccelerateDataBean implements Serializable {
 	/**
 	 * Instance of {@link ModelMap} for generic storage
 	 */
+	@JsonProperty
 	private ModelMap model = null;
 
 	/**
@@ -148,7 +151,6 @@ public class AccelerateDataBean implements Serializable {
 	 */
 	public final AccelerateDataBean addAll(Object... aArgs) {
 		Assert.notNull(aArgs, "Arguments are required");
-		Assert.noNullElements(aArgs, "Arguments are required");
 		Assert.isTrue(((aArgs.length % 2) == 0), "Incorrect number of arguments");
 
 		for (int idx = 0; idx < aArgs.length; idx += 2) {
@@ -212,7 +214,7 @@ public class AccelerateDataBean implements Serializable {
 	 *             thrown due to {@link JSONUtil#serialize(Object)}
 	 */
 	public String toShortJSON() throws AccelerateException {
-		return (getIdField() != null) ? JSONUtil.serializeOnly(this, getIdField())
+		return (this.idField != null) ? JSONUtil.serializeOnly(this, this.idField)
 				: "{\"id\":\"" + super.toString() + "\"}";
 	}
 
@@ -242,15 +244,6 @@ public class AccelerateDataBean implements Serializable {
 		for (String field : aFieldNames) {
 			this.logExcludedFields.remove(field);
 		}
-	}
-
-	/**
-	 * Getter method for "idField" property
-	 * 
-	 * @return idField
-	 */
-	public String getIdField() {
-		return this.idField;
 	}
 
 	/**

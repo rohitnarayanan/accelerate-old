@@ -96,7 +96,11 @@ public class StaticListenerHelper implements ApplicationListener<ApplicationRead
 	@PostConstruct
 	public void initialize() throws AccelerateException {
 		Exception exception = null;
-		StopWatch stopWatch = AuditLoggerAspect.logMethodStart("accelerate.spring.StaticListenerHelper.construct()");
+		StopWatch stopWatch = null;
+
+		if (AuditLoggerAspect.isDebugEnabled()) {
+			stopWatch = AuditLoggerAspect.logMethodStart("accelerate.spring.StaticListenerHelper.construct()");
+		}
 		try {
 			initializeContextListenerMap();
 			initializeCacheListenerMap();
@@ -104,7 +108,10 @@ public class StaticListenerHelper implements ApplicationListener<ApplicationRead
 			exception = error;
 			throw error;
 		} finally {
-			AuditLoggerAspect.logMethodEnd("accelerate.spring.StaticListenerHelper.construct()", exception, stopWatch);
+			if (AuditLoggerAspect.isDebugEnabled()) {
+				AuditLoggerAspect.logMethodEnd("accelerate.spring.StaticListenerHelper.construct()", exception,
+						stopWatch);
+			}
 		}
 	}
 
@@ -143,14 +150,15 @@ public class StaticListenerHelper implements ApplicationListener<ApplicationRead
 	/**
 	 * @throws AccelerateException
 	 *             thrown due to
-	 *             {@link #getAnnotationAttributes(BeanDefinition)}
+	 *             {@link #getAnnotationAttributes(BeanDefinition, Class)}
 	 */
 	private void initializeContextListenerMap() throws AccelerateException {
 		this.staticContextListeners = findCandidateComponents(StaticContextListener.class).stream()
 				.flatMap(beanDefinition -> {
 					LOGGER.debug("Registering StaticContextListener [{}]", beanDefinition.getBeanClassName());
 
-					AnnotationAttributes annotationAttributes = getAnnotationAttributes(beanDefinition);
+					AnnotationAttributes annotationAttributes = getAnnotationAttributes(beanDefinition,
+							StaticContextListener.class);
 					return Stream.of(
 							AccelerateDataBean.build("event", "onContextStarted", "listenerClass",
 									beanDefinition.getBeanClassName(), "handleMethod",
@@ -158,24 +166,27 @@ public class StaticListenerHelper implements ApplicationListener<ApplicationRead
 							AccelerateDataBean.build("event", "onContextClosed", "listenerClass",
 									beanDefinition.getBeanClassName(), "handleMethod",
 									annotationAttributes.getString("onContextClosed")));
-				}).collect(Collectors.groupingBy(bean -> bean.get("event").toString(), () -> new HashMap<>(), Collectors
-						.toMap(bean -> bean.get("listenerClass").toString(), bean -> bean.get("handler").toString())));
+				})
+				.collect(Collectors.groupingBy(bean -> bean.get("event").toString(), () -> new HashMap<>(),
+						Collectors.toMap(bean -> bean.get("listenerClass").toString(),
+								bean -> bean.get("handleMethod").toString())));
 	}
 
 	/**
 	 * @throws AccelerateException
 	 *             thrown due to
-	 *             {@link #getAnnotationAttributes(BeanDefinition)}
+	 *             {@link #getAnnotationAttributes(BeanDefinition, Class)}
 	 */
 	private void initializeCacheListenerMap() throws AccelerateException {
 		this.staticCacheListeners = findCandidateComponents(StaticCacheListener.class).stream().map(beanDefinition -> {
 			LOGGER.debug("Registering StaticCacheListener [{}]", beanDefinition.getBeanClassName());
 
-			AnnotationAttributes annotationAttributes = getAnnotationAttributes(beanDefinition);
+			AnnotationAttributes annotationAttributes = getAnnotationAttributes(beanDefinition,
+					StaticCacheListener.class);
 			return AccelerateDataBean.build("cacheName", annotationAttributes.getString("name"), "listenerClass",
 					beanDefinition.getBeanClassName(), "handleMethod", annotationAttributes.getString("handler"));
 		}).collect(Collectors.groupingBy(bean -> bean.get("cacheName").toString(), () -> new HashMap<>(), Collectors
-				.toMap(bean -> bean.get("listenerClass").toString(), bean -> bean.get("handler").toString())));
+				.toMap(bean -> bean.get("listenerClass").toString(), bean -> bean.get("handleMethod").toString())));
 	}
 
 	/**
@@ -196,28 +207,34 @@ public class StaticListenerHelper implements ApplicationListener<ApplicationRead
 
 	/**
 	 * @param aBeanDefinition
+	 * @param aAnnotationType
 	 * @return
 	 * @throws AccelerateException
 	 *             thrown due to
 	 *             {@link ReflectionUtil#getFieldValue(Class, Object, String)}
 	 */
-	private static AnnotationAttributes getAnnotationAttributes(BeanDefinition aBeanDefinition)
-			throws AccelerateException {
+	private static AnnotationAttributes getAnnotationAttributes(BeanDefinition aBeanDefinition,
+			Class<? extends Annotation> aAnnotationType) throws AccelerateException {
 		Object metadata = ReflectionUtil.getFieldValue(aBeanDefinition.getClass(), aBeanDefinition, "metadata");
 		@SuppressWarnings("unchecked")
 		Map<String, LinkedList<AnnotationAttributes>> attributesMap = (Map<String, LinkedList<AnnotationAttributes>>) ReflectionUtil
 				.getFieldValue(metadata.getClass(), metadata, "attributesMap");
-		return attributesMap.get(StaticCacheListener.class.getName()).get(0);
+		return attributesMap.get(aAnnotationType.getName()).get(0);
 	}
 
 	/**
-	 * @param aHandlerKey
+	 * @param aContextEvent
 	 */
-	private void notifyContextListener(String aHandlerKey) {
-		this.staticContextListeners.forEach((aClassName, aHandlerMap) -> {
+	private void notifyContextListener(String aContextEvent) {
+		Map<String, String> listenerMap = this.staticContextListeners.get(aContextEvent);
+		if (ObjectUtils.isEmpty(listenerMap)) {
+			return;
+		}
+
+		listenerMap.forEach((aClassName, aHandleMethod) -> {
 			try {
 				Class<?> targetClass = Class.forName(aClassName);
-				ReflectionUtil.invokeMethod(targetClass, null, aHandlerMap.get(aHandlerKey),
+				ReflectionUtil.invokeMethod(targetClass, null, aHandleMethod,
 						new Class<?>[] { ApplicationContext.class }, new Object[] { this.applicationContext });
 			} catch (Exception error) {
 				AccelerateException.checkAndThrow(error);
@@ -235,10 +252,10 @@ public class StaticListenerHelper implements ApplicationListener<ApplicationRead
 			return;
 		}
 
-		listenerMap.forEach((aClassName, aHandlerName) -> {
+		listenerMap.forEach((aClassName, aHandleMethod) -> {
 			try {
 				Class<?> targetClass = Class.forName(aClassName);
-				ReflectionUtil.invokeMethod(targetClass, null, aHandlerName, new Class<?>[] { aCache.getClass() },
+				ReflectionUtil.invokeMethod(targetClass, null, aHandleMethod, new Class<?>[] { aCache.getClass() },
 						new Object[] { aCache });
 			} catch (Exception error) {
 				AccelerateException.checkAndThrow(error);

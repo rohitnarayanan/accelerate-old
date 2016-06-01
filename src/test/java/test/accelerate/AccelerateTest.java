@@ -64,7 +64,7 @@ public class AccelerateTest extends WebMvcConfigurerAdapter {
 	 */
 	@Bean
 	public static EmbeddedServletContainerCustomizer customizeEmbeddedContainer() {
-		return aContainer -> aContainer.addErrorPages(new ErrorPage("/aclUtil/error"));
+		return aContainer -> aContainer.addErrorPages(new ErrorPage("/acl/util/web/error"));
 	}
 
 	/**
@@ -91,21 +91,21 @@ public class AccelerateTest extends WebMvcConfigurerAdapter {
 	 * @param aCache
 	 */
 	public static final void testHandler(PropertyCache aCache) {
-		System.err.println("Injected Cache with size:" + aCache.size());
+		System.err.println("AccelerateTest: Injected Cache with size:" + aCache.size());
 	}
 
 	/**
 	 * @param aContext
 	 */
 	public static final void contextStarted(@SuppressWarnings("unused") ApplicationContext aContext) {
-		System.err.println("Context started");
+		System.err.println("AccelerateTest: Context started");
 	}
 
 	/**
 	 * @param aContext
 	 */
 	public static final void contextClosed(@SuppressWarnings("unused") ApplicationContext aContext) {
-		System.err.println("Context closed");
+		System.err.println("AccelerateTest: Context closed");
 	}
 
 	/**

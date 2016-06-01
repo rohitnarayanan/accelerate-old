@@ -2,12 +2,14 @@ package accelerate.controller;
 
 import static accelerate.util.AccelerateConstants.COMMA_CHAR;
 import static accelerate.util.AccelerateConstants.EMPTY_STRING;
+import static accelerate.util.AppUtil.getErrorLog;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -15,11 +17,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.core.env.Environment;
-import org.springframework.http.MediaType;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import accelerate.databean.AccelerateDataBean;
 import accelerate.util.AccelerateConstants;
@@ -35,9 +36,9 @@ import accelerate.util.WebUtil;
  * @version 1.0 Initial Version
  * @since 25-May-2015
  */
-@Controller
+@RestController
 @ConditionalOnWebApplication
-@ConditionalOnProperty(name = "accelerate.web.ui")
+@ConditionalOnProperty(name = "accelerate.web.util")
 @RequestMapping("/acl/util")
 public class AccelerateUtilController implements EnvironmentAware {
 	/**
@@ -62,7 +63,7 @@ public class AccelerateUtilController implements EnvironmentAware {
 	/**
 	 * @return
 	 */
-	@RequestMapping(method = RequestMethod.GET, path = "/info/jvm", produces = MediaType.APPLICATION_JSON_VALUE)
+	@RequestMapping(method = RequestMethod.GET, path = "/info/jvm")
 	public static AccelerateDataBean jvmInfo() {
 		Runtime runtime = Runtime.getRuntime();
 		return AccelerateDataBean.build("JVM Max Size", Math.round((runtime.maxMemory() / 1024) / 1024) + "mb",
@@ -101,19 +102,37 @@ public class AccelerateUtilController implements EnvironmentAware {
 
 	/**
 	 * @param aRequest
+	 *            {@link HttpServletRequest} instance
+	 * @return thymeleaf view name for the error page
+	 */
+	@RequestMapping("/web/error")
+	public static AccelerateDataBean error(HttpServletRequest aRequest) {
+		AccelerateDataBean dataBean = requestInfo(aRequest);
+		dataBean.put("requestURI", StringUtil.toString(aRequest.getAttribute(RequestDispatcher.ERROR_REQUEST_URI)));
+		dataBean.put("errorStatusCode",
+				StringUtil.toString(aRequest.getAttribute(RequestDispatcher.ERROR_STATUS_CODE)));
+		dataBean.put("errorMessage", StringUtil.toString(aRequest.getAttribute(RequestDispatcher.ERROR_MESSAGE)));
+		dataBean.put("errorType", StringUtil.toString(aRequest.getAttribute(RequestDispatcher.ERROR_EXCEPTION_TYPE)));
+		dataBean.put("errorStackTrace",
+				getErrorLog((Throwable) aRequest.getAttribute(RequestDispatcher.ERROR_EXCEPTION)));
+		return dataBean;
+	}
+
+	/**
+	 * @param aRequest
 	 * @param aResponse
 	 */
-	@RequestMapping(method = RequestMethod.POST, path = "/temp/deleteCookies")
+	@RequestMapping(method = RequestMethod.POST, path = "/web/deleteCookies")
 	public static void deleteCookies(HttpServletRequest aRequest, HttpServletResponse aResponse) {
-		WebUtil.deleteCookies(aRequest, aResponse, CollectionUtil
-				.toArray(StringUtil.split(aRequest.getParameter("list"), AccelerateConstants.COMMA_CHAR)));
+		WebUtil.deleteCookies(aRequest, aResponse, CollectionUtil.toArray(
+				StringUtil.split(aRequest.getParameter("list"), AccelerateConstants.COMMA_CHAR), String.class));
 	}
 
 	/**
 	 * @param aLogPath
 	 * @return
 	 */
-	@RequestMapping(method = RequestMethod.GET, value = "/logs/list")
+	@RequestMapping(method = RequestMethod.GET, path = "/logs/list")
 	public static AccelerateDataBean listLogs(@RequestParam(name = "dir") String aLogPath) {
 		AccelerateDataBean dataBean = AccelerateDataBean.build("directory", aLogPath);
 		File logDir = new File(aLogPath);
@@ -136,7 +155,7 @@ public class AccelerateUtilController implements EnvironmentAware {
 	 * @param aFileNames
 	 * @return
 	 */
-	@RequestMapping(method = RequestMethod.POST, value = "/logs/delete")
+	@RequestMapping(method = RequestMethod.POST, path = "/logs/delete")
 	public static Map<String, Boolean> deleteLogs(@RequestParam(name = "dir") String aLogPath,
 			@RequestParam(name = "files", required = false) String aFileNames) {
 		return StringUtil.split(aFileNames, AccelerateConstants.COMMA_CHAR).stream()

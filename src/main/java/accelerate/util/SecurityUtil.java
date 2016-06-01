@@ -18,10 +18,15 @@ import org.springframework.security.authentication.InsufficientAuthenticationExc
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.DefaultRedirectStrategy;
+import org.springframework.security.web.RedirectStrategy;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.access.AccessDeniedHandlerImpl;
 import org.springframework.security.web.csrf.CsrfException;
+import org.springframework.web.util.UrlPathHelper;
 
 import accelerate.databean.AccelerateWebSession;
 
@@ -37,6 +42,21 @@ public final class SecurityUtil {
 	 * {@link Logger} instance
 	 */
 	static final Logger LOGGER = LoggerFactory.getLogger(SecurityUtil.class);
+
+	/**
+	 * static instance
+	 */
+	static final UrlPathHelper URL_PATH_HELPER = new UrlPathHelper();
+
+	/**
+	 * 
+	 */
+	public static final RedirectStrategy REDIRECT_STRATEGY = new DefaultRedirectStrategy();
+
+	/**
+	 * 
+	 */
+	public static final SessionRegistry SESSION_REGISTRY = new SessionRegistryImpl();
 
 	/**
 	 * hidden constructor
@@ -91,7 +111,7 @@ public final class SecurityUtil {
 					return;
 				}
 
-				WebUtil.REDIRECT_STRATEGY.sendRedirect(aRequest, aResponse, getAuthErrorParam(aAuthException));
+				REDIRECT_STRATEGY.sendRedirect(aRequest, aResponse, getAuthErrorParam(aAuthException));
 			}
 		};
 	}
@@ -109,12 +129,12 @@ public final class SecurityUtil {
 			public void handle(HttpServletRequest aRequest, HttpServletResponse aResponse,
 					AccessDeniedException aAccessDeniedException) throws IOException, ServletException {
 				if (aAccessDeniedException instanceof CsrfException) {
-					if (StringUtils.startsWithAny(WebUtil.URL_PATH_HELPER.getPathWithinApplication(aRequest), aLoginURL,
+					if (StringUtils.startsWithAny(URL_PATH_HELPER.getPathWithinApplication(aRequest), aLoginURL,
 							aLogoutURL)) {
 						LOGGER.info("Ignoring Login/Logout failure due to invalid CSRF token, "
 								+ "User will be logged out and sent to index(/) page");
 						WebUtil.logout(aRequest, aResponse);
-						WebUtil.REDIRECT_STRATEGY.sendRedirect(aRequest, aResponse, "/");
+						REDIRECT_STRATEGY.sendRedirect(aRequest, aResponse, "/");
 						return;
 					}
 				}

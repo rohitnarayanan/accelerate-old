@@ -3,6 +3,7 @@ package accelerate.util;
 import static accelerate.util.AppUtil.compare;
 import static org.springframework.util.ObjectUtils.isEmpty;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -128,15 +129,19 @@ public final class CollectionUtil {
 	/**
 	 * @param <E>
 	 * @param aCollection
+	 * @param aArrayType
 	 * @return array of elements
 	 */
-	@SuppressWarnings("unchecked")
-	public static <E> E[] toArray(Collection<? extends E> aCollection) {
+	public static <E> E[] toArray(Collection<? extends E> aCollection, Class<E> aArrayType) {
 		if (isEmpty(aCollection)) {
 			return null;
 		}
 
-		return (E[]) aCollection.toArray();
+		return aCollection.stream().toArray(index -> {
+			@SuppressWarnings("unchecked")
+			E[] arr = (E[]) Array.newInstance(aArrayType, index);
+			return arr;
+		});
 	}
 
 	/**

@@ -33,6 +33,13 @@ public class AuditLoggerAspect {
 	protected static final Logger LOGGER = LoggerFactory.getLogger(AuditLoggerAspect.class);
 
 	/**
+	 * @return
+	 */
+	public static boolean isDebugEnabled() {
+		return LOGGER.isDebugEnabled();
+	}
+
+	/**
 	 * This method profiles the execution of the method that has been captured
 	 * by the pointcut defined. It logs the entry and exit of every method and
 	 * also logs the execution time.
@@ -50,8 +57,13 @@ public class AuditLoggerAspect {
 	public static Object audit(ProceedingJoinPoint aJoinPoint) throws Throwable {
 		Throwable error = null;
 		Object returnObject = null;
-		String signature = StringUtil.split(aJoinPoint.getSignature().toString(), SPACE_CHAR).get(1);
-		StopWatch stopWatch = logMethodStart(signature);
+		String signature = null;
+		StopWatch stopWatch = null;
+
+		if (LOGGER.isDebugEnabled()) {
+			signature = StringUtil.split(aJoinPoint.getSignature().toString(), SPACE_CHAR).get(1);
+			stopWatch = logMethodStart(signature);
+		}
 
 		try {
 			returnObject = aJoinPoint.proceed();
@@ -59,7 +71,9 @@ public class AuditLoggerAspect {
 			error = throwable;
 		}
 
-		logMethodEnd(signature, error, stopWatch);
+		if (LOGGER.isDebugEnabled()) {
+			logMethodEnd(signature, error, stopWatch);
+		}
 
 		if (error != null) {
 			throw error;

@@ -7,6 +7,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import org.springframework.util.Assert;
+import org.springframework.util.ReflectionUtils;
 
 import accelerate.exception.AccelerateException;
 
@@ -42,7 +43,11 @@ public final class ReflectionUtil {
 				"Invalid Call. All arguments are required");
 
 		try {
-			Field field = aTargetClass.getField(aTargetField);
+			Field field = ReflectionUtils.findField(aTargetClass, aTargetField);
+			if (field == null) {
+				throw new NoSuchFieldException("Field " + aTargetField + " not found.");
+			}
+
 			boolean accessible = field.isAccessible();
 			field.setAccessible(true);
 			Object value = field.get(aTargetInstance);
@@ -73,7 +78,11 @@ public final class ReflectionUtil {
 				"Invalid Call. All arguments are required");
 
 		try {
-			Field field = aTargetClass.getField(aTargetField);
+			Field field = ReflectionUtils.findField(aTargetClass, aTargetField);
+			if (field == null) {
+				throw new NoSuchFieldException("Field " + aTargetField + " not found.");
+			}
+
 			boolean accessible = field.isAccessible();
 			field.setAccessible(true);
 			field.set(aTargetInstance, aFieldValue);
@@ -104,7 +113,11 @@ public final class ReflectionUtil {
 				"Invalid Call. All arguments are required");
 
 		try {
-			Method method = aTargetClass.getMethod(aTargetMethodName, aMethodArgTypes);
+			Method method = ReflectionUtils.findMethod(aTargetClass, aTargetMethodName, aMethodArgTypes);
+			if (aMethodArgTypes == null) {
+				throw new NoSuchMethodException("Method " + aTargetMethodName + " not found.");
+			}
+
 			boolean accessible = method.isAccessible();
 			method.setAccessible(true);
 			Object value = method.invoke(aTargetInstance, aMethodArgs);
