@@ -25,6 +25,8 @@ import org.springframework.security.web.DefaultRedirectStrategy;
 import org.springframework.security.web.RedirectStrategy;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.access.AccessDeniedHandlerImpl;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.security.web.csrf.CsrfException;
 import org.springframework.web.util.UrlPathHelper;
 
@@ -72,36 +74,39 @@ public final class SecurityUtil {
 	}
 
 	/**
+	 * @param aURLPrefix
 	 * @param aAuthenticationException
 	 * @return
 	 */
-	public static final String getAuthErrorParam(AuthenticationException aAuthenticationException) {
-		StringBuilder errorURL = new StringBuilder();
+	public static final String getAuthErrorParam(String aURLPrefix, AuthenticationException aAuthenticationException) {
+		StringBuilder errorURL = new StringBuilder(aURLPrefix);
 
 		if (aAuthenticationException instanceof InsufficientAuthenticationException) {
-			errorURL.append("errorType=notLoggedIn");
+			errorURL.append("?errorType=notLoggedIn");
 		} else if (aAuthenticationException instanceof BadCredentialsException) {
-			errorURL.append("errorType=incorrectLogin");
+			errorURL.append("?errorType=incorrectLogin");
 		} else if (aAuthenticationException instanceof DisabledException) {
-			errorURL.append("errorType=userDisabled");
+			errorURL.append("?errorType=userDisabled");
 		} else if (aAuthenticationException instanceof AccountExpiredException) {
-			errorURL.append("errorType=userAccountExpired");
+			errorURL.append("?errorType=userAccountExpired");
 		} else if (aAuthenticationException instanceof CredentialsExpiredException) {
-			errorURL.append("errorType=userCredentialsAccount");
+			errorURL.append("?errorType=userCredentialsAccount");
 		} else if (aAuthenticationException instanceof LockedException) {
-			errorURL.append("errorType=userAccountLocked");
+			errorURL.append("?errorType=userAccountLocked");
 		} else {
-			errorURL.append("errorType=other");
+			errorURL.append("?errorType=other");
 		}
 
 		return errorURL.toString();
 	}
 
 	/**
+	 * @param aAuthErrorURLPrefix
 	 * @param aAnglularJSFlag
 	 * @return
 	 */
-	public static final AuthenticationEntryPoint configureAuthenticationEntryPoint(final boolean aAnglularJSFlag) {
+	public static final AuthenticationEntryPoint configureAuthenticationEntryPoint(final String aAuthErrorURLPrefix,
+			final boolean aAnglularJSFlag) {
 		return new AuthenticationEntryPoint() {
 			@Override
 			public void commence(HttpServletRequest aRequest, HttpServletResponse aResponse,
@@ -111,7 +116,23 @@ public final class SecurityUtil {
 					return;
 				}
 
-				REDIRECT_STRATEGY.sendRedirect(aRequest, aResponse, getAuthErrorParam(aAuthException));
+				REDIRECT_STRATEGY.sendRedirect(aRequest, aResponse,
+						getAuthErrorParam(aAuthErrorURLPrefix, aAuthException));
+			}
+		};
+	}
+
+	/**
+	 * @param aAuthErrorURLPrefix
+	 * @return
+	 */
+	public static final AuthenticationFailureHandler authenticationFailureHandler(final String aAuthErrorURLPrefix) {
+		return new SimpleUrlAuthenticationFailureHandler() {
+			@Override
+			public void onAuthenticationFailure(HttpServletRequest aRequest, HttpServletResponse aResponse,
+					AuthenticationException aAuthException) throws IOException, ServletException {
+				setDefaultFailureUrl(getAuthErrorParam(aAuthErrorURLPrefix, aAuthException));
+				super.onAuthenticationFailure(aRequest, aResponse, aAuthException);
 			}
 		};
 	}

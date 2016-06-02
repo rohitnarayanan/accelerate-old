@@ -100,10 +100,10 @@ public final class AngularJSUtil {
 			responseData.put("authError", aAuthException.getClass().getName());
 			aResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 			aResponse.getWriter().write(JSONUtil.serialize(responseData));
-			return false;
+			return true;
 		}
 
-		return true;
+		return false;
 	}
 
 	/**
