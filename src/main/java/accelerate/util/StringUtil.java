@@ -298,7 +298,7 @@ public final class StringUtil {
 		Assert.isTrue((end >= 0), "end index cannot be less than 0");
 		Assert.isTrue((start < length), "start index cannot be beyond the string length");
 		Assert.isTrue((end <= length), "end index cannot be beyond the string length");
-		Assert.isTrue((end > length), "end index cannot be before start index");
+		Assert.isTrue((end > start), "end index cannot be before start index");
 
 		return aValue.subSequence(start, end).toString();
 	}

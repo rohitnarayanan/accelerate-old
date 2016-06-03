@@ -80,6 +80,10 @@ bootRepackage {
 	enabled = false
 }
 
+jar {
+	from sourceSets.main.allSource
+}
+
 /*
  * Eclipse settings
  */
