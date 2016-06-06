@@ -90,7 +90,7 @@ public class AccelerateUserSession extends AccelerateWebSession implements UserD
 	 */
 	@Override
 	public String getPassword() {
-		return getPassword();
+		return super.getPassword();
 	}
 
 	/*
@@ -104,7 +104,7 @@ public class AccelerateUserSession extends AccelerateWebSession implements UserD
 	 */
 	@Override
 	public String getUsername() {
-		return getUsername();
+		return super.getUsername();
 	}
 
 	/*
