@@ -1,11 +1,10 @@
 package accelerate.util;
 
-import static accelerate.util.StringUtil.camelCase;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
 
@@ -142,7 +141,7 @@ public final class ReflectionUtil {
 		Assert.noNullElements(new Object[] { aTargetInstance, aTargetField },
 				"Invalid Call. All arguments are required");
 
-		String getterName = camelCase("get", aTargetField);
+		String getterName = StringUtils.join("get", StringUtils.capitalize(aTargetField));
 		return invokeMethod(aTargetInstance.getClass(), aTargetInstance, getterName, (Class<?>[]) null,
 				(Object[]) null);
 	}
@@ -160,7 +159,7 @@ public final class ReflectionUtil {
 		Assert.noNullElements(new Object[] { aTargetInstance, aTargetField, aFieldValue },
 				"Invalid Call. All arguments are required");
 
-		String setterName = camelCase("set", aTargetField);
+		String setterName = StringUtils.join("set", StringUtils.capitalize(aTargetField));
 		invokeMethod(aTargetInstance.getClass(), aTargetInstance, setterName, new Class<?>[] { aFieldValue.getClass() },
 				new Object[] { aFieldValue });
 	}

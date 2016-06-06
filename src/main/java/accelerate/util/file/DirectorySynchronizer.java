@@ -2,7 +2,6 @@ package accelerate.util.file;
 
 import static accelerate.util.AccelerateConstants.HYPHEN_CHAR;
 import static accelerate.util.AccelerateConstants.UNIX_PATH_CHAR;
-import static accelerate.util.FileUtil.getPath;
 import static org.springframework.util.ObjectUtils.isEmpty;
 
 import java.io.File;
@@ -21,6 +20,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
+import org.springframework.util.StringUtils;
 
 import accelerate.batch.AccelerateBatch;
 import accelerate.batch.AccelerateTask;
@@ -405,7 +405,7 @@ public class DirectorySynchronizer {
 			}
 
 			StringBuilder key = new StringBuilder();
-			key.append(FileUtil.getPath(aFile.getParentFile()).substring(this.pathIndex));
+			key.append(StringUtils.cleanPath(aFile.getParentFile().getPath()).substring(this.pathIndex));
 			key.append(UNIX_PATH_CHAR);
 			if (this.dirSyncInput.ignoreExtensions) {
 				key.append(FileUtil.getFileName(aFile));
@@ -423,7 +423,7 @@ public class DirectorySynchronizer {
 		 */
 		@Override
 		public File handleDirectory(File aFolder) {
-			String shortPath = FileUtil.getPath(aFolder).substring(this.pathIndex);
+			String shortPath = StringUtils.cleanPath(aFolder.getPath()).substring(this.pathIndex);
 			File targetFolder = new File(this.compareRoot, shortPath);
 			if (!targetFolder.exists()) {
 				this.fileMap.put(shortPath, aFolder);
@@ -523,7 +523,7 @@ public class DirectorySynchronizer {
 		@Override
 		protected void execute() throws AccelerateException {
 			int sourceRootIndex = this.sourceRoot.getPath().length();
-			File destination = new File(this.targetRoot, getPath(this.sourceFile).substring(sourceRootIndex));
+			File destination = new File(this.targetRoot, this.sourceFile.getPath().substring(sourceRootIndex));
 			try {
 				if ((this.conflictResult == null) && destination.exists()) {
 					this.copyResult = false;

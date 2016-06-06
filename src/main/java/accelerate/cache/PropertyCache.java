@@ -5,7 +5,6 @@ import static accelerate.util.AccelerateConstants.DOT_CHAR;
 import static accelerate.util.AccelerateConstants.EMPTY_STRING;
 import static accelerate.util.AppUtil.compare;
 import static accelerate.util.ResourceUtil.LoadPropertyMap;
-import static accelerate.util.StringUtil.join;
 import static org.springframework.util.ObjectUtils.isEmpty;
 
 import java.util.Iterator;
@@ -14,6 +13,8 @@ import java.util.Map;
 
 import javax.sql.DataSource;
 
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedOperation;
@@ -24,7 +25,6 @@ import accelerate.exception.AccelerateException;
 import accelerate.util.AccelerateConstants;
 import accelerate.util.ReflectionUtil;
 import accelerate.util.ResourceUtil;
-import accelerate.util.StringUtil;
 
 /**
  * <p>
@@ -125,7 +125,7 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 */
 	@ManagedOperation(description = "This method returns the element stored in cache against the given key")
 	public String get(String... aPropertyKeys) {
-		return get(join(aPropertyKeys));
+		return get(StringUtils.join(ArrayUtils.toArray(aPropertyKeys), DOT_CHAR));
 	}
 
 	/**
@@ -136,8 +136,8 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 *            array of strings to be concatenated to form the property key
 	 * @return array of values
 	 */
-	public List<String> getPropertyList(String... aPropertyKeys) {
-		return StringUtil.split(get(join(aPropertyKeys)), COMMA_CHAR);
+	public String[] getPropertyList(String... aPropertyKeys) {
+		return StringUtils.split(get(aPropertyKeys), COMMA_CHAR);
 	}
 
 	/**

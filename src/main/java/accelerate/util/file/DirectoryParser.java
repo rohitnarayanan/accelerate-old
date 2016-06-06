@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 import org.springframework.util.Assert;
 
 import accelerate.exception.AccelerateException;
-import accelerate.util.FileUtil;
 
 /**
  * Utility class that provides methods to traverse a given directory. Users can
@@ -35,7 +34,7 @@ public class DirectoryParser {
 	public static List<File> execute(File aFolder, Predicate<File> aFileFilter, FileHandler aHandler)
 			throws AccelerateException {
 		Assert.isTrue((aFolder != null) && aFolder.exists() && aFolder.isDirectory(),
-				"Invalid folder - " + FileUtil.getPath(aFolder));
+				"Invalid folder - " + ((aFolder != null) ? aFolder.getPath() : "NULL"));
 		List<File> fileList = new ArrayList<>();
 		parseDirectory(aFolder, aFileFilter, aHandler, fileList);
 		return fileList;

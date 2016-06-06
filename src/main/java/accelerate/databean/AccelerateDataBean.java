@@ -1,13 +1,11 @@
 package accelerate.databean;
 
 import java.io.Serializable;
-import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.springframework.ui.ModelMap;
-import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -45,17 +43,17 @@ public class AccelerateDataBean implements Serializable {
 	private transient boolean largeDataset = false;
 
 	/**
-	 * Instance of {@link ModelMap} for generic storage
+	 * Instance of {@link DataMap} for generic storage
 	 */
 	@JsonProperty
-	private ModelMap model = null;
+	private DataMap dataMap = null;
 
 	/**
 	 * default constructor
 	 */
 	public AccelerateDataBean() {
 		this.logExcludedFields = new HashSet<>();
-		this.model = new ModelMap();
+		this.dataMap = new DataMap();
 	}
 
 	/*
@@ -74,44 +72,27 @@ public class AccelerateDataBean implements Serializable {
 	}
 
 	/**
-	 * @param aAttributeName
-	 * @param aAttributeValue
-	 * @return
-	 * @see org.springframework.ui.ModelMap#addAttribute(java.lang.String,
-	 *      java.lang.Object)
-	 */
-	public ModelMap put(String aAttributeName, Object aAttributeValue) {
-		return this.model.addAttribute(aAttributeName, aAttributeValue);
-	}
-
-	/**
-	 * @param aAttributeValue
-	 * @return
-	 * @see org.springframework.ui.ModelMap#addAttribute(java.lang.Object)
-	 */
-	public ModelMap put(Object aAttributeValue) {
-		return this.model.addAttribute(aAttributeValue);
-	}
-
-	/**
 	 * @param aKey
 	 * @return
 	 * @see java.util.LinkedHashMap#get(java.lang.Object)
 	 */
 	public Boolean contains(Object aKey) {
-		return this.model.containsKey(aKey);
+		return this.dataMap.containsKey(aKey);
 	}
 
 	/**
+	 * Shortcut for {@link HashMap#get(Object)}
+	 * 
 	 * @param aKey
-	 * @return
-	 * @see java.util.LinkedHashMap#get(java.lang.Object)
+	 * @return Mapped value
 	 */
 	public Object get(Object aKey) {
-		return this.model.get(aKey);
+		return this.dataMap.get(aKey);
 	}
 
 	/**
+	 * Shortcut to handle null values
+	 * 
 	 * @param aKey
 	 * @param aDefaultValue
 	 * @return
@@ -119,25 +100,26 @@ public class AccelerateDataBean implements Serializable {
 	 *      java.lang.Object)
 	 */
 	public Object getOrDefault(Object aKey, Object aDefaultValue) {
-		return this.model.getOrDefault(aKey, aDefaultValue);
+		return this.dataMap.getOrDefault(aKey, aDefaultValue);
 	}
 
 	/**
-	 * @param aAttributeValues
-	 * @return
-	 * @see org.springframework.ui.ModelMap#addAllAttributes(java.util.Collection)
+	 * @param aAttributeName
+	 * @param aAttributeValue
+	 * @return {@link DataMap} instance for call chaining
 	 */
-	public ModelMap putAll(Collection<?> aAttributeValues) {
-		return this.model.addAllAttributes(aAttributeValues);
+	public AccelerateDataBean put(String aAttributeName, Object aAttributeValue) {
+		this.dataMap.putData(aAttributeName, aAttributeValue);
+		return this;
 	}
 
 	/**
 	 * @param aAttributes
-	 * @return
-	 * @see org.springframework.ui.ModelMap#addAllAttributes(java.util.Map)
+	 * @return {@link DataMap} instance for call chaining
 	 */
-	public ModelMap putAll(Map<String, ?> aAttributes) {
-		return this.model.addAllAttributes(aAttributes);
+	public AccelerateDataBean putAll(Map<String, Object> aAttributes) {
+		this.dataMap.putAll(aAttributes);
+		return this;
 	}
 
 	/**
@@ -149,27 +131,21 @@ public class AccelerateDataBean implements Serializable {
 	 *            Variable number of key value pairs
 	 * @return selft instance for chaining calls
 	 */
-	public final AccelerateDataBean addAll(Object... aArgs) {
-		Assert.notNull(aArgs, "Arguments are required");
-		Assert.isTrue(((aArgs.length % 2) == 0), "Incorrect number of arguments");
-
-		for (int idx = 0; idx < aArgs.length; idx += 2) {
-			this.model.put((String) aArgs[idx], aArgs[idx + 1]);
-		}
-
+	public final AccelerateDataBean putAll(Object... aArgs) {
+		this.dataMap.putAllData(aArgs);
 		return this;
 	}
 
 	/**
 	 * Static shortcut method to build a new instance using
-	 * {@link #addAll(Object...)}
+	 * {@link #putAll(Object...)}
 	 * 
 	 * @param aArgs
 	 * @return
 	 */
 	public static final AccelerateDataBean build(Object... aArgs) {
 		AccelerateDataBean bean = new AccelerateDataBean();
-		bean.addAll(aArgs);
+		bean.putAll(aArgs);
 		return bean;
 	}
 

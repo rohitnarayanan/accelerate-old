@@ -1,4 +1,6 @@
-package accelerate.util;
+package accelerate.web;
+
+import static accelerate.util.AccelerateConstants.UNIX_PATH_CHAR;
 
 import java.util.Arrays;
 
@@ -8,6 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;
@@ -34,9 +37,10 @@ public class WebUtil {
 	/**
 	 * @param aRequest
 	 * @param aResponse
+	 * @param aCookieList
 	 * @throws ServletException
 	 */
-	public static final void logout(HttpServletRequest aRequest, HttpServletResponse aResponse)
+	public static final void logout(HttpServletRequest aRequest, HttpServletResponse aResponse, String... aCookieList)
 			throws ServletException {
 		HttpSession session = aRequest.getSession(false);
 		if (session != null) {
@@ -45,7 +49,7 @@ public class WebUtil {
 		}
 
 		aRequest.logout();
-		deleteCookies(aRequest, aResponse, "JSESSIONID");
+		deleteCookies(aRequest, aResponse, (aCookieList != null) ? aCookieList : new String[] { "JSESSIONID" });
 	}
 
 	/**
@@ -61,7 +65,7 @@ public class WebUtil {
 		Arrays.stream(aCookieList).map(cookieName -> {
 			LOGGER.debug("Resetting cookie [{}]", cookieName);
 			Cookie cookie = new Cookie(cookieName, null);
-			cookie.setPath(StringUtil.toString(aRequest.getContextPath(), AccelerateConstants.UNIX_PATH_CHAR));
+			cookie.setPath(StringUtils.defaultString(aRequest.getContextPath(), UNIX_PATH_CHAR));
 			cookie.setMaxAge(0);
 			return cookie;
 		}).forEach(cookie -> aResponse.addCookie(cookie));

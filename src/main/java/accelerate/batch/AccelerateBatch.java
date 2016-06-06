@@ -17,7 +17,7 @@ import org.springframework.util.Assert;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import accelerate.databean.AccelerateDataBean;
+import accelerate.databean.DataMap;
 import accelerate.exception.AccelerateException;
 import accelerate.util.JSONUtil;
 
@@ -205,9 +205,9 @@ public class AccelerateBatch<T extends AccelerateTask> extends ThreadPoolTaskExe
 	 */
 	@ManagedOperation(description = "This method returns JSON string with basic status information on the batch")
 	public String getStatus() throws AccelerateException {
-		AccelerateDataBean dataBean = AccelerateDataBean.build("1.name", this.batchName, "2.corePoolSize",
-				getCorePoolSize(), "3.maxPoolSize", getMaxPoolSize(), "4.initialized", this.initialized,
-				"5.completedTasks", this.completedTaskCount, "6.taskCount", this.tasks.size());
+		DataMap dataBean = DataMap.buildMap("1.name", this.batchName, "2.corePoolSize", getCorePoolSize(),
+				"3.maxPoolSize", getMaxPoolSize(), "4.initialized", this.initialized, "5.completedTasks",
+				this.completedTaskCount, "6.taskCount", this.tasks.size());
 
 		return JSONUtil.serialize(dataBean);
 	}

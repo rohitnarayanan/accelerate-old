@@ -1,10 +1,6 @@
-package accelerate.databean;
+package accelerate.web;
 
-import java.util.Map;
-
-import org.apache.commons.fileupload.FileItem;
-
-import accelerate.util.StringUtil;
+import accelerate.databean.AccelerateDataBean;
 
 /**
  * Generic Request Bean for Web Application
@@ -30,11 +26,6 @@ public class AccelerateWebRequest extends AccelerateDataBean {
 	private String queryString = null;
 
 	/**
-	 * Request Parameters
-	 */
-	private Map<String, Object> requestParams = null;
-
-	/**
 	 * {@link Throwable} instance caught required to be passed to another
 	 * service
 	 */
@@ -44,46 +35,6 @@ public class AccelerateWebRequest extends AccelerateDataBean {
 	 * default constructor
 	 */
 	public AccelerateWebRequest() {
-	}
-
-	/**
-	 * @param aParam
-	 * @return
-	 */
-	public String getParameter(String aParam) {
-		Object paramValue = this.requestParams.get(aParam);
-		if (paramValue instanceof String[]) {
-			String[] paramValues = (String[]) paramValue;
-			return paramValues[0];
-		}
-
-		return StringUtil.toString(paramValue);
-	}
-
-	/**
-	 * @param aParam
-	 * @return
-	 */
-	public FileItem getFileItemParameter(String aParam) {
-		Object paramValue = this.requestParams.get(aParam);
-		if (paramValue instanceof FileItem) {
-			return (FileItem) paramValue;
-		}
-
-		return null;
-	}
-
-	/**
-	 * @param aParam
-	 * @return
-	 */
-	public byte[] getParameterStream(String aParam) {
-		Object paramValue = this.requestParams.get(aParam);
-		if (paramValue instanceof byte[]) {
-			return (byte[]) paramValue;
-		}
-
-		return null;
 	}
 
 	/**
@@ -120,24 +71,6 @@ public class AccelerateWebRequest extends AccelerateDataBean {
 	 */
 	public void setQueryString(String aQueryString) {
 		this.queryString = aQueryString;
-	}
-
-	/**
-	 * Getter method for "requestParams" property
-	 * 
-	 * @return requestParams
-	 */
-	public Map<String, Object> getRequestParams() {
-		return this.requestParams;
-	}
-
-	/**
-	 * Setter method for "requestParams" property
-	 * 
-	 * @param aRequestParams
-	 */
-	public void setRequestParams(Map<String, Object> aRequestParams) {
-		this.requestParams = aRequestParams;
 	}
 
 	/**

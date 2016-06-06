@@ -7,9 +7,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,8 +28,8 @@ import com.fasterxml.jackson.annotation.JsonView;
 
 import accelerate.exception.AccelerateException;
 import accelerate.spring.StaticListenerHelper;
+import accelerate.util.AccelerateConstants;
 import accelerate.util.JSONUtil;
-import accelerate.util.StringUtil;
 
 /**
  * This is a generic {@link Map} based cache stored on the JVM heap. It has no
@@ -215,7 +217,12 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	}
 
 	/**
-	 * This method sets the age of the cache
+	 * This method sets the age of the cache. The format of the age should be
+	 * [Duration {@link TimeUnit}].
+	 * 
+	 * <p>
+	 * Examples: 4.5 SECONDS, 8 HOURS, 2 DAYS
+	 * </p>
 	 *
 	 * @param aCacheAge
 	 */
@@ -455,26 +462,8 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	 */
 	private void calculateCacheDuration() {
 		if (this.cacheAge != null) {
-			char timeframe = StringUtil.extractFromEnd(this.cacheAge, 1).charAt(0);
-			Float value = Float.parseFloat(StringUtil.extractUpto(this.cacheAge, 0, 1));
-
-			switch (timeframe) {
-			case 'S':
-				this.cacheDuration = value.longValue();
-				break;
-			case 's':
-				this.cacheDuration = value.longValue() * 1000;
-				break;
-			case 'm':
-				this.cacheDuration = value.longValue() * 60 * 1000;
-				break;
-			case 'h':
-				this.cacheDuration = value.longValue() * 60 * 60 * 1000;
-				break;
-			case 'd':
-				this.cacheDuration = value.longValue() * 24 * 60 * 60 * 1000;
-				break;
-			}
+			String[] tokens = StringUtils.split(this.cacheAge, AccelerateConstants.SPACE_CHAR);
+			this.cacheDuration = TimeUnit.valueOf(tokens[1]).toMillis(Long.parseLong(tokens[0]));
 		} else {
 			this.cacheDuration = -1;
 		}

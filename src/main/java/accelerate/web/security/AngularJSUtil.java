@@ -1,4 +1,4 @@
-package accelerate.util;
+package accelerate.web.security;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -21,6 +21,10 @@ import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.WebUtils;
+
+import accelerate.util.AccelerateConstants;
+import accelerate.util.AppUtil;
+import accelerate.util.JSONUtil;
 
 /**
  * Utility class with helper methods to handle IO operations

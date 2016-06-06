@@ -3,8 +3,6 @@ package accelerate.util;
 import static accelerate.util.AccelerateConstants.DOT_CHAR;
 import static accelerate.util.AccelerateConstants.EMPTY_STRING;
 import static accelerate.util.AccelerateConstants.NEW_LINE;
-import static accelerate.util.StringUtil.join;
-import static java.lang.String.valueOf;
 import static org.springframework.util.ObjectUtils.isEmpty;
 
 import java.io.BufferedReader;
@@ -25,10 +23,10 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
 
 import accelerate.exception.AccelerateException;
 import accelerate.util.file.DirectoryParser;
@@ -84,18 +82,6 @@ public final class FileUtil {
 		}
 
 		return aTargetFile.getName().substring(index + 1);
-	}
-
-	/**
-	 * @param aTargetFile
-	 * @return Unix Style File Path
-	 */
-	public static String getPath(File aTargetFile) {
-		if (aTargetFile == null) {
-			return EMPTY_STRING;
-		}
-
-		return StringUtils.cleanPath(aTargetFile.getPath());
 	}
 
 	/**
@@ -248,20 +234,19 @@ public final class FileUtil {
 	 * @param aFileFilter
 	 * @param aFindPattern
 	 * @param aReplacement
-	 * @param aGlobalReplace
 	 * @return
 	 * @throws AccelerateException
 	 */
 	public static List<File> renameFiles(File aRootFolder, Predicate<File> aFileFilter, final String aFindPattern,
-			final String aReplacement, final boolean aGlobalReplace) throws AccelerateException {
-		Assert.noNullElements(new Object[] { aRootFolder, aFindPattern, aReplacement, aGlobalReplace },
+			final String aReplacement) throws AccelerateException {
+		Assert.noNullElements(new Object[] { aRootFolder, aFindPattern, aReplacement },
 				"Invalid Input. Required arguments are missing");
 
 		return DirectoryParser.execute(aRootFolder, aFileFilter, new DirectoryParser.FileHandler() {
 			@Override
 			public File handleFile(File aFile) throws AccelerateException {
 				String currentName = aFile.getName();
-				String newName = StringUtil.replace(currentName, aFindPattern, aReplacement, aGlobalReplace);
+				String newName = StringUtils.replacePattern(currentName, aFindPattern, aReplacement);
 
 				if (AppUtil.compare(newName, currentName)) {
 					return aFile;
@@ -343,7 +328,7 @@ public final class FileUtil {
 				sectionSize = aTargetFile.length() / aSplitSize;
 			}
 
-			File splitFile = new File(outputDir, join(name, valueOf(sectionCount), extn));
+			File splitFile = new File(outputDir, StringUtils.join(new Object[] { name, sectionCount, extn }, DOT_CHAR));
 
 			@SuppressWarnings("resource")
 			BufferedWriter writer = new BufferedWriter(new FileWriter(splitFile));
@@ -363,7 +348,8 @@ public final class FileUtil {
 
 						sectionCount++;
 						byteCount = 0;
-						splitFile = new File(outputDir, join(name, valueOf(sectionCount), extn));
+						splitFile = new File(outputDir,
+								StringUtils.join(new Object[] { name, sectionCount, extn }, DOT_CHAR));
 
 						writer = new BufferedWriter(new FileWriter(splitFile));
 					}

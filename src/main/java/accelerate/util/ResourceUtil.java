@@ -1,6 +1,6 @@
 package accelerate.util;
 
-import static accelerate.util.AccelerateConstants.POUND_CHAR;
+import static accelerate.util.AccelerateConstants.EMPTY_STRING;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Properties;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -16,6 +17,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -155,7 +157,8 @@ public final class ResourceUtil {
 	public static Map<String, String> LoadPropertyMap(Properties aProperties) {
 		Map<String, String> propertyMap = new HashMap<>();
 		for (Entry<Object, Object> entry : aProperties.entrySet()) {
-			propertyMap.put(StringUtil.toString(entry.getKey()), StringUtil.toString(entry.getValue()));
+			propertyMap.put(Objects.toString(entry.getKey(), EMPTY_STRING),
+					Objects.toString(entry.getValue(), EMPTY_STRING));
 		}
 
 		return propertyMap;
@@ -186,7 +189,26 @@ public final class ResourceUtil {
 	/**
 	 * This method helps overcome the limitation of java {@link Properties}
 	 * class, by parsing a property file with special characters that will break
-	 * the process otherwise.
+	 * the process otherwise. It assumes the delimiter appears only once per
+	 * line and maps the key value to tokens 0 and 1. Any additional tokens
+	 * created due to multiple declarations of the delimiter on the same line
+	 * will be lost.
+	 * 
+	 * <p>
+	 * Assuming the delimiter is '#', here are a few examples:
+	 * </p>
+	 * 
+	 * <pre>
+	 * a#b will be mapped to a=b
+	 * </pre>
+	 * 
+	 * <pre>
+	 * a will be mapped to a=''
+	 * </pre>
+	 * 
+	 * <pre>
+	 * a#b#c will be mapped to a=b
+	 * </pre>
 	 *
 	 * @param aInputStream
 	 *            {@link InputStream} instance to be loaded
@@ -205,12 +227,11 @@ public final class ResourceUtil {
 			reader = new BufferedReader(new InputStreamReader(aInputStream));
 
 			while ((inputLine = reader.readLine()) != null) {
-				int index = inputLine.indexOf(aDelimiter);
-				if (index < 0) {
-					propertyMap.put(inputLine, POUND_CHAR);
+				String[] tokens = StringUtils.split(inputLine, aDelimiter);
+				if (tokens.length == 1) {
+					propertyMap.put(tokens[0], AccelerateConstants.EMPTY_STRING);
 				} else {
-					propertyMap.put(StringUtil.extract(inputLine, 0, index++),
-							StringUtil.extract(inputLine, index, -1));
+					propertyMap.put(tokens[0], tokens[1]);
 				}
 			}
 		} catch (IOException error) {

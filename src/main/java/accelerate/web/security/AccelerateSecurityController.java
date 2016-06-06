@@ -1,4 +1,4 @@
-package accelerate.controller;
+package accelerate.web.security;
 
 import java.util.List;
 import java.util.Map;

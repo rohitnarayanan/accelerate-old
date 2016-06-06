@@ -2,6 +2,7 @@ package accelerate.logging;
 
 import static accelerate.util.AccelerateConstants.SPACE_CHAR;
 
+import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -12,8 +13,6 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
-
-import accelerate.util.StringUtil;
 
 /**
  * This class is setup as a spring {@link Aspect}, to allow applications to
@@ -61,7 +60,7 @@ public class AuditLoggerAspect {
 		StopWatch stopWatch = null;
 
 		if (LOGGER.isDebugEnabled()) {
-			signature = StringUtil.split(aJoinPoint.getSignature().toString(), SPACE_CHAR).get(1);
+			signature = StringUtils.split(aJoinPoint.getSignature().toString(), SPACE_CHAR)[1];
 			stopWatch = logMethodStart(signature);
 		}
 

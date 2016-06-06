@@ -4,6 +4,7 @@ import static accelerate.util.AccelerateConstants.COMMA_CHAR;
 
 import java.io.Serializable;
 import java.lang.annotation.Annotation;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -15,6 +16,7 @@ import java.util.stream.Stream;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
@@ -32,13 +34,12 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.util.StopWatch;
 
 import accelerate.cache.AccelerateCache;
-import accelerate.databean.AccelerateDataBean;
+import accelerate.databean.DataMap;
 import accelerate.exception.AccelerateException;
 import accelerate.logging.AuditLoggerAspect;
 import accelerate.logging.Auditable;
 import accelerate.util.AppUtil;
 import accelerate.util.ReflectionUtil;
-import accelerate.util.StringUtil;
 
 /**
  * Utility class that handles Spring context load event.
@@ -160,16 +161,14 @@ public class StaticListenerHelper implements ApplicationListener<ApplicationRead
 					AnnotationAttributes annotationAttributes = getAnnotationAttributes(beanDefinition,
 							StaticContextListener.class);
 					return Stream.of(
-							AccelerateDataBean.build("event", "onContextStarted", "listenerClass",
+							DataMap.buildMap("event", "onContextStarted", "listenerClass",
 									beanDefinition.getBeanClassName(), "handleMethod",
 									annotationAttributes.getString("onContextStarted")),
-							AccelerateDataBean.build("event", "onContextClosed", "listenerClass",
+							DataMap.buildMap("event", "onContextClosed", "listenerClass",
 									beanDefinition.getBeanClassName(), "handleMethod",
 									annotationAttributes.getString("onContextClosed")));
-				})
-				.collect(Collectors.groupingBy(bean -> bean.get("event").toString(), () -> new HashMap<>(),
-						Collectors.toMap(bean -> bean.get("listenerClass").toString(),
-								bean -> bean.get("handleMethod").toString())));
+				}).collect(Collectors.groupingBy(map -> map.get("event").toString(), () -> new HashMap<>(), Collectors
+						.toMap(map -> map.get("listenerClass").toString(), map -> map.get("handleMethod").toString())));
 	}
 
 	/**
@@ -183,10 +182,10 @@ public class StaticListenerHelper implements ApplicationListener<ApplicationRead
 
 			AnnotationAttributes annotationAttributes = getAnnotationAttributes(beanDefinition,
 					StaticCacheListener.class);
-			return AccelerateDataBean.build("cacheName", annotationAttributes.getString("name"), "listenerClass",
+			return DataMap.buildMap("cacheName", annotationAttributes.getString("name"), "listenerClass",
 					beanDefinition.getBeanClassName(), "handleMethod", annotationAttributes.getString("handler"));
-		}).collect(Collectors.groupingBy(bean -> bean.get("cacheName").toString(), () -> new HashMap<>(), Collectors
-				.toMap(bean -> bean.get("listenerClass").toString(), bean -> bean.get("handleMethod").toString())));
+		}).collect(Collectors.groupingBy(map -> map.get("cacheName").toString(), () -> new HashMap<>(), Collectors
+				.toMap(map -> map.get("listenerClass").toString(), map -> map.get("handleMethod").toString())));
 	}
 
 	/**
@@ -198,7 +197,7 @@ public class StaticListenerHelper implements ApplicationListener<ApplicationRead
 		provider.addIncludeFilter(new AnnotationTypeFilter(aAnnotationType));
 
 		Set<BeanDefinition> componentSet = new HashSet<>(provider.findCandidateComponents("accelerate.*"));
-		StringUtil.split(this.accelerateProperties.getAppBasePackage(), COMMA_CHAR).parallelStream()
+		Arrays.stream(StringUtils.split(this.accelerateProperties.getAppBasePackage(), COMMA_CHAR)).parallel()
 				.filter(packageName -> !AppUtil.compare(packageName, "accelerate"))
 				.forEach(packageName -> componentSet.addAll(provider.findCandidateComponents(packageName)));
 

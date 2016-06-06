@@ -1,6 +1,6 @@
 package accelerate.util;
 
-import static accelerate.util.AppUtil.compare;
+import static accelerate.util.AccelerateConstants.EMPTY_STRING;
 import static org.springframework.util.ObjectUtils.isEmpty;
 
 import java.lang.reflect.Array;
@@ -11,11 +11,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.ArrayUtils;
 
-import accelerate.databean.AccelerateDataBean;
+import accelerate.databean.DataMap;
 import accelerate.exception.AccelerateException;
 
 /**
@@ -53,7 +55,7 @@ public final class CollectionUtil {
 			return Collections.EMPTY_MAP;
 		}
 
-		aProperties.forEach((key, value) -> propMap.put(StringUtil.toString(key), type.cast(value)));
+		aProperties.forEach((key, value) -> propMap.put(Objects.toString(key, EMPTY_STRING), type.cast(value)));
 
 		return propMap;
 	}
@@ -63,32 +65,18 @@ public final class CollectionUtil {
 	 * @param mapInstanceB
 	 * @return result string
 	 */
-	public static AccelerateDataBean compareMaps(Map<?, ?> mapInstanceA, Map<?, ?> mapInstanceB) {
-		AccelerateDataBean extraA = new AccelerateDataBean();
-		AccelerateDataBean extraB = new AccelerateDataBean();
-		AccelerateDataBean conflict = new AccelerateDataBean();
+	public static DataMap compareMaps(Map<String, Object> mapInstanceA, Map<String, Object> mapInstanceB) {
+		Object extraA = mapInstanceA.entrySet().stream().filter(entry -> mapInstanceB.get(entry.getKey()) == null)
+				.collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue()));
 
-		mapInstanceA.forEach((key, value) -> {
-			if (mapInstanceB.get(key) == null) {
-				extraA.put(StringUtil.toString(key), value);
-			}
-		});
+		Object extraB = mapInstanceB.entrySet().stream().filter(entry -> mapInstanceA.get(entry.getKey()) == null)
+				.collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue()));
 
-		mapInstanceB.forEach((key, value) -> {
-			if (mapInstanceA.get(key) == null) {
-				extraB.put(StringUtil.toString(key), value);
-			}
-		});
+		Object conflict = mapInstanceA.entrySet().stream().filter(entry -> mapInstanceB.get(entry.getKey()) != null)
+				.map(entry -> new Object[] { entry.getKey(), entry.getValue(), mapInstanceB.get(entry.getKey()) })
+				.collect(Collectors.toMap(values -> values[0], values -> new Object[] { values[1], values[2] }));
 
-		mapInstanceA.forEach((key, value) -> {
-			Object valueB = mapInstanceB.get(key);
-			if ((valueB != null) && !compare(valueB, value)) {
-				conflict.put(StringUtil.toString(key), new Object[] { value, valueB });
-			}
-		});
-
-		AccelerateDataBean dataMap = AccelerateDataBean.build("extraA", extraA, "extraB", extraB, "conflict", conflict);
-		return dataMap;
+		return DataMap.buildMap("extraA", extraA, "extraB", extraB, "conflict", conflict);
 	}
 
 	/**

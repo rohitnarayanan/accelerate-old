@@ -1,4 +1,4 @@
-package accelerate.util;
+package accelerate.web.security;
 
 import java.io.IOException;
 
@@ -30,7 +30,8 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationFa
 import org.springframework.security.web.csrf.CsrfException;
 import org.springframework.web.util.UrlPathHelper;
 
-import accelerate.databean.AccelerateWebSession;
+import accelerate.web.AccelerateWebSession;
+import accelerate.web.WebUtil;
 
 /**
  * Utility class with helper methods to handle IO operations

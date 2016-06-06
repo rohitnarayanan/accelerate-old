@@ -1,15 +1,5 @@
 package test.accelerate;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import accelerate.databean.AccelerateDataBean;
-import accelerate.util.CollectionUtil;
-import accelerate.util.FileUtil;
-import accelerate.util.StringUtil;
-
 /**
  * Basic class to quick test code
  *
@@ -21,8 +11,7 @@ import accelerate.util.StringUtil;
 public class QuickTest {
 	public static void main(String[] args) {
 		try {
-			Object f = CollectionUtil.toArray(Arrays.asList(new String[] { "a", "b" }), Object.class);
-			System.out.println(f);
+			System.out.println();
 		} catch (Exception error) {
 			error.printStackTrace();
 		}

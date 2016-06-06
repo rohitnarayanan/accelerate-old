@@ -1,5 +1,7 @@
-package accelerate.databean;
+package accelerate.web;
 
+import accelerate.databean.AccelerateDataBean;
+import accelerate.databean.AccelerateMessage;
 import accelerate.exception.AccelerateException;
 import accelerate.util.JSONUtil;
 
