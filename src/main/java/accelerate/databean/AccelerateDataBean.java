@@ -8,7 +8,7 @@ import java.util.Set;
 
 import org.springframework.util.ObjectUtils;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonFilter;
 
 import accelerate.exception.AccelerateException;
 import accelerate.util.JSONUtil;
@@ -20,6 +20,7 @@ import accelerate.util.JSONUtil;
  * @version 1.0 Initial Version
  * @since 21-May-2015
  */
+@JsonFilter("default")
 public class AccelerateDataBean implements Serializable {
 	/**
 	 * serialVersionUID
@@ -45,7 +46,6 @@ public class AccelerateDataBean implements Serializable {
 	/**
 	 * Instance of {@link DataMap} for generic storage
 	 */
-	@JsonProperty
 	private DataMap dataMap = null;
 
 	/**

@@ -19,12 +19,23 @@ public class AccelerateWebResponse extends AccelerateDataBean {
 	private static final long serialVersionUID = 1L;
 
 	/**
+	 * Context Path of the application
+	 */
+	private String contextPath = null;
+
+	/**
 	 * Return Code. <code>
 	 * 0: Success
 	 * !=0: Failure/Alternate Result
 	 * </code>
 	 */
 	private int returnCode = 0;
+
+	/**
+	 * Flag to indicate that there was an error on the server side while
+	 * processing the request.
+	 */
+	private boolean serverError = false;
 
 	/**
 	 * Result as mapped in the RequestHandlers.xml file
@@ -40,11 +51,6 @@ public class AccelerateWebResponse extends AccelerateDataBean {
 	 * {@link Exception} caught during process
 	 */
 	private Exception error = null;
-
-	/**
-	 * Context Path of the application
-	 */
-	private String contextPath = null;
 
 	/**
 	 * {@link AccelerateWebRequest} instance
@@ -94,6 +100,24 @@ public class AccelerateWebResponse extends AccelerateDataBean {
 	}
 
 	/**
+	 * Getter method for "contextPath" property
+	 * 
+	 * @return contextPath
+	 */
+	public String getContextPath() {
+		return this.contextPath;
+	}
+
+	/**
+	 * Setter method for "contextPath" property
+	 * 
+	 * @param aContextPath
+	 */
+	public void setContextPath(String aContextPath) {
+		this.contextPath = aContextPath;
+	}
+
+	/**
 	 * Getter method for "returnCode" property
 	 * 
 	 * @return returnCode
@@ -109,6 +133,24 @@ public class AccelerateWebResponse extends AccelerateDataBean {
 	 */
 	public void setReturnCode(int aReturnCode) {
 		this.returnCode = aReturnCode;
+	}
+
+	/**
+	 * Getter method for "serverError" property
+	 * 
+	 * @return serverError
+	 */
+	public boolean isServerError() {
+		return this.serverError;
+	}
+
+	/**
+	 * Setter method for "serverError" property
+	 * 
+	 * @param aServerError
+	 */
+	public void setServerError(boolean aServerError) {
+		this.serverError = aServerError;
 	}
 
 	/**
@@ -163,24 +205,6 @@ public class AccelerateWebResponse extends AccelerateDataBean {
 	 */
 	public void setError(Exception aError) {
 		this.error = aError;
-	}
-
-	/**
-	 * Getter method for "contextPath" property
-	 * 
-	 * @return contextPath
-	 */
-	public String getContextPath() {
-		return this.contextPath;
-	}
-
-	/**
-	 * Setter method for "contextPath" property
-	 * 
-	 * @param aContextPath
-	 */
-	public void setContextPath(String aContextPath) {
-		this.contextPath = aContextPath;
 	}
 
 	/**

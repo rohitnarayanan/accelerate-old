@@ -38,9 +38,9 @@ public class AccelerateMessage implements Serializable {
 	 * @param aMessageText
 	 */
 	public AccelerateMessage(MessageType aMessageType, String aMessageCode, String aMessageText) {
-		setMessageType(aMessageType);
-		setMessageCode(aMessageCode);
-		setMessageText(aMessageText);
+		this.messageType = aMessageType;
+		this.messageCode = aMessageCode;
+		this.messageText = aMessageText;
 	}
 
 	/**
@@ -48,8 +48,8 @@ public class AccelerateMessage implements Serializable {
 	 * @param aMessageCode
 	 */
 	public AccelerateMessage(MessageType aMessageType, String aMessageCode) {
-		setMessageType(aMessageType);
-		setMessageCode(aMessageCode);
+		this.messageType = aMessageType;
+		this.messageCode = aMessageCode;
 	}
 
 	/**

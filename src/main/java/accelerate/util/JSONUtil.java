@@ -70,13 +70,10 @@ public final class JSONUtil {
 		mapper.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
 		mapper.setSerializationInclusion(aInclude);
 		mapper.configure(SerializationFeature.INDENT_OUTPUT, aIndent);
+		mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
 		mapper.configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, aQuoteFieldNames);
 		mapper.configure(JsonGenerator.Feature.ESCAPE_NON_ASCII, aEscapeNonAscii);
 		mapper.configure(MapperFeature.DEFAULT_VIEW_INCLUSION, aIncludeDefaultView);
-
-		SimpleFilterProvider filterProvider = new SimpleFilterProvider();
-		filterProvider.setDefaultFilter(SimpleBeanPropertyFilter.serializeAllExcept());
-		mapper.setConfig(mapper.getSerializationConfig().withFilters(filterProvider));
 
 		return mapper;
 	}
@@ -90,9 +87,9 @@ public final class JSONUtil {
 	 * @throws AccelerateException
 	 */
 	public static String serialize(Object aObject) throws AccelerateException {
-		if (isEmpty(aObject)) {
-			return EMPTY_STRING;
-		}
+		// if (isEmpty(aObject)) {
+		// return EMPTY_STRING;
+		// }
 
 		return serialize(aObject, objectMapper());
 	}
@@ -109,9 +106,9 @@ public final class JSONUtil {
 	 * @throws AccelerateException
 	 */
 	public static String serialize(Object aObject, ObjectMapper aObjectMapper) throws AccelerateException {
-		if (isEmpty(aObject)) {
-			return EMPTY_STRING;
-		}
+		// if (isEmpty(aObject)) {
+		// return EMPTY_STRING;
+		// }
 
 		try {
 			return aObjectMapper.writeValueAsString(aObject);
@@ -160,14 +157,11 @@ public final class JSONUtil {
 			return EMPTY_STRING;
 		}
 
-		if (!isEmpty(aExcludedFields)) {
-			SimpleFilterProvider filterProvider = new SimpleFilterProvider();
-			filterProvider.setDefaultFilter(SimpleBeanPropertyFilter.serializeAllExcept(aExcludedFields));
-			aObjectMapper.setConfig(aObjectMapper.getSerializationConfig().withFilters(filterProvider));
-		}
-
 		try {
-			return aObjectMapper.writeValueAsString(aObject);
+			return aObjectMapper
+					.writer(new SimpleFilterProvider()
+							.setDefaultFilter(SimpleBeanPropertyFilter.serializeAllExcept(aExcludedFields)))
+					.writeValueAsString(aObject);
 		} catch (JsonProcessingException error) {
 			throw new AccelerateException(error);
 		}
@@ -213,14 +207,11 @@ public final class JSONUtil {
 			return EMPTY_STRING;
 		}
 
-		if (!isEmpty(aIncludedFields)) {
-			SimpleFilterProvider filterProvider = new SimpleFilterProvider();
-			filterProvider.setDefaultFilter(SimpleBeanPropertyFilter.filterOutAllExcept(aIncludedFields));
-			aObjectMapper.setConfig(aObjectMapper.getSerializationConfig().withFilters(filterProvider));
-		}
-
 		try {
-			return aObjectMapper.writeValueAsString(aObject);
+			return aObjectMapper
+					.writer(new SimpleFilterProvider()
+							.setDefaultFilter(SimpleBeanPropertyFilter.filterOutAllExcept(aIncludedFields)))
+					.writeValueAsString(aObject);
 		} catch (JsonProcessingException error) {
 			throw new AccelerateException(error);
 		}
