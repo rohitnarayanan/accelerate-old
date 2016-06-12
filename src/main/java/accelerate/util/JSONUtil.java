@@ -66,14 +66,20 @@ public final class JSONUtil {
 	public static ObjectMapper objectMapper(Include aInclude, boolean aIndent, boolean aQuoteFieldNames,
 			boolean aEscapeNonAscii, boolean aIncludeDefaultView) {
 		ObjectMapper mapper = new ObjectMapper();
+
 		mapper.setVisibility(PropertyAccessor.ALL, Visibility.NONE);
 		mapper.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
+
 		mapper.setSerializationInclusion(aInclude);
+
 		mapper.configure(SerializationFeature.INDENT_OUTPUT, aIndent);
 		mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
 		mapper.configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, aQuoteFieldNames);
 		mapper.configure(JsonGenerator.Feature.ESCAPE_NON_ASCII, aEscapeNonAscii);
 		mapper.configure(MapperFeature.DEFAULT_VIEW_INCLUSION, aIncludeDefaultView);
+
+		mapper.setFilterProvider(
+				new SimpleFilterProvider().setDefaultFilter(SimpleBeanPropertyFilter.serializeAllExcept()));
 
 		return mapper;
 	}
@@ -87,9 +93,9 @@ public final class JSONUtil {
 	 * @throws AccelerateException
 	 */
 	public static String serialize(Object aObject) throws AccelerateException {
-		// if (isEmpty(aObject)) {
-		// return EMPTY_STRING;
-		// }
+		if (isEmpty(aObject)) {
+			return EMPTY_STRING;
+		}
 
 		return serialize(aObject, objectMapper());
 	}
@@ -106,9 +112,9 @@ public final class JSONUtil {
 	 * @throws AccelerateException
 	 */
 	public static String serialize(Object aObject, ObjectMapper aObjectMapper) throws AccelerateException {
-		// if (isEmpty(aObject)) {
-		// return EMPTY_STRING;
-		// }
+		if (isEmpty(aObject)) {
+			return EMPTY_STRING;
+		}
 
 		try {
 			return aObjectMapper.writeValueAsString(aObject);

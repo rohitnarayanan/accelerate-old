@@ -1,5 +1,7 @@
 package test.accelerate;
 
+import accelerate.web.AccelerateWebResponse;
+
 /**
  * Basic class to quick test code
  *
@@ -11,7 +13,11 @@ package test.accelerate;
 public class QuickTest {
 	public static void main(String[] args) {
 		try {
-			System.out.println();
+			AccelerateWebResponse response = new AccelerateWebResponse();
+			response.setServerError(true);
+			response.setReturnCode(10);
+			response.put("OK", "KO");
+			System.out.println(response);
 		} catch (Exception error) {
 			error.printStackTrace();
 		}
