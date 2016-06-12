@@ -83,7 +83,7 @@ public final class SecurityUtil {
 		StringBuilder errorURL = new StringBuilder(aURLPrefix);
 
 		if (aAuthenticationException instanceof InsufficientAuthenticationException) {
-			errorURL.append("?errorType=notLoggedIn");
+			errorURL.append("?notLoggedIn=Y");
 		} else if (aAuthenticationException instanceof BadCredentialsException) {
 			errorURL.append("?errorType=incorrectLogin");
 		} else if (aAuthenticationException instanceof DisabledException) {
