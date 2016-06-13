@@ -1,10 +1,12 @@
 package accelerate.databean;
 
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 import org.springframework.util.ObjectUtils;
 
@@ -30,32 +32,53 @@ public class AccelerateDataBean implements Serializable {
 	/**
 	 * {@link Set} to include names of fields to exclude while logging
 	 */
-	protected transient Set<String> logExcludedFields = null;
+	protected transient Set<String> logExcludedFields;
 
 	/**
 	 * Name of the id field for the bean
 	 */
-	private transient String idField = null;
+	private transient String idField;
 
 	/**
 	 * Flag to indicate that the bean stores a huge amount of data, so exception
 	 * handlers and interceptors can avoid serializing the entire bean
 	 */
-	private transient boolean largeDataset = false;
+	private transient boolean largeDataset;
 
 	/**
 	 * Instance of {@link DataMap} for generic storage
 	 */
 	private DataMap dataMap = null;
 
+	/*
+	 * Static Methods
+	 */
+	/**
+	 * Static shortcut method to build a new instance using
+	 * {@link #putAllAnd(Object...)}
+	 * 
+	 * @param aArgs
+	 * @return
+	 */
+	public static final AccelerateDataBean build(Object... aArgs) {
+		AccelerateDataBean bean = new AccelerateDataBean();
+		bean.putAllAnd(aArgs);
+		return bean;
+	}
+
+	/*
+	 * Constructors
+	 */
 	/**
 	 * default constructor
 	 */
 	public AccelerateDataBean() {
-		this.logExcludedFields = new HashSet<>();
-		this.dataMap = new DataMap();
+
 	}
 
+	/*
+	 * Override Methods
+	 */
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -71,84 +94,170 @@ public class AccelerateDataBean implements Serializable {
 		return toJSON();
 	}
 
+	/*
+	 * Delegate Methods
+	 */
+	/**
+	 * @param aKey
+	 * @param aValue
+	 * @return
+	 * @see accelerate.databean.DataMap#putAnd(java.lang.String,
+	 *      java.lang.Object)
+	 */
+	public DataMap putAnd(String aKey, Object aValue) {
+		return getDataMap().putAnd(aKey, aValue);
+	}
+
+	/**
+	 * @param aArgs
+	 * @return
+	 * @see accelerate.databean.DataMap#putAllAnd(java.lang.Object[])
+	 */
+	public DataMap putAllAnd(Object... aArgs) {
+		return getDataMap().putAllAnd(aArgs);
+	}
+
 	/**
 	 * @param aKey
 	 * @return
-	 * @see java.util.LinkedHashMap#get(java.lang.Object)
-	 */
-	public Boolean contains(Object aKey) {
-		return this.dataMap.containsKey(aKey);
-	}
-
-	/**
-	 * Shortcut for {@link HashMap#get(Object)}
-	 * 
-	 * @param aKey
-	 * @return Mapped value
+	 * @see java.util.HashMap#get(java.lang.Object)
 	 */
 	public Object get(Object aKey) {
-		return this.dataMap.get(aKey);
+		return getDataMap().get(aKey);
 	}
 
 	/**
-	 * Shortcut to handle null values
+	 * @param aKey
+	 * @return
+	 * @see java.util.HashMap#containsKey(java.lang.Object)
+	 */
+	public boolean containsKey(String aKey) {
+		return getDataMap().containsKey(aKey);
+	}
+
+	/**
+	 * @param aKey
+	 * @param aValue
+	 * @return
+	 * @see java.util.HashMap#put(java.lang.Object, java.lang.Object)
+	 */
+	public Object put(String aKey, Object aValue) {
+		return getDataMap().put(aKey, aValue);
+	}
+
+	/**
+	 * @param aMap
+	 * @see java.util.HashMap#putAll(java.util.Map)
+	 */
+	public void putAll(Map<? extends String, ? extends Object> aMap) {
+		getDataMap().putAll(aMap);
+	}
+
+	/**
+	 * @param aKey
+	 * @return
+	 * @see java.util.HashMap#remove(java.lang.Object)
+	 */
+	public Object remove(String aKey) {
+		return getDataMap().remove(aKey);
+	}
+
+	/**
 	 * 
+	 * @see java.util.HashMap#clear()
+	 */
+	public void clear() {
+		getDataMap().clear();
+	}
+
+	/**
+	 * @return
+	 * @see java.util.HashMap#keySet()
+	 */
+	public Set<String> keySet() {
+		return getDataMap().keySet();
+	}
+
+	/**
+	 * @return
+	 * @see java.util.HashMap#entrySet()
+	 */
+	public Set<Entry<String, Object>> entrySet() {
+		return getDataMap().entrySet();
+	}
+
+	/**
 	 * @param aKey
 	 * @param aDefaultValue
 	 * @return
-	 * @see java.util.LinkedHashMap#getOrDefault(java.lang.Object,
-	 *      java.lang.Object)
+	 * @see java.util.HashMap#getOrDefault(java.lang.Object, java.lang.Object)
 	 */
-	public Object getOrDefault(Object aKey, Object aDefaultValue) {
-		return this.dataMap.getOrDefault(aKey, aDefaultValue);
+	public Object getOrDefault(String aKey, Object aDefaultValue) {
+		return getDataMap().getOrDefault(aKey, aDefaultValue);
 	}
 
 	/**
-	 * @param aAttributeName
-	 * @param aAttributeValue
-	 * @return {@link DataMap} instance for call chaining
-	 */
-	public AccelerateDataBean put(String aAttributeName, Object aAttributeValue) {
-		this.dataMap.putData(aAttributeName, aAttributeValue);
-		return this;
-	}
-
-	/**
-	 * @param aAttributes
-	 * @return {@link DataMap} instance for call chaining
-	 */
-	public AccelerateDataBean putAll(Map<String, Object> aAttributes) {
-		this.dataMap.putAll(aAttributes);
-		return this;
-	}
-
-	/**
-	 * Shortcut method to add multiple key value pairs to the map. Though it
-	 * accepts an Object array by definition, but it expects the arguments to be
-	 * in the order of key1, value1, key2, value2.. and so on.
-	 * 
-	 * @param aArgs
-	 *            Variable number of key value pairs
-	 * @return selft instance for chaining calls
-	 */
-	public final AccelerateDataBean putAll(Object... aArgs) {
-		this.dataMap.putAllData(aArgs);
-		return this;
-	}
-
-	/**
-	 * Static shortcut method to build a new instance using
-	 * {@link #putAll(Object...)}
-	 * 
-	 * @param aArgs
+	 * @param aKey
+	 * @param aValue
 	 * @return
+	 * @see java.util.HashMap#putIfAbsent(java.lang.Object, java.lang.Object)
 	 */
-	public static final AccelerateDataBean build(Object... aArgs) {
-		AccelerateDataBean bean = new AccelerateDataBean();
-		bean.putAll(aArgs);
-		return bean;
+	public Object putIfAbsent(String aKey, Object aValue) {
+		return getDataMap().putIfAbsent(aKey, aValue);
 	}
 
+	/**
+	 * @param aKey
+	 * @param aValue
+	 * @return
+	 * @see java.util.HashMap#remove(java.lang.Object, java.lang.Object)
+	 */
+	public boolean remove(String aKey, Object aValue) {
+		return getDataMap().remove(aKey, aValue);
+	}
+
+	/**
+	 * @param aKey
+	 * @param aValue
+	 * @return
+	 * @see java.util.HashMap#replace(java.lang.Object, java.lang.Object)
+	 */
+	public Object replace(String aKey, Object aValue) {
+		return getDataMap().replace(aKey, aValue);
+	}
+
+	/**
+	 * @param aKey
+	 * @param aValue
+	 * @param aRemappingFunction
+	 * @return
+	 * @see java.util.HashMap#merge(java.lang.Object, java.lang.Object,
+	 *      java.util.function.BiFunction)
+	 */
+	public Object merge(String aKey, Object aValue,
+			BiFunction<? super Object, ? super Object, ? extends Object> aRemappingFunction) {
+		return getDataMap().merge(aKey, aValue, aRemappingFunction);
+	}
+
+	/**
+	 * @param aAction
+	 * @see java.util.HashMap#forEach(java.util.function.BiConsumer)
+	 */
+	public void forEach(BiConsumer<? super String, ? super Object> aAction) {
+		getDataMap().forEach(aAction);
+	}
+
+	/**
+	 * @param aFunction
+	 * @see java.util.HashMap#replaceAll(java.util.function.BiFunction)
+	 */
+	public void replaceAll(BiFunction<? super String, ? super Object, ? extends Object> aFunction) {
+		getDataMap().replaceAll(aFunction);
+	}
+
+	/*
+	 * Public API
+	 */
 	/**
 	 * This methods returns a JSON representation of this bean
 	 *
@@ -173,12 +282,12 @@ public class AccelerateDataBean implements Serializable {
 			return toShortJSON();
 		}
 
-		if (ObjectUtils.isEmpty(this.logExcludedFields)) {
+		if (ObjectUtils.isEmpty(getLogExcludedFields())) {
 			return JSONUtil.serialize(this);
 		}
 
 		return JSONUtil.serializeExcept(this,
-				this.logExcludedFields.toArray(new String[this.logExcludedFields.size()]));
+				getLogExcludedFields().toArray(new String[getLogExcludedFields().size()]));
 	}
 
 	/**
@@ -202,7 +311,7 @@ public class AccelerateDataBean implements Serializable {
 	 */
 	public synchronized void addJsonIgnoreFields(String... aFieldNames) {
 		for (String field : aFieldNames) {
-			this.logExcludedFields.add(field);
+			getLogExcludedFields().add(field);
 		}
 	}
 
@@ -218,8 +327,45 @@ public class AccelerateDataBean implements Serializable {
 		}
 
 		for (String field : aFieldNames) {
-			this.logExcludedFields.remove(field);
+			getLogExcludedFields().remove(field);
 		}
+	}
+
+	/*
+	 * Private Methods
+	 */
+	/**
+	 * @return
+	 */
+	private DataMap getDataMap() {
+		if (this.dataMap == null) {
+			this.dataMap = new DataMap();
+		}
+
+		return this.dataMap;
+	}
+
+	/**
+	 * @return
+	 */
+	private Set<String> getLogExcludedFields() {
+		if (this.logExcludedFields == null) {
+			this.logExcludedFields = new HashSet<>();
+		}
+
+		return this.logExcludedFields;
+	}
+
+	/*
+	 * Getters/Setters
+	 */
+	/**
+	 * Getter method for "idField" property
+	 * 
+	 * @return idField
+	 */
+	public String getIdField() {
+		return this.idField;
 	}
 
 	/**

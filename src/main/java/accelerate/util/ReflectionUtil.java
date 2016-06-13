@@ -59,6 +59,31 @@ public final class ReflectionUtil {
 	}
 
 	/**
+	 * @param aTargetInstance
+	 * @param aTargetField
+	 * @return
+	 * @throws AccelerateException
+	 *             - Wrapping the following exceptions thrown due to
+	 *             {@link Field} operations - {@link IllegalArgumentException} |
+	 *             {@link IllegalAccessException} | {@link SecurityException}
+	 */
+	public static Object getFieldValue(Object aTargetInstance, Field aTargetField) throws AccelerateException {
+		Assert.noNullElements(new Object[] { aTargetInstance, aTargetField },
+				"Invalid Call. All arguments are required");
+
+		try {
+			boolean accessible = aTargetField.isAccessible();
+			aTargetField.setAccessible(true);
+			Object value = aTargetField.get(aTargetInstance);
+			aTargetField.setAccessible(accessible);
+
+			return value;
+		} catch (IllegalArgumentException | IllegalAccessException | SecurityException error) {
+			throw new AccelerateException(error);
+		}
+	}
+
+	/**
 	 * @param aTargetClass
 	 * @param aTargetInstance
 	 * @param aTargetField

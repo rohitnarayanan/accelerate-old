@@ -25,7 +25,7 @@ public class DataMap extends HashMap<String, Object> {
 		Assert.notNull(aArgs, "Arguments are required");
 		Assert.isTrue(((aArgs.length % 2) == 0), "Incorrect number of arguments");
 
-		return new DataMap().putAllData(aArgs);
+		return new DataMap().putAllAnd(aArgs);
 	}
 
 	/**
@@ -33,7 +33,7 @@ public class DataMap extends HashMap<String, Object> {
 	 * @param aValue
 	 * @return
 	 */
-	public DataMap putData(String aKey, Object aValue) {
+	public DataMap putAnd(String aKey, Object aValue) {
 		put(aKey, aValue);
 		return this;
 	}
@@ -42,7 +42,7 @@ public class DataMap extends HashMap<String, Object> {
 	 * @param aArgs
 	 * @return
 	 */
-	public DataMap putAllData(Object... aArgs) {
+	public DataMap putAllAnd(Object... aArgs) {
 		for (int idx = 0; idx < aArgs.length; idx += 2) {
 			this.put((String) aArgs[idx], aArgs[idx + 1]);
 		}
