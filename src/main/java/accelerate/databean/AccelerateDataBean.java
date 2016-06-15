@@ -8,11 +8,13 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.ObjectUtils;
 
 import com.fasterxml.jackson.annotation.JsonFilter;
 
 import accelerate.exception.AccelerateException;
+import accelerate.util.AccelerateConstants;
 import accelerate.util.JSONUtil;
 
 /**
@@ -258,6 +260,35 @@ public class AccelerateDataBean implements Serializable {
 	/*
 	 * Public API
 	 */
+	/**
+	 * @param aKey
+	 * @return
+	 * @see java.util.HashMap#get(java.lang.Object)
+	 */
+	public String getString(String aKey) {
+		return StringUtils.defaultString((String) getDataMap().get(aKey), AccelerateConstants.EMPTY_STRING);
+	}
+
+	/**
+	 * @param aKey
+	 * @return
+	 * @see java.util.HashMap#get(java.lang.Object)
+	 */
+	public Integer getInt(String aKey) {
+		return Integer.parseInt((String) getDataMap().get(aKey));
+	}
+
+	/**
+	 * @param <T>
+	 * @param aKey
+	 * @return
+	 * @see java.util.HashMap#get(java.lang.Object)
+	 */
+	@SuppressWarnings("unchecked")
+	public <T> T get(String aKey) {
+		return (T) getDataMap().get(aKey);
+	}
+
 	/**
 	 * This methods returns a JSON representation of this bean
 	 *

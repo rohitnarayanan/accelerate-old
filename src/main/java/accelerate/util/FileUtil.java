@@ -51,6 +51,21 @@ public final class FileUtil {
 	}
 
 	/**
+	 * Method to consistenly return path of the file in unix format with '/'
+	 * separator instead of '\\' used in windows.
+	 * 
+	 * @param aTargetFile
+	 * @return file name
+	 */
+	public static String getFilePath(File aTargetFile) {
+		if (aTargetFile == null) {
+			return EMPTY_STRING;
+		}
+
+		return StringUtils.replace(aTargetFile.getPath(), "\\", "/");
+	}
+
+	/**
 	 * @param aTargetFile
 	 * @return file name
 	 */

@@ -1,5 +1,8 @@
 package test.accelerate;
 
+import java.io.File;
+
+import accelerate.util.FileUtil;
 import accelerate.web.AccelerateWebResponse;
 
 /**
@@ -13,11 +16,8 @@ import accelerate.web.AccelerateWebResponse;
 public class QuickTest {
 	public static void main(String[] args) {
 		try {
-			AccelerateWebResponse response = new AccelerateWebResponse();
-			response.setServerError(true);
-			response.setReturnCode(10);
-			response.put("OK", "KO");
-			System.out.println(response);
+			File file = new File("C:\\Users\\185710\\Documents\\OneNote Notebooks");
+			System.out.println(FileUtil.getFilePath(file));
 		} catch (Exception error) {
 			error.printStackTrace();
 		}
