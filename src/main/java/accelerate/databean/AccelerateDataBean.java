@@ -74,7 +74,6 @@ public class AccelerateDataBean implements Serializable {
 	 * default constructor
 	 */
 	public AccelerateDataBean() {
-
 	}
 
 	/*
@@ -263,7 +262,7 @@ public class AccelerateDataBean implements Serializable {
 	 * @see accelerate.databean.DataMap#get(java.lang.String)
 	 */
 	public <T> T get(String aKey) {
-		return this.dataMap.get(aKey);
+		return getDataMap().get(aKey);
 	}
 
 	/**
@@ -272,7 +271,7 @@ public class AccelerateDataBean implements Serializable {
 	 * @see accelerate.databean.DataMap#getString(java.lang.String)
 	 */
 	public String getString(String aKey) {
-		return this.dataMap.getString(aKey);
+		return getDataMap().getString(aKey);
 	}
 
 	/**
@@ -281,7 +280,7 @@ public class AccelerateDataBean implements Serializable {
 	 * @see accelerate.databean.DataMap#getInt(java.lang.String)
 	 */
 	public Integer getInt(String aKey) {
-		return this.dataMap.getInt(aKey);
+		return getDataMap().getInt(aKey);
 	}
 
 	/**
@@ -290,7 +289,7 @@ public class AccelerateDataBean implements Serializable {
 	 * @see accelerate.databean.DataMap#is(java.lang.String)
 	 */
 	public boolean is(String aKey) {
-		return this.dataMap.is(aKey);
+		return getDataMap().is(aKey);
 	}
 
 	/*
