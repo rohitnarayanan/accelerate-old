@@ -62,7 +62,7 @@ public class DataMap extends HashMap<String, Object> {
 	 */
 	@SuppressWarnings("unchecked")
 	public <T> T get(String aKey) {
-		return (T) get(aKey);
+		return (T) super.get(aKey);
 	}
 
 	/**
