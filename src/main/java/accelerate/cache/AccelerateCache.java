@@ -63,24 +63,24 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	/**
 	 * {@link Class} instance for the cache key type
 	 */
-	protected Class<K> keyClass = null;
+	protected Class<K> keyClass;
 
 	/**
 	 * {@link Class} instance for the cache value type
 	 */
-	protected Class<V> valueClass = null;
+	protected Class<V> valueClass;
 
 	/**
 	 * {@link ApplicationContext} instance
 	 */
 	@Autowired
-	protected ApplicationContext applicationContext = null;
+	protected ApplicationContext applicationContext;
 
 	/**
 	 * {@link StaticListenerHelper} instance
 	 */
 	@Autowired
-	private StaticListenerHelper staticListenerHelper = null;
+	private StaticListenerHelper staticListenerHelper;
 
 	/**
 	 * 
@@ -90,12 +90,12 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	/**
 	 * Name of the cache
 	 */
-	private String cacheName = null;
+	private String cacheName;
 
 	/**
 	 * Cache Age
 	 */
-	private String cacheAge = null;
+	private String cacheAge;
 
 	/**
 	 * Cache Duration
@@ -105,7 +105,7 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	/**
 	 * Is the cache refreshable or permanent
 	 */
-	protected boolean refreshable = false;
+	protected boolean refreshable;
 
 	/**
 	 * Init time of Cache
@@ -120,12 +120,12 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	/**
 	 * Semaphore to block while cache is being refresh
 	 */
-	protected Boolean refreshMonitor = false;
+	protected Boolean refreshMonitor;
 
 	/**
 	 * Is the cache initialized
 	 */
-	protected boolean initialized = false;
+	protected boolean initialized;
 
 	/**
 	 * Default Constructor

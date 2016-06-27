@@ -20,17 +20,17 @@ public class AccelerateMessage implements Serializable {
 	/**
 	 * {@link MessageType}
 	 */
-	private MessageType messageType = null;
+	private MessageType messageType;
 
 	/**
 	 * AccelerateMessage Code
 	 */
-	private String messageCode = null;
+	private String messageCode;
 
 	/**
 	 * AccelerateMessage Text
 	 */
-	private String messageText = null;
+	private String messageText;
 
 	/**
 	 * @param aMessageType

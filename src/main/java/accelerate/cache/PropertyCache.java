@@ -55,18 +55,18 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 * The attribute contains the URL to the property file. The URL can be in
 	 * any format supported by the {@link ResourceUtil} class.
 	 */
-	private String configURL = null;
+	private String configURL;
 
 	/**
 	 * SQL query to fetch properties from the database. It is expected that the
 	 * select clause will be of the format key_column, value_column
 	 */
-	private String configQuery = null;
+	private String configQuery;
 
 	/**
 	 * {@link DataSource} instance to query db for properties
 	 */
-	private DataSource dataSource = null;
+	private DataSource dataSource;
 
 	/**
 	 * Name of the profile for which to cache the properties. Usually properties
@@ -75,7 +75,7 @@ public class PropertyCache extends AccelerateCache<String, String> {
 	 * <p>
 	 * Allows to store same properties with different values.
 	 */
-	private String profileName = null;
+	private String profileName;
 
 	/**
 	 * Default Constructor

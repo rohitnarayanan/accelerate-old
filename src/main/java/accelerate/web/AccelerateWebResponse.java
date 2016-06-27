@@ -21,7 +21,7 @@ public class AccelerateWebResponse extends AccelerateDataBean {
 	/**
 	 * Context Path of the application
 	 */
-	private String contextPath = null;
+	private String contextPath;
 
 	/**
 	 * Return Code. <code>
@@ -29,33 +29,33 @@ public class AccelerateWebResponse extends AccelerateDataBean {
 	 * !=0: Failure/Alternate Result
 	 * </code>
 	 */
-	private int returnCode = 0;
+	private int returnCode;
 
 	/**
 	 * Flag to indicate that there was an error on the server side while
 	 * processing the request.
 	 */
-	private boolean serverError = false;
+	private boolean serverError;
 
 	/**
 	 * Result as mapped in the RequestHandlers.xml file
 	 */
-	private String viewName = null;
+	private String viewName;
 
 	/**
 	 * {@link AccelerateMessage} instance
 	 */
-	private AccelerateMessage message = null;
+	private AccelerateMessage message;
 
 	/**
 	 * {@link Exception} caught during process
 	 */
-	private Exception error = null;
+	private Exception error;
 
 	/**
 	 * {@link AccelerateWebRequest} instance
 	 */
-	private transient AccelerateWebRequest request = null;
+	private transient AccelerateWebRequest request;
 
 	/**
 	 * default constructor

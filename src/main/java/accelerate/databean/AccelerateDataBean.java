@@ -8,13 +8,12 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.ObjectUtils;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonFilter;
 
 import accelerate.exception.AccelerateException;
-import accelerate.util.AccelerateConstants;
 import accelerate.util.JSONUtil;
 
 /**
@@ -50,7 +49,7 @@ public class AccelerateDataBean implements Serializable {
 	/**
 	 * Instance of {@link DataMap} for generic storage
 	 */
-	private DataMap dataMap = null;
+	private transient DataMap dataMap;
 
 	/*
 	 * Static Methods
@@ -103,44 +102,6 @@ public class AccelerateDataBean implements Serializable {
 	 * @param aKey
 	 * @param aValue
 	 * @return
-	 * @see accelerate.databean.DataMap#putAnd(java.lang.String,
-	 *      java.lang.Object)
-	 */
-	public DataMap putAnd(String aKey, Object aValue) {
-		return getDataMap().putAnd(aKey, aValue);
-	}
-
-	/**
-	 * @param aArgs
-	 * @return
-	 * @see accelerate.databean.DataMap#putAllAnd(java.lang.Object[])
-	 */
-	public DataMap putAllAnd(Object... aArgs) {
-		return getDataMap().putAllAnd(aArgs);
-	}
-
-	/**
-	 * @param aKey
-	 * @return
-	 * @see java.util.HashMap#get(java.lang.Object)
-	 */
-	public Object get(Object aKey) {
-		return getDataMap().get(aKey);
-	}
-
-	/**
-	 * @param aKey
-	 * @return
-	 * @see java.util.HashMap#containsKey(java.lang.Object)
-	 */
-	public boolean containsKey(String aKey) {
-		return getDataMap().containsKey(aKey);
-	}
-
-	/**
-	 * @param aKey
-	 * @param aValue
-	 * @return
 	 * @see java.util.HashMap#put(java.lang.Object, java.lang.Object)
 	 */
 	public Object put(String aKey, Object aValue) {
@@ -157,6 +118,34 @@ public class AccelerateDataBean implements Serializable {
 
 	/**
 	 * @param aKey
+	 * @param aValue
+	 * @return
+	 * @see java.util.HashMap#putIfAbsent(java.lang.Object, java.lang.Object)
+	 */
+	public Object putIfAbsent(String aKey, Object aValue) {
+		return getDataMap().putIfAbsent(aKey, aValue);
+	}
+
+	/**
+	 * @param aKey
+	 * @param aValue
+	 * @return
+	 * @see java.util.HashMap#replace(java.lang.Object, java.lang.Object)
+	 */
+	public Object replace(String aKey, Object aValue) {
+		return getDataMap().replace(aKey, aValue);
+	}
+
+	/**
+	 * @param aFunction
+	 * @see java.util.HashMap#replaceAll(java.util.function.BiFunction)
+	 */
+	public void replaceAll(BiFunction<? super String, ? super Object, ? extends Object> aFunction) {
+		getDataMap().replaceAll(aFunction);
+	}
+
+	/**
+	 * @param aKey
 	 * @return
 	 * @see java.util.HashMap#remove(java.lang.Object)
 	 */
@@ -165,11 +154,62 @@ public class AccelerateDataBean implements Serializable {
 	}
 
 	/**
+	 * @param aKey
+	 * @param aValue
+	 * @return
+	 * @see java.util.HashMap#remove(java.lang.Object, java.lang.Object)
+	 */
+	public boolean remove(String aKey, Object aValue) {
+		return getDataMap().remove(aKey, aValue);
+	}
+
+	/**
+	 * @param aKey
+	 * @param aValue
+	 * @param aRemappingFunction
+	 * @return
+	 * @see java.util.HashMap#merge(java.lang.Object, java.lang.Object,
+	 *      java.util.function.BiFunction)
+	 */
+	public Object merge(String aKey, Object aValue,
+			BiFunction<? super Object, ? super Object, ? extends Object> aRemappingFunction) {
+		return getDataMap().merge(aKey, aValue, aRemappingFunction);
+	}
+
+	/**
 	 * 
 	 * @see java.util.HashMap#clear()
 	 */
 	public void clear() {
 		getDataMap().clear();
+	}
+
+	/**
+	 * @param aKey
+	 * @return
+	 * @see java.util.HashMap#get(java.lang.Object)
+	 */
+	public Object get(Object aKey) {
+		return getDataMap().get(aKey);
+	}
+
+	/**
+	 * @param aKey
+	 * @param aDefaultValue
+	 * @return
+	 * @see java.util.HashMap#getOrDefault(java.lang.Object, java.lang.Object)
+	 */
+	public Object getOrDefault(String aKey, Object aDefaultValue) {
+		return getDataMap().getOrDefault(aKey, aDefaultValue);
+	}
+
+	/**
+	 * @param aKey
+	 * @return
+	 * @see java.util.HashMap#containsKey(java.lang.Object)
+	 */
+	public boolean containsKey(String aKey) {
+		return getDataMap().containsKey(aKey);
 	}
 
 	/**
@@ -189,59 +229,6 @@ public class AccelerateDataBean implements Serializable {
 	}
 
 	/**
-	 * @param aKey
-	 * @param aDefaultValue
-	 * @return
-	 * @see java.util.HashMap#getOrDefault(java.lang.Object, java.lang.Object)
-	 */
-	public Object getOrDefault(String aKey, Object aDefaultValue) {
-		return getDataMap().getOrDefault(aKey, aDefaultValue);
-	}
-
-	/**
-	 * @param aKey
-	 * @param aValue
-	 * @return
-	 * @see java.util.HashMap#putIfAbsent(java.lang.Object, java.lang.Object)
-	 */
-	public Object putIfAbsent(String aKey, Object aValue) {
-		return getDataMap().putIfAbsent(aKey, aValue);
-	}
-
-	/**
-	 * @param aKey
-	 * @param aValue
-	 * @return
-	 * @see java.util.HashMap#remove(java.lang.Object, java.lang.Object)
-	 */
-	public boolean remove(String aKey, Object aValue) {
-		return getDataMap().remove(aKey, aValue);
-	}
-
-	/**
-	 * @param aKey
-	 * @param aValue
-	 * @return
-	 * @see java.util.HashMap#replace(java.lang.Object, java.lang.Object)
-	 */
-	public Object replace(String aKey, Object aValue) {
-		return getDataMap().replace(aKey, aValue);
-	}
-
-	/**
-	 * @param aKey
-	 * @param aValue
-	 * @param aRemappingFunction
-	 * @return
-	 * @see java.util.HashMap#merge(java.lang.Object, java.lang.Object,
-	 *      java.util.function.BiFunction)
-	 */
-	public Object merge(String aKey, Object aValue,
-			BiFunction<? super Object, ? super Object, ? extends Object> aRemappingFunction) {
-		return getDataMap().merge(aKey, aValue, aRemappingFunction);
-	}
-
-	/**
 	 * @param aAction
 	 * @see java.util.HashMap#forEach(java.util.function.BiConsumer)
 	 */
@@ -250,45 +237,65 @@ public class AccelerateDataBean implements Serializable {
 	}
 
 	/**
-	 * @param aFunction
-	 * @see java.util.HashMap#replaceAll(java.util.function.BiFunction)
-	 */
-	public void replaceAll(BiFunction<? super String, ? super Object, ? extends Object> aFunction) {
-		getDataMap().replaceAll(aFunction);
-	}
-
-	/*
-	 * Public API
-	 */
-	/**
 	 * @param aKey
+	 * @param aValue
 	 * @return
-	 * @see java.util.HashMap#get(java.lang.Object)
+	 * @see accelerate.databean.DataMap#putAnd(java.lang.String,
+	 *      java.lang.Object)
 	 */
-	public String getString(String aKey) {
-		return StringUtils.defaultString((String) getDataMap().get(aKey), AccelerateConstants.EMPTY_STRING);
+	public DataMap putAnd(String aKey, Object aValue) {
+		return getDataMap().putAnd(aKey, aValue);
 	}
 
 	/**
-	 * @param aKey
+	 * @param aArgs
 	 * @return
-	 * @see java.util.HashMap#get(java.lang.Object)
+	 * @see accelerate.databean.DataMap#putAllAnd(java.lang.Object[])
 	 */
-	public Integer getInt(String aKey) {
-		return Integer.parseInt((String) getDataMap().get(aKey));
+	public DataMap putAllAnd(Object... aArgs) {
+		return getDataMap().putAllAnd(aArgs);
 	}
 
 	/**
 	 * @param <T>
 	 * @param aKey
 	 * @return
-	 * @see java.util.HashMap#get(java.lang.Object)
+	 * @see accelerate.databean.DataMap#get(java.lang.String)
 	 */
-	@SuppressWarnings("unchecked")
 	public <T> T get(String aKey) {
-		return (T) getDataMap().get(aKey);
+		return this.dataMap.get(aKey);
 	}
 
+	/**
+	 * @param aKey
+	 * @return
+	 * @see accelerate.databean.DataMap#getString(java.lang.String)
+	 */
+	public String getString(String aKey) {
+		return this.dataMap.getString(aKey);
+	}
+
+	/**
+	 * @param aKey
+	 * @return
+	 * @see accelerate.databean.DataMap#getInt(java.lang.String)
+	 */
+	public Integer getInt(String aKey) {
+		return this.dataMap.getInt(aKey);
+	}
+
+	/**
+	 * @param aKey
+	 * @return
+	 * @see accelerate.databean.DataMap#is(java.lang.String)
+	 */
+	public boolean is(String aKey) {
+		return this.dataMap.is(aKey);
+	}
+
+	/*
+	 * Public API
+	 */
 	/**
 	 * This methods returns a JSON representation of this bean
 	 *
@@ -368,6 +375,7 @@ public class AccelerateDataBean implements Serializable {
 	/**
 	 * @return
 	 */
+	@JsonAnyGetter
 	private DataMap getDataMap() {
 		if (this.dataMap == null) {
 			this.dataMap = new DataMap();
