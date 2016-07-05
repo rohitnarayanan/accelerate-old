@@ -1,5 +1,6 @@
 package test.accelerate;
 
+import accelerate.databean.DataMap;
 import accelerate.web.AccelerateWebResponse;
 
 /**
@@ -17,6 +18,8 @@ public class QuickTest {
 			bean.put("Key1", "Value1");
 			bean.setViewName("asdf");
 			System.out.println(bean);
+
+			System.out.println(true || false);
 		} catch (Exception error) {
 			error.printStackTrace();
 		}

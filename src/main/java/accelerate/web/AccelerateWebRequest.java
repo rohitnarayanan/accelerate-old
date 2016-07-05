@@ -1,5 +1,7 @@
 package accelerate.web;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import accelerate.databean.AccelerateDataBean;
 
 /**
@@ -18,18 +20,19 @@ public class AccelerateWebRequest extends AccelerateDataBean {
 	/**
 	 * Name of the action to be invoked. Can be used across multiple frameworks
 	 */
-	private String actionId = null;
+	private String actionId;
 
 	/**
 	 * Generic query string. Can be used in customized ways by applications
 	 */
-	private String queryString = null;
+	private String queryString;
 
 	/**
 	 * {@link Throwable} instance caught required to be passed to another
 	 * service
 	 */
-	private transient Exception error = null;
+	@JsonIgnore
+	private Exception error;
 
 	/**
 	 * default constructor

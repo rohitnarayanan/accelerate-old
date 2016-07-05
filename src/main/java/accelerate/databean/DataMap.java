@@ -5,7 +5,9 @@ import java.util.HashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.Assert;
 
+import accelerate.exception.AccelerateException;
 import accelerate.util.AccelerateConstants;
+import accelerate.util.JSONUtil;
 
 /**
  * {@link HashMap} extension with overloaded methods for easy loading, method
@@ -90,5 +92,31 @@ public class DataMap extends HashMap<String, Object> {
 	 */
 	public boolean is(String aKey) {
 		return Boolean.parseBoolean((String) get(aKey));
+	}
+
+	/**
+	 * This methods returns a JSON representation of this Map
+	 * 
+	 * @return
+	 * @throws AccelerateException
+	 *             thrown due to {@link JSONUtil#serialize(Object)}
+	 */
+	public String toJSON() throws AccelerateException {
+		return JSONUtil.serialize(this);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
+	/**
+	 * @return
+	 * @throws AccelerateException
+	 *             thrown due to {@link #toJSON()}
+	 */
+	@Override
+	public String toString() throws AccelerateException {
+		return toJSON();
 	}
 }

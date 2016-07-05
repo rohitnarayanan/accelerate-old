@@ -1,6 +1,7 @@
 package accelerate.databean;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -12,6 +13,7 @@ import org.springframework.util.ObjectUtils;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonFilter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import accelerate.exception.AccelerateException;
 import accelerate.util.JSONUtil;
@@ -33,7 +35,7 @@ public class AccelerateDataBean implements Serializable {
 	/**
 	 * {@link Set} to include names of fields to exclude while logging
 	 */
-	protected transient Set<String> logExcludedFields;
+	protected transient Set<String> logExcludedFields = Collections.EMPTY_SET;
 
 	/**
 	 * Name of the id field for the bean
@@ -49,7 +51,8 @@ public class AccelerateDataBean implements Serializable {
 	/**
 	 * Instance of {@link DataMap} for generic storage
 	 */
-	private transient DataMap dataMap;
+	@JsonIgnore
+	private DataMap dataMap;
 
 	/*
 	 * Static Methods
@@ -347,8 +350,12 @@ public class AccelerateDataBean implements Serializable {
 	 * @param aFieldNames
 	 */
 	public synchronized void addJsonIgnoreFields(String... aFieldNames) {
+		if (this.logExcludedFields == Collections.EMPTY_SET) {
+			this.logExcludedFields = new HashSet<>();
+		}
+
 		for (String field : aFieldNames) {
-			getLogExcludedFields().add(field);
+			this.logExcludedFields.add(field);
 		}
 	}
 
@@ -359,12 +366,12 @@ public class AccelerateDataBean implements Serializable {
 	 * @param aFieldNames
 	 */
 	public synchronized void removeJsonIgnoreFields(String... aFieldNames) {
-		if (this.logExcludedFields == null) {
+		if (ObjectUtils.isEmpty(this.logExcludedFields)) {
 			return;
 		}
 
 		for (String field : aFieldNames) {
-			getLogExcludedFields().remove(field);
+			this.logExcludedFields.remove(field);
 		}
 	}
 
@@ -387,10 +394,6 @@ public class AccelerateDataBean implements Serializable {
 	 * @return
 	 */
 	private Set<String> getLogExcludedFields() {
-		if (this.logExcludedFields == null) {
-			this.logExcludedFields = new HashSet<>();
-		}
-
 		return this.logExcludedFields;
 	}
 

@@ -51,7 +51,7 @@ public class DirectoryParser {
 	 */
 	private static void parseDirectory(File aFolder, Predicate<File> aFileFilter, FileHandler aHandler,
 			final List<File> aFileList) throws AccelerateException {
-		aFileList.addAll(listFiles(aFolder).stream()
+		aFileList.addAll(listFiles(aFolder).parallelStream()
 				.filter(aFile -> (aFileFilter == null) ? true : aFileFilter.test(aFile)).map(aFile -> {
 					if (aHandler == null) {
 						return aFile;
@@ -60,7 +60,9 @@ public class DirectoryParser {
 					File newFile = null;
 					if (aFile.isDirectory()) {
 						newFile = aHandler.handleDirectory(aFile);
-						parseDirectory(newFile, aFileFilter, aHandler, aFileList);
+						if (newFile != null) {
+							parseDirectory(newFile, aFileFilter, aHandler, aFileList);
+						}
 					} else {
 						newFile = aHandler.handleFile(aFile);
 					}

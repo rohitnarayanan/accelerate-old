@@ -57,13 +57,13 @@ public class DirectorySynchronizer {
 		}
 
 		DirSyncFileHandler sourceHandler = new DirSyncFileHandler(aDirSyncInput, true);
-		DirectoryParser.execute(aDirSyncInput.sourceDir,
-				aFile -> AppUtil.compareAny(accelerate.util.FileUtil.getFileExtn(aFile), aDirSyncInput.ignoreExtns),
+		DirectoryParser.execute(aDirSyncInput.sourceDir, aFile -> !AppUtil
+				.compareAny(accelerate.util.FileUtil.getFileExtn(aFile), aDirSyncInput.ignoreExtns.toArray()),
 				sourceHandler);
 
 		DirSyncFileHandler targetHandler = new DirSyncFileHandler(aDirSyncInput, false);
-		DirectoryParser.execute(aDirSyncInput.targetDir,
-				aFile -> AppUtil.compareAny(accelerate.util.FileUtil.getFileExtn(aFile), aDirSyncInput.ignoreExtns),
+		DirectoryParser.execute(aDirSyncInput.targetDir, aFile -> !AppUtil
+				.compareAny(accelerate.util.FileUtil.getFileExtn(aFile), aDirSyncInput.ignoreExtns.toArray()),
 				targetHandler);
 
 		if (aDirSyncInput.ignoreExtensions) {
