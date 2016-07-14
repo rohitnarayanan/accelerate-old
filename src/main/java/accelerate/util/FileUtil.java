@@ -13,6 +13,11 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.CopyOption;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -235,11 +240,20 @@ public final class FileUtil {
 	 *            - New Extn to be given. It is ignored in case of directory
 	 *            rename
 	 * @return array of file names
+	 * 
+	 * @throws AccelerateException
+	 *             {@link IOException} thrown by
+	 *             {@link Files#move(Path, Path, CopyOption...)}
 	 */
-	public static File renameFileAndExtn(File aFile, String aName, String aExtn) {
+	public static File renameFileAndExtn(File aFile, String aName, String aExtn) throws AccelerateException {
 		String extn = aFile.isDirectory() ? EMPTY_STRING : DOT_CHAR + aExtn;
 		File target = new File(aFile.getParent(), aName + extn);
-		aFile.renameTo(target);
+
+		try {
+			Files.move(Paths.get(aFile.toURI()), Paths.get(target.toURI()));
+		} catch (IOException error) {
+			throw new AccelerateException(error);
+		}
 
 		return target;
 	}
@@ -250,16 +264,15 @@ public final class FileUtil {
 	 * @param aFindPattern
 	 * @param aReplacement
 	 * @return
-	 * @throws AccelerateException
 	 */
 	public static List<File> renameFiles(File aRootFolder, Predicate<File> aFileFilter, final String aFindPattern,
-			final String aReplacement) throws AccelerateException {
+			final String aReplacement) {
 		Assert.noNullElements(new Object[] { aRootFolder, aFindPattern, aReplacement },
 				"Invalid Input. Required arguments are missing");
 
 		return DirectoryParser.execute(aRootFolder, aFileFilter, new DirectoryParser.FileHandler() {
 			@Override
-			public File handleFile(File aFile) throws AccelerateException {
+			public File handleFile(File aFile) {
 				String currentName = aFile.getName();
 				String newName = StringUtils.replacePattern(currentName, aFindPattern, aReplacement);
 

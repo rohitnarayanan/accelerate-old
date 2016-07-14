@@ -147,11 +147,12 @@ public class AccelerateDataBean implements Serializable {
 	}
 
 	/**
+	 * @param <T>
 	 * @param aKey
 	 * @return
 	 * @see java.util.HashMap#remove(java.lang.Object)
 	 */
-	public Object remove(String aKey) {
+	public <T> T remove(String aKey) {
 		return getDataMap().remove(aKey);
 	}
 

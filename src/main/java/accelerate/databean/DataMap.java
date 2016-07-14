@@ -95,6 +95,16 @@ public class DataMap extends HashMap<String, Object> {
 	}
 
 	/**
+	 * @param <T>
+	 * @param aKey
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public <T> T remove(String aKey) {
+		return (T) super.remove(aKey);
+	}
+
+	/**
 	 * This methods returns a JSON representation of this Map
 	 * 
 	 * @return
