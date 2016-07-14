@@ -13,6 +13,7 @@ import org.springframework.util.Assert;
 import accelerate.databean.AccelerateDataBean;
 import accelerate.exception.AccelerateException;
 import accelerate.logging.Auditable;
+import accelerate.util.AppUtil;
 
 /**
  * Abstract implementation for {@link Runnable}
@@ -166,7 +167,7 @@ public abstract class AccelerateTask extends AccelerateDataBean implements Calla
 			execute();
 			this.complete = true;
 		} catch (Exception error) {
-			LOGGER.debug("Error in execution for task [{}]", this.taskKey);
+			LOGGER.warn("Error [{}] in execution for task [{}]", AppUtil.getErrorMessage(error), this.taskKey);
 			this.taskError = error;
 			AccelerateException.checkAndThrow(error);
 		} finally {

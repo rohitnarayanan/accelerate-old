@@ -4,6 +4,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.ObjectUtils;
 
 /**
@@ -125,6 +126,19 @@ public final class AppUtil {
 	@SafeVarargs
 	public static <T> boolean compareAny(T aCompareValue, T... aCompareValueList) {
 		return compareAny(aCompareValue, CollectionUtil.toList(aCompareValueList));
+	}
+
+	/**
+	 * @param aError
+	 * @return error log
+	 */
+	public static String getErrorMessage(Throwable aError) {
+		if (aError == null) {
+			return AccelerateConstants.EMPTY_STRING;
+		}
+
+		String message = aError.getMessage();
+		return StringUtils.isEmpty(message) ? aError.getClass().getName() : message;
 	}
 
 	/**

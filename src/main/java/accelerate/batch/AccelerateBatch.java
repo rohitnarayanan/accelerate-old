@@ -136,8 +136,6 @@ public class AccelerateBatch<T extends AccelerateTask> extends ThreadPoolTaskExe
 	@ManagedOperation(description = "This method shuts down the current batch instance")
 	public void shutdown() {
 		Assert.state(this.initialized, "Batch not initialized");
-
-		LOGGER.debug("Shutdown requested");
 		super.shutdown();
 	}
 
@@ -216,15 +214,15 @@ public class AccelerateBatch<T extends AccelerateTask> extends ThreadPoolTaskExe
 	 * @param aTaskList
 	 */
 	@SafeVarargs
-	public final void submit(T... aTaskList) {
-		this.submit(toList(aTaskList));
+	public final void submitTasks(T... aTaskList) {
+		this.submitTasks(toList(aTaskList));
 	}
 
 	/**
 	 * @param aTaskList
 	 */
 	@SuppressWarnings("unchecked")
-	public final synchronized void submit(List<T> aTaskList) {
+	public final synchronized void submitTasks(List<T> aTaskList) {
 		Assert.state(this.initialized, "Batch not initialized");
 		Assert.notEmpty(aTaskList, "No tasks provided");
 

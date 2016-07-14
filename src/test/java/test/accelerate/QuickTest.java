@@ -1,6 +1,7 @@
 package test.accelerate;
 
-import accelerate.databean.DataMap;
+import java.io.File;
+
 import accelerate.web.AccelerateWebResponse;
 
 /**
@@ -19,7 +20,10 @@ public class QuickTest {
 			bean.setViewName("asdf");
 			System.out.println(bean);
 
-			System.out.println(true || false);
+			// Files.copy(Paths, out)
+			File f = new File("\\\\192.168.1.46\\rohitnarayanan\\Documents\\Docs\\TCS Docs");
+			// File f = new File("D:\\Rogger\\Docs\\TCS Docs");
+			System.out.println(f.exists() + "===" + f.toURI());
 		} catch (Exception error) {
 			error.printStackTrace();
 		}
