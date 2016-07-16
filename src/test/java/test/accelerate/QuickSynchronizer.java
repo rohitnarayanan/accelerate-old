@@ -19,12 +19,12 @@ public class QuickSynchronizer {
 	public static void main(String[] args) {
 		try {
 			DirSyncInput input = new DirSyncInput();
-			input.copyToSource = false;
-			input.copyToTarget = true;
-			// input.overwriteTarget = true;
+			input.copyToSource = true;
+			// input.copyToTarget = true;
+			input.overwriteTarget = true;
 			input.ignoreExtns.add("DS_Store");
-			input.sourceDir = new File(new URI("file:/D:/Rogger/Docs/TCS%20Docs/"));
-			input.targetDir = new File(new URI("file:////192.168.1.46/rohitnarayanan/Documents/Docs/TCS%20Docs/"));
+			input.sourceDir = new File(new URI("file:/D:/Rogger/Docs/Learning/"));
+			input.targetDir = new File(new URI("file:////192.168.1.46/rohitnarayanan/Documents/Docs/Learning/"));
 
 			DirSyncOutput output = DirectorySynchronizer.compare(input);
 

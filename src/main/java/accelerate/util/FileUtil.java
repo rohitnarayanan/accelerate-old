@@ -14,6 +14,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,6 +30,7 @@ import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;
@@ -67,7 +69,7 @@ public final class FileUtil {
 			return EMPTY_STRING;
 		}
 
-		return StringUtils.replace(aTargetFile.getPath(), "\\", "/");
+		return org.springframework.util.StringUtils.cleanPath(aTargetFile.getPath());
 	}
 
 	/**
@@ -169,6 +171,60 @@ public final class FileUtil {
 	}
 
 	/**
+	 * @param aSource
+	 * @param aDestination
+	 * @param aOverwrite
+	 * @return copy status
+	 */
+	public static boolean copyViaOS(File aSource, File aDestination, Boolean aOverwrite) {
+		Assert.noNullElements(new Object[] { aSource, aDestination }, "Invalid Input. All arguments are required");
+
+		Assert.state(aSource.exists(), "Source does not exist");
+		Assert.state((aOverwrite || !aDestination.exists()), "Destination exists");
+
+		if (aDestination.exists()) {
+			if (aSource.isFile()) {
+				Assert.state(aDestination.isFile(), "Source is a file but destination exists as a directory");
+			} else {
+				Assert.state(aDestination.isDirectory(), "Source is a directory but destination exists as a file");
+			}
+		}
+
+		String copyCommand = null;
+		if (SystemUtils.IS_OS_WINDOWS) {
+			copyCommand = StringUtils.join("cmd /C ", (aSource.isDirectory() ? "XCOPY \"" : "COPY \""),
+					aSource.getPath(), "\" \"", aDestination.getPath(),
+					(aSource.isDirectory() ? "\\\" /E /Q /R /Y" : "\""));
+		} else {
+			copyCommand = StringUtils.join("cp -fr '", getFilePath(aSource), "' '", getFilePath(aDestination), "'");
+		}
+
+		LOGGER.debug("Copy Command [{}]", copyCommand);
+
+		BufferedReader reader = null;
+		String outputLine = null;
+
+		try {
+			aDestination.getParentFile().mkdirs();
+
+			Process process = Runtime.getRuntime().exec(copyCommand, null, SystemUtils.getJavaIoTmpDir());
+			reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+
+			StringBuilder outputBuffer = new StringBuilder();
+			while ((outputLine = reader.readLine()) != null) {
+				outputBuffer.append(outputLine);
+			}
+			LOGGER.debug("Copy Command Output =>\n{}", outputBuffer);
+		} catch (IOException error) {
+			throw new AccelerateException(error);
+		} finally {
+			IOUtils.closeQuietly(reader);
+		}
+
+		return aDestination.exists();
+	}
+
+	/**
 	 * This method returns a sorted list of files in the given Directory.
 	 *
 	 * @param aFolder
@@ -190,12 +246,12 @@ public final class FileUtil {
 	 *            path to the file or folder of files
 	 * @param aNamePattern
 	 *            text to be searched in the filename
-	 * @return {@link List} of {@link File} that match the search criteria
+	 * @return {@link Map} of {@link File} that match the search criteria
 	 * @throws AccelerateException
 	 *             throw by
 	 *             {@link DirectoryParser#execute(File, java.util.function.Predicate, accelerate.util.file.DirectoryParser.FileHandler)}
 	 */
-	public static List<File> findFilesByName(String aRootPath, String aNamePattern) throws AccelerateException {
+	public static Map<String, File> findFilesByName(String aRootPath, String aNamePattern) throws AccelerateException {
 		return DirectoryParser.execute(new File(aRootPath),
 				aFile -> StringUtil.grepCheck(aNamePattern, aFile.getName()), null);
 	}
@@ -205,12 +261,12 @@ public final class FileUtil {
 	 *            path to the file or folder of files
 	 * @param aSearchExtn
 	 *            extension of the file
-	 * @return {@link List} of {@link File} that match the search criteria
+	 * @return {@link Map} of {@link File} that match the search criteria
 	 * @throws AccelerateException
 	 *             throw by
 	 *             {@link DirectoryParser#execute(File, java.util.function.Predicate, accelerate.util.file.DirectoryParser.FileHandler)}
 	 */
-	public static List<File> findFilesByExtn(String aRootPath, String aSearchExtn) throws AccelerateException {
+	public static Map<String, File> findFilesByExtn(String aRootPath, String aSearchExtn) throws AccelerateException {
 		return DirectoryParser.execute(new File(aRootPath),
 				aFile -> AppUtil.compare(accelerate.util.FileUtil.getFileExtn(aFile), aSearchExtn), null);
 	}
@@ -265,8 +321,8 @@ public final class FileUtil {
 	 * @param aReplacement
 	 * @return
 	 */
-	public static List<File> renameFiles(File aRootFolder, Predicate<File> aFileFilter, final String aFindPattern,
-			final String aReplacement) {
+	public static Map<String, File> renameFiles(File aRootFolder, Predicate<File> aFileFilter,
+			final String aFindPattern, final String aReplacement) {
 		Assert.noNullElements(new Object[] { aRootFolder, aFindPattern, aReplacement },
 				"Invalid Input. Required arguments are missing");
 

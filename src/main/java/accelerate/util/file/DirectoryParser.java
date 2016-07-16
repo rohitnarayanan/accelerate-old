@@ -3,14 +3,14 @@ package accelerate.util.file;
 import static accelerate.util.FileUtil.listFiles;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import org.springframework.util.Assert;
 
 import accelerate.exception.AccelerateException;
+import accelerate.util.FileUtil;
 
 /**
  * Utility class that provides methods to traverse a given directory. Users can
@@ -29,46 +29,48 @@ public class DirectoryParser {
 	 * @return List of all files that were processed
 	 * @throws AccelerateException
 	 *             thrown by
-	 *             {@link #parseDirectory(File, Predicate, FileHandler, List)}
+	 *             {@link #parseDirectory(File, Predicate, FileHandler, Map)}
 	 */
-	public static List<File> execute(File aFolder, Predicate<File> aFileFilter, FileHandler aHandler)
+	public static Map<String, File> execute(File aFolder, Predicate<File> aFileFilter, FileHandler aHandler)
 			throws AccelerateException {
 		Assert.isTrue((aFolder != null) && aFolder.exists() && aFolder.isDirectory(),
 				"Invalid folder - " + ((aFolder != null) ? aFolder.getPath() : "NULL"));
-		List<File> fileList = new ArrayList<>();
-		parseDirectory(aFolder, aFileFilter, aHandler, fileList);
-		return fileList;
+		Map<String, File> fileMap = new ConcurrentHashMap<>();
+		parseDirectory(aFolder, aFileFilter, aHandler, fileMap);
+		return fileMap;
 	}
 
 	/**
 	 * @param aFolder
 	 * @param aFileFilter
 	 * @param aHandler
-	 * @param aFileList
+	 * @param aFileMap
 	 * @throws AccelerateException
 	 *             thrown by {@link FileHandler#handleDirectory(File)} or
 	 *             {@link FileHandler#handleFile(File)}
 	 */
 	private static void parseDirectory(File aFolder, Predicate<File> aFileFilter, FileHandler aHandler,
-			final List<File> aFileList) throws AccelerateException {
-		aFileList.addAll(listFiles(aFolder).parallelStream()
-				.filter(aFile -> (aFileFilter == null) ? true : aFileFilter.test(aFile)).map(aFile -> {
-					if (aHandler == null) {
-						return aFile;
+			final Map<String, File> aFileMap) throws AccelerateException {
+		listFiles(aFolder).parallelStream().filter(aFile -> (aFileFilter == null) ? true : aFileFilter.test(aFile))
+				.forEach(aFile -> {
+					File newFile = aFile;
+					try {
+						aFileMap.put(FileUtil.getFilePath(newFile), newFile);
+					} catch (@SuppressWarnings("unused") NullPointerException error) {
+						System.err.println(aFileMap + "@@" + newFile + "@@" + FileUtil.getFilePath(newFile));
 					}
 
-					File newFile = null;
 					if (aFile.isDirectory()) {
-						newFile = aHandler.handleDirectory(aFile);
-						if (newFile != null) {
-							parseDirectory(newFile, aFileFilter, aHandler, aFileList);
+						if (aHandler != null) {
+							newFile = aHandler.handleDirectory(aFile);
 						}
-					} else {
+						if (newFile != null) {
+							parseDirectory(newFile, aFileFilter, aHandler, aFileMap);
+						}
+					} else if (aHandler != null) {
 						newFile = aHandler.handleFile(aFile);
 					}
-
-					return newFile;
-				}).collect(Collectors.toList()));
+				});
 	}
 
 	/**

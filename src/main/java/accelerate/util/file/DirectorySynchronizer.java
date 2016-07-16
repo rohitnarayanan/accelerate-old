@@ -1,9 +1,7 @@
 package accelerate.util.file;
 
-import static accelerate.util.AccelerateConstants.DOUBLE_QUOTE_CHAR;
 import static accelerate.util.AccelerateConstants.HYPHEN_CHAR;
 import static accelerate.util.AccelerateConstants.NEW_LINE;
-import static accelerate.util.AccelerateConstants.SPACE_CHAR;
 import static accelerate.util.AccelerateConstants.UNIX_PATH_CHAR;
 import static org.springframework.util.ObjectUtils.isEmpty;
 
@@ -22,7 +20,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import accelerate.batch.AccelerateBatch;
 import accelerate.batch.AccelerateTask;
@@ -117,16 +114,18 @@ public class DirectorySynchronizer {
 		if (aDirSyncInput.copyToSource) {
 			aDirSyncOutput.newTargetFiles.parallelStream().forEach(file -> {
 				dirSyncBatch.submitTasks(
-						new DirSyncFileCopyTask(file, aDirSyncInput.sourceDir, aDirSyncInput.targetDir, "T"));
+						new DirSyncFileCopyTask(file, aDirSyncInput.targetDir, aDirSyncInput.sourceDir, "T"));
 			});
 		}
 
 		if (aDirSyncInput.overwriteTarget) {
 			aDirSyncOutput.conflictedFiles.forEach((key, value) -> {
-				dirSyncBatch.submitTasks(new DirSyncFileCopyTask(value.sourceFile, aDirSyncInput.sourceDir,
-						aDirSyncInput.targetDir, "C"));
+				dirSyncBatch.submitTasks(new DirSyncFileCopyTask(value, "C"));
 			});
 		}
+
+		dirSyncBatch.setWaitForTasksToCompleteOnShutdown(true);
+		dirSyncBatch.shutdown(TimeUnit.HOURS, 2);
 
 		aDirSyncOutput.message.append("Missing files copied to Target @ ").append(aDirSyncInput.targetDir.getPath())
 				.append(": ").append(counterMap.get("S").size()).append(NEW_LINE);
@@ -134,9 +133,6 @@ public class DirectorySynchronizer {
 				.append(": ").append(counterMap.get("T").size()).append(NEW_LINE);
 		aDirSyncOutput.message.append("Conflicted files copied to Target @ ").append(aDirSyncInput.targetDir.getPath())
 				.append(": ").append(counterMap.get("C").size()).append(NEW_LINE);
-
-		dirSyncBatch.setWaitForTasksToCompleteOnShutdown(true);
-		dirSyncBatch.shutdown(TimeUnit.HOURS, 2);
 	}
 
 	/**
@@ -180,9 +176,17 @@ public class DirectorySynchronizer {
 			}
 
 			ConflictResult conflictResult = new ConflictResult();
-			conflictResult.sourceFile = aSourceFile;
-			conflictResult.targetFile = aTargetFile;
-			conflictResult.conflictReason = aSourceFile.length() + ":" + aTargetFile.length();
+			if (aSourceFile.lastModified() > aTargetFile.lastModified()) {
+				conflictResult.sourceFile = aSourceFile;
+				conflictResult.targetFile = aTargetFile;
+				conflictResult.conflictReason = "Source is new =>" + aSourceFile.length() + ":" + aTargetFile.length()
+						+ "/" + aSourceFile.lastModified() + ":" + aTargetFile.lastModified();
+			} else {
+				conflictResult.sourceFile = aTargetFile;
+				conflictResult.targetFile = aSourceFile;
+				conflictResult.conflictReason = "Destination is new =>" + aSourceFile.length() + ":"
+						+ aTargetFile.length() + "/" + aSourceFile.lastModified() + ":" + aTargetFile.lastModified();
+			}
 			return conflictResult;
 		};
 	}
@@ -486,6 +490,7 @@ public class DirectorySynchronizer {
 		private File sourceFile = null;
 		private File sourceRoot = null;
 		private File targetRoot = null;
+		private ConflictResult conflictResult = null;
 		String mode = null;
 		private boolean copyResult = false;
 
@@ -504,6 +509,17 @@ public class DirectorySynchronizer {
 			this.mode = aMode;
 		}
 
+		/**
+		 * Constructor 2
+		 *
+		 * @param aConflictResult
+		 */
+		public DirSyncFileCopyTask(ConflictResult aConflictResult, String aMode) {
+			super("DirSyncFileCopyTask-" + UUID.randomUUID());
+			this.conflictResult = aConflictResult;
+			this.mode = aMode;
+		}
+
 		/*
 		 * (non-Javadoc)
 		 * 
@@ -515,26 +531,21 @@ public class DirectorySynchronizer {
 		 */
 		@Override
 		protected void execute() throws AccelerateException {
-			int sourceRootIndex = this.sourceRoot.getPath().length();
-			File destination = new File(this.targetRoot, this.sourceFile.getPath().substring(sourceRootIndex));
 			try {
-				if (!AppUtil.compare(this.mode, "C") && destination.exists()) {
+				if (AppUtil.compare(this.mode, "C")) {
+					this.copyResult = FileUtil.copyViaOS(this.conflictResult.sourceFile, this.conflictResult.targetFile,
+							true);
+					return;
+				}
+
+				int sourceRootIndex = this.sourceRoot.getPath().length();
+				File destination = new File(this.targetRoot, this.sourceFile.getPath().substring(sourceRootIndex));
+				if (destination.exists()) {
 					this.copyResult = false;
 					return;
 				}
 
-				if (this.sourceFile.isFile()) {
-					// FileUtils.copyFile(this.sourceFile, destination);
-				} else {
-					// FileUtils.copyDirectory(this.sourceFile, destination);
-				}
-
-				String copyCommand = StringUtils.join("XCOPY ", DOUBLE_QUOTE_CHAR, this.sourceFile.getPath(),
-						DOUBLE_QUOTE_CHAR, SPACE_CHAR, DOUBLE_QUOTE_CHAR, destination.getPath(),
-						(this.sourceFile.isDirectory() ? File.separator : ""), DOUBLE_QUOTE_CHAR, " /E /Q /R /Y");
-				System.out.println(copyCommand);
-				Runtime.getRuntime().exec(copyCommand).waitFor();
-				this.copyResult = destination.exists();
+				this.copyResult = FileUtil.copyViaOS(this.sourceFile, destination, false);
 			} catch (Exception error) {
 				throw new AccelerateException(error);
 			}
