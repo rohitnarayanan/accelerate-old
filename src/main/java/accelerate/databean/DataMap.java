@@ -82,7 +82,14 @@ public class DataMap extends HashMap<String, Object> {
 	 * @see java.util.HashMap#get(java.lang.Object)
 	 */
 	public Integer getInt(String aKey) {
-		return Integer.parseInt((String) get(aKey));
+		Object value = get(aKey);
+		if (value == null) {
+			return null;
+		} else if (value instanceof Integer) {
+			return (Integer) value;
+		}
+
+		return Integer.parseInt(value.toString());
 	}
 
 	/**
@@ -91,7 +98,14 @@ public class DataMap extends HashMap<String, Object> {
 	 * @see java.util.HashMap#get(java.lang.Object)
 	 */
 	public boolean is(String aKey) {
-		return Boolean.parseBoolean((String) get(aKey));
+		Object value = get(aKey);
+		if (value == null) {
+			return false;
+		} else if (value instanceof Boolean) {
+			return (Boolean) value;
+		}
+
+		return Boolean.parseBoolean(value.toString());
 	}
 
 	/**

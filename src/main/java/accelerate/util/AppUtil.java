@@ -1,11 +1,22 @@
 package accelerate.util;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.List;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
+
+import accelerate.exception.AccelerateException;
 
 /**
  * This class provides utility methods for the application
@@ -15,6 +26,11 @@ import org.springframework.util.ObjectUtils;
  * @since Jun 12, 2009
  */
 public final class AppUtil {
+	/**
+	 * 
+	 */
+	static final Logger LOGGER = LoggerFactory.getLogger(AppUtil.class);
+
 	/**
 	 * hidden constructor
 	 */
@@ -155,5 +171,38 @@ public final class AppUtil {
 		writer.flush();
 
 		return writer.getBuffer().toString();
+	}
+
+	/**
+	 * @param aCommand
+	 * @param aEnvSettings
+	 * @param aExecuteDir
+	 * @return Command Output
+	 */
+	public static String executeOSCommand(String aCommand, String[] aEnvSettings, File aExecuteDir) {
+		Assert.state(StringUtils.isNotEmpty(aCommand), "Invalid Input. Command cannot be empty");
+		LOGGER.debug("OSCommand [{}]", aCommand);
+
+		BufferedReader reader = null;
+		String outputLine = null;
+		StringBuilder outputBuffer = new StringBuilder();
+
+		try {
+			Process process = Runtime.getRuntime().exec(aCommand, aEnvSettings,
+					(aExecuteDir != null) ? aExecuteDir : SystemUtils.getJavaIoTmpDir());
+			reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+
+			while ((outputLine = reader.readLine()) != null) {
+				outputBuffer.append(outputLine);
+			}
+
+			LOGGER.debug("OSCommand Output =>\n{}", outputBuffer);
+		} catch (IOException error) {
+			throw new AccelerateException(error);
+		} finally {
+			IOUtils.closeQuietly(reader);
+		}
+
+		return outputBuffer.toString();
 	}
 }

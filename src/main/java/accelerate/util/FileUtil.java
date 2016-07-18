@@ -14,7 +14,6 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -199,28 +198,8 @@ public final class FileUtil {
 			copyCommand = StringUtils.join("cp -fr '", getFilePath(aSource), "' '", getFilePath(aDestination), "'");
 		}
 
-		LOGGER.debug("Copy Command [{}]", copyCommand);
-
-		BufferedReader reader = null;
-		String outputLine = null;
-
-		try {
-			aDestination.getParentFile().mkdirs();
-
-			Process process = Runtime.getRuntime().exec(copyCommand, null, SystemUtils.getJavaIoTmpDir());
-			reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-
-			StringBuilder outputBuffer = new StringBuilder();
-			while ((outputLine = reader.readLine()) != null) {
-				outputBuffer.append(outputLine);
-			}
-			LOGGER.debug("Copy Command Output =>\n{}", outputBuffer);
-		} catch (IOException error) {
-			throw new AccelerateException(error);
-		} finally {
-			IOUtils.closeQuietly(reader);
-		}
-
+		aDestination.getParentFile().mkdirs();
+		AppUtil.executeOSCommand(copyCommand, null, null);
 		return aDestination.exists();
 	}
 
