@@ -5,7 +5,7 @@ buildscript {
 		jcenter()
 	}
 	dependencies {
-		classpath("io.spring.gradle:dependency-management-plugin:$springPlatformVersion")
+		classpath("io.spring.gradle:dependency-management-plugin:$springPlatformGradleVersion")
 		classpath("org.springframework.boot:spring-boot-gradle-plugin:$springBootGradleVersion")
 	}
 }
@@ -14,13 +14,13 @@ apply plugin: "io.spring.dependency-management"
 
 dependencyManagement {
 	imports {
-		mavenBom "io.spring.platform:platform-bom:$springBootVersion"
+		mavenBom "io.spring.platform:platform-bom:$springPlatformVersion"
 	}
 }
 
 repositories {
-    jcenter()
-    mavenLocal()
+	jcenter()
+	mavenLocal()
 }
 
 apply plugin: "java"
