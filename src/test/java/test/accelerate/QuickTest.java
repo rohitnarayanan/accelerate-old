@@ -3,6 +3,7 @@ package test.accelerate;
 import java.io.File;
 
 import accelerate.util.FileUtil;
+import accelerate.util.StringUtil;
 
 /**
  * Basic class to quick test code
@@ -15,10 +16,12 @@ import accelerate.util.FileUtil;
 public class QuickTest {
 	public static void main(String[] args) {
 		try {
-			File source = new File("C:\\Users\\185710\\Desktop\\Temp");
-			File destination = new File("C:\\Users\\185710\\Desktop\\2.txt");
-
-			System.out.println(FileUtil.listFiles(new File("D:\\Rogger\\Docs\\Certificates\\Visa")));
+			File folder = new File("C:\\Temp\\root\\f2\\sf5");
+			File root = new File("C:\\Temp\\root");
+			System.out.println(FileUtil.getPathKey(folder.toPath(), root.toPath()));
+			FileUtil.walkFileTree("C:\\Temp\\root", null, null, null,
+					(aFile, aFileVisitResult) -> aFile.getName().startsWith("f"))
+					.forEach((k, v) -> System.out.println(v));
 		} catch (Exception error) {
 			error.printStackTrace();
 		}

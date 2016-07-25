@@ -15,13 +15,18 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.CopyOption;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -35,7 +40,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;
 
 import accelerate.exception.AccelerateException;
-import accelerate.util.file.DirectoryParser;
 
 /**
  * PUT DESCRIPTION HERE
@@ -54,6 +58,21 @@ public final class FileUtil {
 	 * hidden constructor
 	 */
 	private FileUtil() {
+	}
+
+	/**
+	 * Method to consistenly return path in unix format with '/' separator
+	 * instead of '\\' used in windows.
+	 * 
+	 * @param aPath
+	 * @return file name
+	 */
+	public static String getFilePath(Path aPath) {
+		if (aPath == null) {
+			return EMPTY_STRING;
+		}
+
+		return org.springframework.util.StringUtils.cleanPath(aPath.toString());
 	}
 
 	/**
@@ -144,29 +163,17 @@ public final class FileUtil {
 	}
 
 	/**
-	 * @param aTargetFile
-	 * @param aLevel
+	 * @param aFile
+	 * @param aRoot
 	 * @return short path
 	 */
-	public static String getShortPath(File aTargetFile, int aLevel) {
-		if (aTargetFile == null) {
+	public static String getPathKey(Path aFile, Path aRoot) {
+		if (aFile == null) {
 			return EMPTY_STRING;
 		}
 
-		StringBuilder buffer = new StringBuilder();
-		File tempFile = aTargetFile.getParentFile();
-
-		for (int i = 0; i < aLevel; i++) {
-			if (tempFile == null) {
-				break;
-			}
-
-			buffer.insert(0, tempFile.getName() + "/");
-			tempFile = tempFile.getParentFile();
-		}
-
-		buffer.append(aTargetFile.getName());
-		return buffer.toString();
+		int rootNameCount = (aRoot == null) ? 0 : aRoot.getNameCount();
+		return getFilePath(aFile.subpath(rootNameCount, aFile.getNameCount()));
 	}
 
 	/**
@@ -222,17 +229,98 @@ public final class FileUtil {
 
 	/**
 	 * @param aRootPath
+	 * @param aSelector
+	 * @param aPreVisitDirectory
+	 * @param aPostVisitDirectory
+	 * @param aVisitFile
+	 * @return
+	 * @throws AccelerateException
+	 *             {@link IOException} thrown by
+	 *             {@link Files#walkFileTree(Path, FileVisitor)}
+	 */
+	public static Map<String, File> walkFileTree(String aRootPath,
+			final Function<File, FileVisitResult> aPreVisitDirectory,
+			final Function<File, FileVisitResult> aPostVisitDirectory, final Function<File, FileVisitResult> aVisitFile,
+			final BiFunction<File, FileVisitResult, Boolean> aSelector) throws AccelerateException {
+		final Map<String, File> fileMap = new TreeMap<>();
+		final Path sourcePath = new File(aRootPath).toPath();
+
+		try {
+			Files.walkFileTree(sourcePath, new FileVisitor<Path>() {
+				@Override
+				public FileVisitResult preVisitDirectory(Path aDir, BasicFileAttributes aAttrs) throws IOException {
+					if (AppUtil.compare(FileUtil.getFilePath(aDir), FileUtil.getFilePath(sourcePath))) {
+						return FileVisitResult.CONTINUE;
+					}
+
+					FileVisitResult visitResult = FileVisitResult.CONTINUE;
+					if (aPreVisitDirectory != null) {
+						visitResult = aPreVisitDirectory.apply(aDir.toFile());
+					}
+
+					if (aSelector != null && aSelector.apply(aDir.toFile(), visitResult)) {
+						fileMap.put(getPathKey(aDir, sourcePath), aDir.toFile());
+					}
+
+					return visitResult;
+				}
+
+				@Override
+				public FileVisitResult postVisitDirectory(Path aDir, IOException aError) throws IOException {
+					if (aError != null) {
+						throw aError;
+					}
+
+					if (aPostVisitDirectory != null) {
+						return aPostVisitDirectory.apply(aDir.toFile());
+					}
+
+					return FileVisitResult.CONTINUE;
+				}
+
+				@Override
+				public FileVisitResult visitFile(Path aFile, BasicFileAttributes aAttrs) throws IOException {
+					FileVisitResult visitResult = FileVisitResult.CONTINUE;
+					if (aVisitFile != null) {
+						visitResult = aVisitFile.apply(aFile.toFile());
+					}
+
+					if (aSelector != null && aSelector.apply(aFile.toFile(), visitResult)) {
+						fileMap.put(getPathKey(aFile, sourcePath), aFile.toFile());
+					}
+
+					return visitResult;
+				}
+
+				@Override
+				public FileVisitResult visitFileFailed(Path aFile, IOException aError) throws IOException {
+					if (aError != null) {
+						throw aError;
+					}
+
+					return FileVisitResult.CONTINUE;
+				}
+			});
+		} catch (IOException error) {
+			throw new AccelerateException(error);
+		}
+
+		return fileMap;
+	}
+
+	/**
+	 * @param aRootPath
 	 *            path to the file or folder of files
 	 * @param aNamePattern
 	 *            text to be searched in the filename
 	 * @return {@link Map} of {@link File} that match the search criteria
 	 * @throws AccelerateException
-	 *             throw by
-	 *             {@link DirectoryParser#execute(File, java.util.function.Predicate, accelerate.util.file.DirectoryParser.FileHandler)}
+	 *             thrown by
+	 *             {@link #walkFileTree(String, Function, Function, Function, BiFunction)}
 	 */
 	public static Map<String, File> findFilesByName(String aRootPath, String aNamePattern) throws AccelerateException {
-		return DirectoryParser.execute(new File(aRootPath),
-				aFile -> StringUtil.grepCheck(aNamePattern, aFile.getName()), null);
+		return walkFileTree(aRootPath, null, null, null,
+				(aFile, aFileVisitResult) -> StringUtil.grepCheck(aNamePattern, aFile.getName()));
 	}
 
 	/**
@@ -242,12 +330,12 @@ public final class FileUtil {
 	 *            extension of the file
 	 * @return {@link Map} of {@link File} that match the search criteria
 	 * @throws AccelerateException
-	 *             throw by
-	 *             {@link DirectoryParser#execute(File, java.util.function.Predicate, accelerate.util.file.DirectoryParser.FileHandler)}
+	 *             thrown by
+	 *             {@link #walkFileTree(String, Function, Function, Function, BiFunction)}
 	 */
 	public static Map<String, File> findFilesByExtn(String aRootPath, String aSearchExtn) throws AccelerateException {
-		return DirectoryParser.execute(new File(aRootPath),
-				aFile -> AppUtil.compare(accelerate.util.FileUtil.getFileExtn(aFile), aSearchExtn), null);
+		return walkFileTree(aRootPath, null, null, null,
+				(aFile, aFileVisitResult) -> AppUtil.compare(accelerate.util.FileUtil.getFileExtn(aFile), aSearchExtn));
 	}
 
 	/**
@@ -260,7 +348,7 @@ public final class FileUtil {
 	 * @return array of file names
 	 */
 	public static File renameFile(File aFile, String aName) {
-		return renameFileAndExtn(aFile, aName, getFileExtn(aFile));
+		return renameFileWithExtn(aFile, aName, getFileExtn(aFile));
 	}
 
 	/**
@@ -280,12 +368,12 @@ public final class FileUtil {
 	 *             {@link IOException} thrown by
 	 *             {@link Files#move(Path, Path, CopyOption...)}
 	 */
-	public static File renameFileAndExtn(File aFile, String aName, String aExtn) throws AccelerateException {
+	public static File renameFileWithExtn(File aFile, String aName, String aExtn) throws AccelerateException {
 		String extn = aFile.isDirectory() ? EMPTY_STRING : DOT_CHAR + aExtn;
 		File target = new File(aFile.getParent(), aName + extn);
 
 		try {
-			Files.move(Paths.get(aFile.toURI()), Paths.get(target.toURI()));
+			Files.move(aFile.toPath(), target.toPath());
 		} catch (IOException error) {
 			throw new AccelerateException(error);
 		}
@@ -294,42 +382,43 @@ public final class FileUtil {
 	}
 
 	/**
-	 * @param aRootFolder
+	 * @param aRootPath
 	 * @param aFileFilter
 	 * @param aFindPattern
 	 * @param aReplacement
 	 * @return
 	 */
-	public static Map<String, File> renameFiles(File aRootFolder, Predicate<File> aFileFilter,
+	public static Map<String, String> renameFiles(String aRootPath, final Predicate<File> aFileFilter,
 			final String aFindPattern, final String aReplacement) {
-		Assert.noNullElements(new Object[] { aRootFolder, aFindPattern, aReplacement },
+		Assert.noNullElements(new Object[] { aRootPath, aFindPattern, aReplacement },
 				"Invalid Input. Required arguments are missing");
 
-		return DirectoryParser.execute(aRootFolder, aFileFilter, new DirectoryParser.FileHandler() {
-			@Override
-			public File handleFile(File aFile) {
-				String currentName = aFile.getName();
-				String newName = StringUtils.replacePattern(currentName, aFindPattern, aReplacement);
+		final Path rootPath = new File(aRootPath).toPath();
+		final Map<String, String> fileMap = new TreeMap<>();
+		final Function<File, FileVisitResult> renameFunction = (aFile -> {
+			if (!aFileFilter.test(aFile)) {
+				return FileVisitResult.CONTINUE;
+			}
 
-				if (AppUtil.compare(newName, currentName)) {
-					return aFile;
-				}
+			String currentName = aFile.getName();
+			String newName = StringUtils.replacePattern(currentName, aFindPattern, aReplacement);
 
+			if (!AppUtil.compare(newName, currentName)) {
 				File newFile = new File(aFile.getParentFile(), newName);
 				if (newFile.exists()) {
 					LOGGER.debug("Cannot rename file [{}] to as file [{}] already exists", aFile, newName);
-					return aFile;
 				}
 
 				LOGGER.debug("Renaming file [{}] to [{}]", aFile, newName);
-				return FileUtil.renameFile(aFile, newName);
+				FileUtil.renameFile(aFile, newName);
 			}
 
-			@Override
-			public File handleDirectory(File aFolder) throws AccelerateException {
-				return handleFile(aFolder);
-			}
+			fileMap.put(getPathKey(aFile.toPath(), rootPath), newName);
+			return FileVisitResult.CONTINUE;
 		});
+
+		walkFileTree(aRootPath, null, renameFunction, renameFunction, null);
+		return fileMap;
 	}
 
 	/**
