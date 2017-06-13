@@ -1,6 +1,5 @@
 .apt_generated/
 .gradle/
-.settings/
 bin/
 build/
 logs/
