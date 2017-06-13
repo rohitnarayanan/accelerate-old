@@ -111,7 +111,7 @@ public final class SecurityUtil {
 		return new AuthenticationEntryPoint() {
 			@Override
 			public void commence(HttpServletRequest aRequest, HttpServletResponse aResponse,
-					AuthenticationException aAuthException) throws IOException, ServletException {
+					AuthenticationException aAuthException) throws IOException {
 				LOGGER.info("AuthError:{}#@#URL:{}", aAuthException.getClass().getName(), aRequest.getRequestURL());
 				if (aAnglularJSFlag && AngularJSUtil.handleAuthEntry(aRequest, aResponse, aAuthException)) {
 					return;

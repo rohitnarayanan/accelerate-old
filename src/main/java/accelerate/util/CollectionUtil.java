@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -231,12 +232,28 @@ public final class CollectionUtil {
 	 * @param aOuterKey
 	 * @param aInnerKey
 	 * @param aValue
-	 * @return {@link List} to which value was added
+	 * @return {@link Map} to which value was added
 	 */
 	public static <P, Q, R> Map<Q, R> addToValueMap(Map<P, Map<Q, R>> aMap, P aOuterKey, Q aInnerKey, R aValue) {
+		return addToValueMap(aMap, aOuterKey, aInnerKey, aValue, false);
+	}
+
+	/**
+	 * @param <P>
+	 * @param <Q>
+	 * @param <R>
+	 * @param aMap
+	 * @param aOuterKey
+	 * @param aInnerKey
+	 * @param aValue
+	 * @param aOrdered
+	 * @return {@link Map} to which value was added
+	 */
+	public static <P, Q, R> Map<Q, R> addToValueMap(Map<P, Map<Q, R>> aMap, P aOuterKey, Q aInnerKey, R aValue,
+			boolean aOrdered) {
 		Map<Q, R> valueMap = aMap.get(aOuterKey);
 		if ((valueMap == null) || (valueMap == Collections.EMPTY_MAP)) {
-			valueMap = new HashMap<>();
+			valueMap = aOrdered ? new TreeMap<>() : new HashMap<>();
 			aMap.put(aOuterKey, valueMap);
 		}
 

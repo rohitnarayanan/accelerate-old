@@ -155,7 +155,7 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	 *             wrapping all possible exceptions
 	 */
 	@PostConstruct
-	public AccelerateCache<K, V> initialize() throws AccelerateException {
+	public void initialize() {
 		Assert.state(!this.initialized, "Batch already initialized");
 
 		try {
@@ -173,8 +173,6 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 		} catch (Exception error) {
 			AccelerateException.checkAndThrow(error, "Error in initializing cache [%s]", name());
 		}
-
-		return this;
 	}
 
 	/*

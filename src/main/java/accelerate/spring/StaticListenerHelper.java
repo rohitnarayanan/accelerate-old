@@ -95,7 +95,7 @@ public class StaticListenerHelper implements ApplicationListener<ApplicationRead
 	 * 
 	 */
 	@PostConstruct
-	public void initialize() throws AccelerateException {
+	public void initialize() {
 		Exception exception = null;
 		StopWatch stopWatch = null;
 

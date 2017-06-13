@@ -19,6 +19,7 @@ import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.Collections;
@@ -167,13 +168,24 @@ public final class FileUtil {
 	 * @param aRoot
 	 * @return short path
 	 */
-	public static String getPathKey(Path aFile, Path aRoot) {
+	public static String getRelativePath(Path aFile, Path aRoot) {
 		if (aFile == null) {
 			return EMPTY_STRING;
 		}
 
 		int rootNameCount = (aRoot == null) ? 0 : aRoot.getNameCount();
 		return getFilePath(aFile.subpath(rootNameCount, aFile.getNameCount()));
+	}
+
+	/**
+	 * Overloaded {@link #getRelativePath(Path, Path)} for file arguments
+	 * 
+	 * @param aRelativePath
+	 * @param aBasePath
+	 * @return
+	 */
+	public static String getRelativePath(File aRelativePath, File aBasePath) {
+		return getRelativePath(Paths.get(aRelativePath.toURI()), Paths.get(aBasePath.toURI()));
 	}
 
 	/**
@@ -248,7 +260,7 @@ public final class FileUtil {
 		try {
 			Files.walkFileTree(sourcePath, new FileVisitor<Path>() {
 				@Override
-				public FileVisitResult preVisitDirectory(Path aDir, BasicFileAttributes aAttrs) throws IOException {
+				public FileVisitResult preVisitDirectory(Path aDir, BasicFileAttributes aAttrs) {
 					if (AppUtil.compare(FileUtil.getFilePath(aDir), FileUtil.getFilePath(sourcePath))) {
 						return FileVisitResult.CONTINUE;
 					}
@@ -259,7 +271,7 @@ public final class FileUtil {
 					}
 
 					if (aSelector != null && aSelector.apply(aDir.toFile(), visitResult)) {
-						fileMap.put(getPathKey(aDir, sourcePath), aDir.toFile());
+						fileMap.put(getRelativePath(aDir, sourcePath), aDir.toFile());
 					}
 
 					return visitResult;
@@ -279,14 +291,14 @@ public final class FileUtil {
 				}
 
 				@Override
-				public FileVisitResult visitFile(Path aFile, BasicFileAttributes aAttrs) throws IOException {
+				public FileVisitResult visitFile(Path aFile, BasicFileAttributes aAttrs) {
 					FileVisitResult visitResult = FileVisitResult.CONTINUE;
 					if (aVisitFile != null) {
 						visitResult = aVisitFile.apply(aFile.toFile());
 					}
 
 					if (aSelector != null && aSelector.apply(aFile.toFile(), visitResult)) {
-						fileMap.put(getPathKey(aFile, sourcePath), aFile.toFile());
+						fileMap.put(getRelativePath(aFile, sourcePath), aFile.toFile());
 					}
 
 					return visitResult;
@@ -413,7 +425,7 @@ public final class FileUtil {
 				FileUtil.renameFile(aFile, newName);
 			}
 
-			fileMap.put(getPathKey(aFile.toPath(), rootPath), newName);
+			fileMap.put(getRelativePath(aFile.toPath(), rootPath), newName);
 			return FileVisitResult.CONTINUE;
 		});
 

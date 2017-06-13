@@ -18,7 +18,7 @@ public class QuickTest {
 		try {
 			File folder = new File("C:\\Temp\\root\\f2\\sf5");
 			File root = new File("C:\\Temp\\root");
-			System.out.println(FileUtil.getPathKey(folder.toPath(), root.toPath()));
+			System.out.println(FileUtil.getRelativePath(folder.toPath(), root.toPath()));
 			FileUtil.walkFileTree("C:\\Temp\\root", null, null, null,
 					(aFile, aFileVisitResult) -> aFile.getName().startsWith("f"))
 					.forEach((k, v) -> System.out.println(v));
