@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
@@ -62,8 +63,8 @@ public final class FileUtil {
 	}
 
 	/**
-	 * Method to consistenly return path in unix format with '/' separator
-	 * instead of '\\' used in windows.
+	 * Method to consistenly return path in unix format with '/' separator instead
+	 * of '\\' used in windows.
 	 * 
 	 * @param aPath
 	 * @return file name
@@ -124,12 +125,7 @@ public final class FileUtil {
 			return EMPTY_STRING;
 		}
 
-		int index = aTargetFile.getName().lastIndexOf(DOT_CHAR);
-		if (index < 0) {
-			return aTargetFile.getName();
-		}
-
-		return aTargetFile.getName().substring(0, index);
+		return FilenameUtils.getBaseName(aTargetFile.getName());
 	}
 
 	/**
@@ -141,12 +137,7 @@ public final class FileUtil {
 			return EMPTY_STRING;
 		}
 
-		int index = aTargetFile.getName().lastIndexOf(DOT_CHAR);
-		if (index < 0) {
-			return EMPTY_STRING;
-		}
-
-		return aTargetFile.getName().substring(index + 1);
+		return FilenameUtils.getExtension(aTargetFile.getName());
 	}
 
 	/**
@@ -388,16 +379,14 @@ public final class FileUtil {
 	}
 
 	/**
-	 * This method renames the given file to new name with the provided
-	 * extension
+	 * This method renames the given file to new name with the provided extension
 	 *
 	 * @param aFile
 	 *            - File to be renamed
 	 * @param aName
 	 *            - New Name to be given.
 	 * @param aExtn
-	 *            - New Extn to be given. It is ignored in case of directory
-	 *            rename
+	 *            - New Extn to be given. It is ignored in case of directory rename
 	 * @return array of file names
 	 * 
 	 * @throws AccelerateException

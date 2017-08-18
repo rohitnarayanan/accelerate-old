@@ -58,6 +58,7 @@ dependencies {
 	compile("org.apache.commons:commons-lang3")
 	compile("commons-beanutils:commons-beanutils")
 	compile("commons-fileupload:commons-fileupload")
+	compile("commons-io:commons-io")
 	
 	//test dependencies
 	testCompile("org.springframework.boot:spring-boot-starter-test")
