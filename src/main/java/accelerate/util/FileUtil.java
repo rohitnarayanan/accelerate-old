@@ -43,7 +43,7 @@ import org.springframework.util.Assert;
 import accelerate.exception.AccelerateException;
 
 /**
- * PUT DESCRIPTION HERE
+ * Utility class with methods for {@link File} and {@link Path} operations
  *
  * @author Rohit Narayanan
  * @version 1.0 Initial Version
@@ -89,6 +89,30 @@ public final class FileUtil {
 		}
 
 		return org.springframework.util.StringUtils.cleanPath(aTargetFile.getPath());
+	}
+
+	/**
+	 * @param aTargetFile
+	 * @return file name
+	 */
+	public static String getFileNameWithExtn(Path aTargetFile) {
+		if (aTargetFile == null) {
+			return EMPTY_STRING;
+		}
+
+		return aTargetFile.toFile().getName();
+	}
+
+	/**
+	 * @param aTargetFile
+	 * @return file name
+	 */
+	public static String getFileName(Path aTargetFile) {
+		if (aTargetFile == null) {
+			return EMPTY_STRING;
+		}
+
+		return getFileName(aTargetFile.toFile());
 	}
 
 	/**
