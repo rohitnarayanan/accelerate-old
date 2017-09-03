@@ -145,12 +145,11 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	}
 
 	/**
-	 * This method initializes the cache. This is the first method that should
-	 * be called before the cache can be used. It also should be registered as
-	 * the "init-method" method in case the Cache class is going to be managed
-	 * by Spring Framework.
-	 *
-	 * @return cache instance to allow chained calls to API
+	 * This method initializes the cache. This is the first method that should be
+	 * called before the cache can be used. It also should be registered as the
+	 * "init-method" method in case the Cache class is going to be managed by Spring
+	 * Framework.
+	 * 
 	 * @throws AccelerateException
 	 *             wrapping all possible exceptions
 	 */
@@ -245,8 +244,8 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	}
 
 	/**
-	 * This method returns the JSON form of value stored in cache against the
-	 * given key
+	 * This method returns the JSON form of value stored in cache against the given
+	 * key
 	 *
 	 * @param aKeyString
 	 *            key string to fetch value stored in the cache
@@ -275,14 +274,13 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	}
 
 	/**
-	 * This method stores the given key-value pair in cache after converting
-	 * them
+	 * This method stores the given key-value pair in cache after converting them
 	 *
 	 * @param aKeyString
 	 *            Key to be added to the cache
 	 * @param aValueString
-	 *            Value to be stored in the cache. It can be a simple String or
-	 *            JSON representation
+	 *            Value to be stored in the cache. It can be a simple String or JSON
+	 *            representation
 	 * @throws AccelerateException
 	 *             thrown by {@link JSONUtil#serialize(Object)} and
 	 *             {@link JSONUtil#deserialize(String, Class)}
@@ -392,8 +390,7 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	}
 
 	/**
-	 * This method returns the date timestamp when the cache was first
-	 * initialized
+	 * This method returns the date timestamp when the cache was first initialized
 	 *
 	 * @return cache name
 	 */
@@ -442,8 +439,8 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	@Async
 	private void checkRefresh() throws AccelerateException {
 		/*
-		 * if cache has not been initialized or is not refreshable or is
-		 * currently refreshing, return
+		 * if cache has not been initialized or is not refreshable or is currently
+		 * refreshing, return
 		 */
 		if (!this.initialized || !this.refreshable || this.refreshMonitor) {
 			return;
@@ -455,8 +452,8 @@ public abstract class AccelerateCache<K, V> implements Serializable {
 	}
 
 	/**
-	 * This method calculates the cache duration to determine when the cache is
-	 * due to be refreshed from the data store
+	 * This method calculates the cache duration to determine when the cache is due
+	 * to be refreshed from the data store
 	 */
 	private void calculateCacheDuration() {
 		if (this.cacheAge != null) {
