@@ -189,15 +189,6 @@ public class AccelerateDataBean implements Serializable {
 
 	/**
 	 * @param aKey
-	 * @return
-	 * @see java.util.HashMap#get(java.lang.Object)
-	 */
-	public Object get(Object aKey) {
-		return getDataMap().get(aKey);
-	}
-
-	/**
-	 * @param aKey
 	 * @param aDefaultValue
 	 * @return
 	 * @see java.util.HashMap#getOrDefault(java.lang.Object, java.lang.Object)
@@ -243,8 +234,7 @@ public class AccelerateDataBean implements Serializable {
 	 * @param aKey
 	 * @param aValue
 	 * @return
-	 * @see accelerate.databean.DataMap#putAnd(java.lang.String,
-	 *      java.lang.Object)
+	 * @see accelerate.databean.DataMap#putAnd(java.lang.String, java.lang.Object)
 	 */
 	public DataMap putAnd(String aKey, Object aValue) {
 		return getDataMap().putAnd(aKey, aValue);
@@ -332,8 +322,8 @@ public class AccelerateDataBean implements Serializable {
 	}
 
 	/**
-	 * This method return a short JSON representation of this bean to save
-	 * memory or disk space
+	 * This method return a short JSON representation of this bean to save memory or
+	 * disk space
 	 *
 	 * @return log string
 	 * @throws AccelerateException
@@ -345,8 +335,7 @@ public class AccelerateDataBean implements Serializable {
 	}
 
 	/**
-	 * This method registers the aFieldName as a field to be excluded from
-	 * logging
+	 * This method registers the aFieldName as a field to be excluded from logging
 	 *
 	 * @param aFieldNames
 	 */
@@ -361,8 +350,7 @@ public class AccelerateDataBean implements Serializable {
 	}
 
 	/**
-	 * This method registers the aFieldName as a field to be excluded from
-	 * logging
+	 * This method registers the aFieldName as a field to be excluded from logging
 	 *
 	 * @param aFieldNames
 	 */
