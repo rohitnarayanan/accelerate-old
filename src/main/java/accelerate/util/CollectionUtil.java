@@ -38,8 +38,8 @@ public final class CollectionUtil {
 
 	/**
 	 * Method converts a {@link Properties} instance to {@link Map} for
-	 * non-synchronized traversal. NOTE: In case the properties instance is null
-	 * a immutable empty map is return for fail-safe loops.
+	 * non-synchronized traversal. NOTE: In case the properties instance is null a
+	 * immutable empty map is return for fail-safe loops.
 	 * 
 	 * @param aProperties
 	 *            - Properties Object
@@ -53,7 +53,7 @@ public final class CollectionUtil {
 		Map<String, T> propMap = new HashMap<>();
 
 		if (isEmpty(aProperties)) {
-			return Collections.EMPTY_MAP;
+			return propMap;
 		}
 
 		aProperties.forEach((key, value) -> propMap.put(Objects.toString(key, EMPTY_STRING), type.cast(value)));
@@ -109,7 +109,7 @@ public final class CollectionUtil {
 	@SafeVarargs
 	public final static <E> List<E> toList(E... aCollection) {
 		if (isEmpty(aCollection)) {
-			return Collections.EMPTY_LIST;
+			return new ArrayList<>();
 		}
 
 		return Arrays.asList(aCollection);

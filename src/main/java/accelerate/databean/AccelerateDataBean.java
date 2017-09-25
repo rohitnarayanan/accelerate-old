@@ -35,7 +35,7 @@ public class AccelerateDataBean implements Serializable {
 	/**
 	 * {@link Set} to include names of fields to exclude while logging
 	 */
-	protected transient Set<String> logExcludedFields = Collections.EMPTY_SET;
+	protected transient Set<String> logExcludedFields = Collections.emptySet();
 
 	/**
 	 * Name of the id field for the bean

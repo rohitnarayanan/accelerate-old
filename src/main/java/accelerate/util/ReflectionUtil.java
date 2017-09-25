@@ -31,10 +31,10 @@ public final class ReflectionUtil {
 	 * @param aTargetField
 	 * @return
 	 * @throws AccelerateException
-	 *             - Wrapping the following exceptions thrown due to
-	 *             {@link Field} operations - {@link IllegalArgumentException} |
-	 *             {@link IllegalAccessException} | {@link NoSuchFieldException}
-	 *             | {@link SecurityException}
+	 *             - Wrapping the following exceptions thrown due to {@link Field}
+	 *             operations - {@link IllegalArgumentException} |
+	 *             {@link IllegalAccessException} | {@link NoSuchFieldException} |
+	 *             {@link SecurityException}
 	 */
 	public static Object getFieldValue(Class<?> aTargetClass, Object aTargetInstance, String aTargetField)
 			throws AccelerateException {
@@ -47,7 +47,7 @@ public final class ReflectionUtil {
 				throw new NoSuchFieldException("Field " + aTargetField + " not found.");
 			}
 
-			boolean accessible = field.isAccessible();
+			boolean accessible = field.canAccess(aTargetInstance);
 			field.setAccessible(true);
 			Object value = field.get(aTargetInstance);
 			field.setAccessible(accessible);
@@ -63,8 +63,8 @@ public final class ReflectionUtil {
 	 * @param aTargetField
 	 * @return
 	 * @throws AccelerateException
-	 *             - Wrapping the following exceptions thrown due to
-	 *             {@link Field} operations - {@link IllegalArgumentException} |
+	 *             - Wrapping the following exceptions thrown due to {@link Field}
+	 *             operations - {@link IllegalArgumentException} |
 	 *             {@link IllegalAccessException} | {@link SecurityException}
 	 */
 	public static Object getFieldValue(Object aTargetInstance, Field aTargetField) throws AccelerateException {
@@ -72,7 +72,7 @@ public final class ReflectionUtil {
 				"Invalid Call. All arguments are required");
 
 		try {
-			boolean accessible = aTargetField.isAccessible();
+			boolean accessible = aTargetField.canAccess(aTargetInstance);
 			aTargetField.setAccessible(true);
 			Object value = aTargetField.get(aTargetInstance);
 			aTargetField.setAccessible(accessible);
@@ -91,10 +91,10 @@ public final class ReflectionUtil {
 	 * @throws AccelerateException
 	 *             on {@link Field} operations
 	 * @throws AccelerateException
-	 *             - Wrapping the following exceptions thrown due to
-	 *             {@link Field} operations - {@link IllegalArgumentException} |
-	 *             {@link IllegalAccessException} | {@link NoSuchFieldException}
-	 *             | {@link SecurityException}
+	 *             - Wrapping the following exceptions thrown due to {@link Field}
+	 *             operations - {@link IllegalArgumentException} |
+	 *             {@link IllegalAccessException} | {@link NoSuchFieldException} |
+	 *             {@link SecurityException}
 	 */
 	public static void setFieldValue(Class<?> aTargetClass, Object aTargetInstance, String aTargetField,
 			Object aFieldValue) throws AccelerateException {
@@ -107,7 +107,7 @@ public final class ReflectionUtil {
 				throw new NoSuchFieldException("Field " + aTargetField + " not found.");
 			}
 
-			boolean accessible = field.isAccessible();
+			boolean accessible = field.canAccess(aTargetInstance);
 			field.setAccessible(true);
 			field.set(aTargetInstance, aFieldValue);
 			field.setAccessible(accessible);
@@ -124,8 +124,8 @@ public final class ReflectionUtil {
 	 * @param aMethodArgs
 	 * @return
 	 * @throws AccelerateException
-	 *             - Wrapping the following exceptions thrown due to
-	 *             {@link Method} operations - {@link NoSuchMethodException} |
+	 *             - Wrapping the following exceptions thrown due to {@link Method}
+	 *             operations - {@link NoSuchMethodException} |
 	 *             {@link SecurityException} | {@link IllegalAccessException} |
 	 *             {@link IllegalArgumentException} |
 	 *             {@link InvocationTargetException}
@@ -142,7 +142,7 @@ public final class ReflectionUtil {
 				throw new NoSuchMethodException("Method " + aTargetMethodName + " not found.");
 			}
 
-			boolean accessible = method.isAccessible();
+			boolean accessible = method.canAccess(aTargetInstance);
 			method.setAccessible(true);
 			Object value = method.invoke(aTargetInstance, aMethodArgs);
 			method.setAccessible(accessible);
