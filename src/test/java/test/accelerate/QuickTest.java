@@ -2,7 +2,10 @@ package test.accelerate;
 
 import java.io.File;
 
+import org.springframework.util.ReflectionUtils;
+
 import accelerate.util.FileUtil;
+import accelerate.util.ReflectionUtil;
 import accelerate.util.StringUtil;
 
 /**
@@ -14,14 +17,17 @@ import accelerate.util.StringUtil;
  */
 @SuppressWarnings("all")
 public class QuickTest {
+	private String field1 = "abc";
+	private static String field2 = "def";
+
 	public static void main(String[] args) {
 		try {
-			File folder = new File("C:\\Temp\\root\\f2\\sf5");
-			File root = new File("C:\\Temp\\root");
-			System.out.println(FileUtil.getRelativePath(folder.toPath(), root.toPath()));
-			FileUtil.walkFileTree("C:\\Temp\\root", null, null, null,
-					(aFile, aFileVisitResult) -> aFile.getName().startsWith("f"))
-					.forEach((k, v) -> System.out.println(v));
+			QuickTest test = new QuickTest();
+			System.out.println(ReflectionUtil.getFieldValue(QuickTest.class, null, "field1"));
+			 System.out.println(ReflectionUtil.getFieldValue(QuickTest.class, null,
+			 "field2"));
+
+//			ReflectionUtils.getField(ReflectionUtils.findField(QuickTest.class, "field2"), test);
 		} catch (Exception error) {
 			error.printStackTrace();
 		}

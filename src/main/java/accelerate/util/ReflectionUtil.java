@@ -38,8 +38,8 @@ public final class ReflectionUtil {
 	 */
 	public static Object getFieldValue(Class<?> aTargetClass, Object aTargetInstance, String aTargetField)
 			throws AccelerateException {
-		Assert.noNullElements(new Object[] { aTargetClass, aTargetInstance, aTargetField },
-				"Invalid Call. All arguments are required");
+		Assert.noNullElements(new Object[] { aTargetClass, aTargetField },
+				"Invalid Call. aTargetClass, aTargetField values are required");
 
 		try {
 			Field field = ReflectionUtils.findField(aTargetClass, aTargetField);
@@ -98,8 +98,8 @@ public final class ReflectionUtil {
 	 */
 	public static void setFieldValue(Class<?> aTargetClass, Object aTargetInstance, String aTargetField,
 			Object aFieldValue) throws AccelerateException {
-		Assert.noNullElements(new Object[] { aTargetClass, aTargetInstance, aTargetField, aFieldValue },
-				"Invalid Call. All arguments are required");
+		Assert.noNullElements(new Object[] { aTargetClass, aTargetField, aFieldValue },
+				"Invalid Call. aTargetClass, aTargetField values are required");
 
 		try {
 			Field field = ReflectionUtils.findField(aTargetClass, aTargetField);
@@ -134,7 +134,7 @@ public final class ReflectionUtil {
 	public static Object invokeMethod(Class<?> aTargetClass, Object aTargetInstance, String aTargetMethodName,
 			Class<?>[] aMethodArgTypes, Object[] aMethodArgs) throws AccelerateException {
 		Assert.noNullElements(new Object[] { aTargetClass, aTargetMethodName },
-				"Invalid Call. All arguments are required");
+				"Invalid Call. aTargetClass, aTargetMethodName values are required");
 
 		try {
 			Method method = ReflectionUtils.findMethod(aTargetClass, aTargetMethodName, aMethodArgTypes);
@@ -181,8 +181,8 @@ public final class ReflectionUtil {
 	 */
 	public static void invokeSetter(Object aTargetInstance, String aTargetField, Object aFieldValue)
 			throws AccelerateException {
-		Assert.noNullElements(new Object[] { aTargetInstance, aTargetField, aFieldValue },
-				"Invalid Call. All arguments are required");
+		Assert.noNullElements(new Object[] { aTargetInstance, aTargetField },
+				"Invalid Call. aTargetInstance, aTargetField values are required");
 
 		String setterName = StringUtils.join("set", StringUtils.capitalize(aTargetField));
 		invokeMethod(aTargetInstance.getClass(), aTargetInstance, setterName, new Class<?>[] { aFieldValue.getClass() },
