@@ -47,7 +47,7 @@ public final class ReflectionUtil {
 				throw new NoSuchFieldException("Field " + aTargetField + " not found.");
 			}
 
-			boolean accessible = field.canAccess(aTargetInstance);
+			boolean accessible = field.isAccessible();
 			field.setAccessible(true);
 			Object value = field.get(aTargetInstance);
 			field.setAccessible(accessible);
@@ -72,7 +72,7 @@ public final class ReflectionUtil {
 				"Invalid Call. All arguments are required");
 
 		try {
-			boolean accessible = aTargetField.canAccess(aTargetInstance);
+			boolean accessible = aTargetField.isAccessible();
 			aTargetField.setAccessible(true);
 			Object value = aTargetField.get(aTargetInstance);
 			aTargetField.setAccessible(accessible);
@@ -107,7 +107,7 @@ public final class ReflectionUtil {
 				throw new NoSuchFieldException("Field " + aTargetField + " not found.");
 			}
 
-			boolean accessible = field.canAccess(aTargetInstance);
+			boolean accessible = field.isAccessible();
 			field.setAccessible(true);
 			field.set(aTargetInstance, aFieldValue);
 			field.setAccessible(accessible);
@@ -142,7 +142,7 @@ public final class ReflectionUtil {
 				throw new NoSuchMethodException("Method " + aTargetMethodName + " not found.");
 			}
 
-			boolean accessible = method.canAccess(aTargetInstance);
+			boolean accessible = method.isAccessible();
 			method.setAccessible(true);
 			Object value = method.invoke(aTargetInstance, aMethodArgs);
 			method.setAccessible(accessible);
